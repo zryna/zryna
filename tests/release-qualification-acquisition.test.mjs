@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { sha256 } from '../scripts/distribution/canonical.mjs';
 import {
@@ -78,107 +79,184 @@ test('bounded fetch requests and requires an exact JSON representation', async (
   }), /response length differs \(declared invalid; expected 18\)/);
 });
 
-test('acquires exact Git, npm, Node, Rust, and upstream-license inputs before selection', async () => {
-  const keys = Buffer.from('keys');
-  const metadata = Buffer.from('metadata');
-  const npmArchive = Buffer.from('npm archive');
-  const nodeArchive = Buffer.from('node archive');
-  const crate = Buffer.from('crate archive');
-  const upstreamLicense = Buffer.from('upstream license');
-  const urls = new Map([
-    ['https://registry.npmjs.org/-/npm/v1/keys', keys],
-    ['https://registry.npmjs.org/example/1.0.0', metadata],
-    ['https://registry.npmjs.org/example/-/example-1.0.0.tgz', npmArchive],
-    ['https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-x64.tar.xz', nodeArchive],
-    ['https://static.crates.io/crates/example-crate/example-crate-1.2.3.crate', crate],
-    [WASMTIME, upstreamLicense],
-  ]);
-  const fetched = [];
-  const accepts = [];
-  const fetchImpl = async (url, options) => {
-    fetched.push(url);
-    accepts.push(options.headers.accept);
-    const data = urls.get(url);
-    assert(data, `unexpected request ${url}`);
-    return response(url, data, { headers: new Headers({
-      'content-length': String(data.length), 'content-type': options.headers.accept,
-    }) });
-  };
-  const source = new Map([
-    ['LICENSE', Buffer.from('root license')],
-    ['NOTICE', Buffer.from('root notice')],
-    ['adapters/typescript-6/src/limits-v3.mjs', Buffer.from('limits 3')],
-    ['adapters/typescript-6/src/limits-v4.mjs', Buffer.from('limits 4')],
-    ['adapters/typescript-6/src/worker-v3.mjs', Buffer.from('worker 3')],
-    ['adapters/typescript-6/src/worker-v4.mjs', Buffer.from('worker 4')],
-    ['adapters/typescript-6/src/worker.mjs', Buffer.from('worker')],
-  ]);
-  const object = 'b'.repeat(40);
-  const spawn = (_git, args) => {
-    const command = args[0];
-    if (command === 'ls-tree') {
-      const path = args.at(-1);
-      return { status: 0, stdout: Buffer.from(`100644 blob ${object}\t${path}\0`) };
+for (const [sourceRef, productionCandidate] of [
+  ['refs/heads/main', false], ['refs/tags/v0.2.3', false], [undefined, false],
+  ['refs/heads/main', true],
+]) {
+  test(`acquires exact materials for ${sourceRef ?? 'legacy default'} candidate=${productionCandidate}`, async () => {
+    const keys = Buffer.from('keys');
+    const metadata = Buffer.from('metadata');
+    const npmArchive = Buffer.from('npm archive');
+    const nodeArchive = Buffer.from('node archive');
+    const crate = Buffer.from('crate archive');
+    const upstreamLicense = Buffer.from('upstream license');
+    const urls = new Map([
+      ['https://registry.npmjs.org/-/npm/v1/keys', keys],
+      ['https://registry.npmjs.org/example/1.0.0', metadata],
+      ['https://registry.npmjs.org/example/-/example-1.0.0.tgz', npmArchive],
+      ['https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-x64.tar.xz', nodeArchive],
+      ['https://static.crates.io/crates/example-crate/example-crate-1.2.3.crate', crate],
+      [WASMTIME, upstreamLicense],
+    ]);
+    const fetched = [];
+    const accepts = [];
+    const fetchImpl = async (url, options) => {
+      fetched.push(url);
+      accepts.push(options.headers.accept);
+      const data = urls.get(url);
+      assert(data, `unexpected request ${url}`);
+      return response(url, data, { headers: new Headers({
+        'content-length': String(data.length), 'content-type': options.headers.accept,
+      }) });
+    };
+    const source = new Map([
+      ['LICENSE', Buffer.from('root license')],
+      ['NOTICE', Buffer.from('root notice')],
+      ['adapters/typescript-6/src/limits-v3.mjs', Buffer.from('limits 3')],
+      ['adapters/typescript-6/src/limits-v4.mjs', Buffer.from('limits 4')],
+      ['adapters/typescript-6/src/v4/boundary/configuration.mjs', Buffer.from('v4/boundary/configuration.mjs')],
+      ['adapters/typescript-6/src/v4/boundary/dispatch.mjs', Buffer.from('v4/boundary/dispatch.mjs')],
+      ['adapters/typescript-6/src/v4/boundary/errors.mjs', Buffer.from('v4/boundary/errors.mjs')],
+      ['adapters/typescript-6/src/v4/boundary/request.mjs', Buffer.from('v4/boundary/request.mjs')],
+      ['adapters/typescript-6/src/v4/boundary/transport.mjs', Buffer.from('v4/boundary/transport.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/constructions.mjs', Buffer.from('v4/syntax/constructions.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/data-declarations.mjs', Buffer.from('v4/syntax/data-declarations.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/diagnostics.mjs', Buffer.from('v4/syntax/diagnostics.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/expression-arena.mjs', Buffer.from('v4/syntax/expression-arena.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/expressions.mjs', Buffer.from('v4/syntax/expressions.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/functions.mjs', Buffer.from('v4/syntax/functions.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/imports.mjs', Buffer.from('v4/syntax/imports.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/matches.mjs', Buffer.from('v4/syntax/matches.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/names.mjs', Buffer.from('v4/syntax/names.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/source.mjs', Buffer.from('v4/syntax/source.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/spans.mjs', Buffer.from('v4/syntax/spans.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/statements.mjs', Buffer.from('v4/syntax/statements.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/tokens.mjs', Buffer.from('v4/syntax/tokens.mjs')],
+      ['adapters/typescript-6/src/v4/syntax/types.mjs', Buffer.from('v4/syntax/types.mjs')],
+      ['adapters/typescript-6/src/worker-v3.mjs', Buffer.from('worker 3')],
+      ['adapters/typescript-6/src/worker-v4.mjs', Buffer.from('worker 4')],
+      ['adapters/typescript-6/src/worker.mjs', Buffer.from('worker')],
+    ]);
+    if (sourceRef !== 'refs/heads/main') {
+      for (const path of source.keys()) {
+        if (path.startsWith('adapters/typescript-6/src/v4/')) source.delete(path);
+      }
     }
-    if (command === 'cat-file' && args[1] === '-s') {
-      const path = [...source.keys()][spawn.sizeIndex++];
-      spawn.pending = path;
-      return { status: 0, stdout: Buffer.from(`${source.get(path).length}\n`) };
-    }
-    if (command === 'cat-file' && args[1] === 'blob') {
-      return { status: 0, stdout: source.get(spawn.pending) };
-    }
-    assert.fail(`unexpected git command ${args.join(' ')}`);
-  };
-  spawn.sizeIndex = 0;
-  const npmDescriptor = {
-    keys: { url: [...urls.keys()][0], size: keys.length, sha256: sha256(keys) },
-    packages: [{ metadata: { url: [...urls.keys()][1], size: metadata.length,
-      sha256: sha256(metadata) }, tarball: { url: [...urls.keys()][2], size: npmArchive.length,
-      sha256: sha256(npmArchive) } }],
-  };
-  const rustRecord = { name: 'example-crate', version: '1.2.3', crateSha256: sha256(crate),
-    files: [{ origin: WASMTIME, size: upstreamLicense.length, sha256: sha256(upstreamLicense) }] };
-  const selected = {
-    npm: { path: 'licenses/typescript-LICENSE.txt', mode: 0o644, data: Buffer.from('npm') },
-    node: { path: 'runtime/node/bin/node', mode: 0o755, data: Buffer.from('node') },
-    rust: { path: 'licenses/rust/example-1.2.3/LICENSE', mode: 0o644, data: Buffer.from('rust') },
-  };
-  const adapters = {
-    typeScriptMaterialDescriptors: () => npmDescriptor,
-    captureTypeScriptMaterials(inputs) {
-      assert.deepEqual(inputs, [{ metadata, keys, archive: npmArchive }]);
-      return [selected.npm];
-    },
-    nodeTarget: () => ({ archive: 'node-v22.22.1-linux-x64.tar.xz',
-      archiveSize: nodeArchive.length, archiveSha256: sha256(nodeArchive) }),
-    async captureNodeMaterials(target, archive, capability) {
-      assert.equal(target, 'x86_64-unknown-linux-gnu');
-      assert.deepEqual(archive, nodeArchive);
-      assert.equal(capability.name, 'selectors');
-      return [selected.node];
-    },
-    rustMaterials: () => [rustRecord],
-    captureRustMaterials(target, captures, license) {
-      assert.equal(target, 'x86_64-unknown-linux-gnu');
-      assert.deepEqual(captures, [{ identity: 'example-crate-1.2.3', archive: crate }]);
-      assert.deepEqual(license, upstreamLicense);
-      return [selected.rust];
-    },
-  };
-  const result = await acquireQualificationMaterials({
-    sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT,
-    target: 'x86_64-unknown-linux-gnu', archiveCapability: { name: 'selectors' },
-    fetchImpl, spawn, adapters,
+    const object = 'b'.repeat(40);
+    const spawn = (_git, args) => {
+      const command = args[0];
+      if (command === 'ls-tree') {
+        const path = args.at(-1);
+        return { status: 0, stdout: Buffer.from(`100644 blob ${object}\t${path}\0`) };
+      }
+      if (command === 'cat-file' && args[1] === '-s') {
+        const path = [...source.keys()][spawn.sizeIndex++];
+        spawn.pending = path;
+        return { status: 0, stdout: Buffer.from(`${source.get(path).length}\n`) };
+      }
+      if (command === 'cat-file' && args[1] === 'blob') {
+        return { status: 0, stdout: source.get(spawn.pending) };
+      }
+      assert.fail(`unexpected git command ${args.join(' ')}`);
+    };
+    spawn.sizeIndex = 0;
+    const npmDescriptor = {
+      keys: { url: [...urls.keys()][0], size: keys.length, sha256: sha256(keys) },
+      packages: [{ metadata: { url: [...urls.keys()][1], size: metadata.length,
+        sha256: sha256(metadata) }, tarball: { url: [...urls.keys()][2], size: npmArchive.length,
+        sha256: sha256(npmArchive) } }],
+    };
+    const rustRecord = { name: 'example-crate', version: '1.2.3', crateSha256: sha256(crate),
+      files: [{ origin: WASMTIME, size: upstreamLicense.length, sha256: sha256(upstreamLicense) }] };
+    const selected = {
+      npm: { path: 'licenses/typescript-LICENSE.txt', mode: 0o644, data: Buffer.from('npm') },
+      node: { path: 'runtime/node/bin/node', mode: 0o755, data: Buffer.from('node') },
+      rust: { path: 'licenses/rust/example-1.2.3/LICENSE', mode: 0o644, data: Buffer.from('rust') },
+    };
+    const adapters = {
+      typeScriptMaterialDescriptors: () => npmDescriptor,
+      captureTypeScriptMaterials(inputs) {
+        assert.deepEqual(inputs, [{ metadata, keys, archive: npmArchive }]);
+        return [selected.npm];
+      },
+      nodeTarget: () => ({ archive: 'node-v22.22.1-linux-x64.tar.xz',
+        archiveSize: nodeArchive.length, archiveSha256: sha256(nodeArchive) }),
+      async captureNodeMaterials(target, archive, capability) {
+        assert.equal(target, 'x86_64-unknown-linux-gnu');
+        assert.deepEqual(archive, nodeArchive);
+        assert.equal(capability.name, 'selectors');
+        return [selected.node];
+      },
+      rustMaterials(target, context) {
+        assert.equal(context.productionCandidate, productionCandidate);
+        assert.equal(context.distribution?.source?.commit, COMMIT);
+        assert.equal(context.architectureReceipt?.source?.commit, COMMIT);
+        return [rustRecord];
+      },
+      captureRustMaterials(target, captures, license, context) {
+        assert.equal(context.productionCandidate, productionCandidate);
+        assert.equal(context.distribution?.source?.commit, COMMIT);
+        assert.equal(context.architectureReceipt?.source?.commit, COMMIT);
+        assert.equal(target, 'x86_64-unknown-linux-gnu');
+        assert.deepEqual(captures, [{ identity: 'example-crate-1.2.3', archive: crate }]);
+        assert.deepEqual(license, upstreamLicense);
+        return [selected.rust];
+      },
+    };
+    const result = await acquireQualificationMaterials({
+      sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT, sourceRef,
+      productionCandidate, distribution: { source: { ref: sourceRef, commit: COMMIT } },
+      architectureReceipt: { source: { commit: COMMIT } },
+      target: 'x86_64-unknown-linux-gnu', archiveCapability: { name: 'selectors' },
+      fetchImpl, spawn, adapters,
+    });
+    const files = result.capturedMaterials;
+    assert.equal(files.length, source.size + 3);
+    assert.deepEqual(result.rustCaptures, [{ identity: 'example-crate-1.2.3', archive: crate }]);
+    assert.deepEqual(fetched, [...urls.keys()]);
+    assert.deepEqual(accepts, [
+      'application/json', 'application/json', 'application/octet-stream',
+      'application/octet-stream', 'application/octet-stream', 'application/octet-stream',
+    ]);
+    assert.deepEqual(files.map(({ path }) => path), files.map(({ path }) => path).sort());
+    assert.deepEqual(files.find(({ path }) => path === 'LICENSE').data, source.get('LICENSE'));
   });
-  const files = result.capturedMaterials;
-  assert.equal(files.length, source.size + 3);
-  assert.deepEqual(result.rustCaptures, [{ identity: 'example-crate-1.2.3', archive: crate }]);
-  assert.deepEqual(fetched, [...urls.keys()]);
-  assert.deepEqual(accepts, [
-    'application/json', 'application/json', 'application/octet-stream',
-    'application/octet-stream', 'application/octet-stream', 'application/octet-stream',
-  ]);
-  assert.deepEqual(files.map(({ path }) => path), files.map(({ path }) => path).sort());
-  assert.deepEqual(files.find(({ path }) => path === 'LICENSE').data, source.get('LICENSE'));
+}
+
+
+test('candidate acquisition rejects mismatched context before fetching any bytes', async () => {
+  for (const distribution of [undefined, { source: { ref: 'refs/tags/v0.2.3', commit: COMMIT } },
+    { source: { ref: 'refs/heads/main', commit: 'b'.repeat(40) } }]) {
+    let requests = 0;
+    await assert.rejects(() => acquireQualificationMaterials({
+      sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT, sourceRef: 'refs/heads/main',
+      target: 'x86_64-unknown-linux-gnu', productionCandidate: true, distribution,
+      fetchImpl: async () => { requests++; throw new Error('unexpected acquisition'); },
+    }), /candidate material source differs/);
+    assert.equal(requests, 0);
+  }
+});
+
+
+test('candidate acquisition authenticates exact recipe and source inputs before requesting materials', async () => {
+  const binding = JSON.parse(readFileSync(new URL(
+    '../scripts/distribution/command-h1-rust-binding-v1.json', import.meta.url)));
+  const source = { repository: 'https://github.com/zryna/zryna',
+    ref: 'refs/heads/main', commit: COMMIT, tree: 'b'.repeat(40) };
+  for (const substituteRecipe of [true, false]) {
+    const receipt = { source, inputs: structuredClone(binding.inputs) };
+    const distribution = { version: '0.2.3', source,
+      target: { triple: 'x86_64-unknown-linux-gnu' },
+      recipe: { format: 'zryna.distribution-recipe.v1', sha256: binding.recipeSha256 } };
+    if (substituteRecipe) distribution.recipe.sha256 = '0'.repeat(64);
+    else receipt.inputs[0].sha256 = '0'.repeat(64);
+    let requests = 0;
+    await assert.rejects(() => acquireQualificationMaterials({
+      sourceRoot: resolve('qualification-source'), sourceCommit: COMMIT, sourceRef: source.ref,
+      target: distribution.target.triple, productionCandidate: true, distribution,
+      architectureReceipt: receipt,
+      fetchImpl: async () => { requests++; throw new Error('unexpected acquisition'); },
+    }), /candidate Rust material source binding/);
+    assert.equal(requests, 0);
+  }
 });

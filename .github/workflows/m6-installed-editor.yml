@@ -1,0 +1,108 @@
+name: M6 installed editor acceptance
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  installed-editor:
+    name: installed editor (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: portable-setup-${{ matrix.os }}
+          path: ${{ runner.temp }}/m6-editor-handoff
+      - name: Verify offline installed-editor controls
+        shell: pwsh
+        run: |
+          node --test scripts/m6/installed-editor/controls.test.mjs scripts/m6/installed-editor/trust.test.mjs scripts/m6/installed-editor/files.test.mjs scripts/m6/installed-editor/ownership.test.mjs scripts/m6/installed-editor/installer-metadata.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Required installed-editor controls failed' }
+      - name: Acquire independently pinned official editor archive
+        shell: pwsh
+        run: |
+          $material = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm6-editor-material'))
+          node scripts/m6/installed-editor-acquire.mjs $material
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned editor acquisition failed' }
+      - name: Select pins from authenticated same-workflow portable build artifact
+        shell: pwsh
+        run: |
+          $receipt = Get-Content -LiteralPath "$env:RUNNER_TEMP/m6-editor-handoff/candidate-receipt.json" -Raw | ConvertFrom-Json
+          foreach ($pin in @($receipt.archive.sha256, $receipt.manifestSha256, $receipt.serverSha256, $receipt.vsixSha256)) {
+            if ($pin -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid authenticated handoff pin' }
+          }
+          "M6_SETUP_ARCHIVE_SHA=$($receipt.archive.sha256)" >> $env:GITHUB_ENV
+          "M6_SETUP_MANIFEST_SHA=$($receipt.manifestSha256)" >> $env:GITHUB_ENV
+          "M6_SERVER_SHA=$($receipt.serverSha256)" >> $env:GITHUB_ENV
+          "M6_VSIX_SHA=$($receipt.vsixSha256)" >> $env:GITHUB_ENV
+      - name: Bind exact source
+        shell: pwsh
+        run: |
+          "M6_SOURCE_COMMIT=$(git rev-parse HEAD)" >> $env:GITHUB_ENV
+          "M6_SOURCE_TREE=$(git show -s --format=%T HEAD)" >> $env:GITHUB_ENV
+          "M6_SOURCE_EPOCH=$(git show -s --format=%ct HEAD)" >> $env:GITHUB_ENV
+      - name: Actual Linux installed VSIX in native virtual-display editor
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          command -v Xvfb
+          command -v xvfb-run
+          linux_gate="$RUNNER_TEMP/m6-editor-linux-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -m 700 "$linux_gate" "$linux_gate/tmp"
+          sudo -n /usr/bin/python3 -I -B scripts/m6/installed-editor/linux-service.py "$linux_gate" \
+            --handoff "$RUNNER_TEMP/m6-editor-handoff" \
+            --editor-archive "$RUNNER_TEMP/m6-editor-material/editor.tar.gz" \
+            --source-commit "$M6_SOURCE_COMMIT" --source-tree "$M6_SOURCE_TREE" \
+            --source-epoch "$M6_SOURCE_EPOCH" \
+            --setup-archive-sha256 "$M6_SETUP_ARCHIVE_SHA" --setup-manifest-sha256 "$M6_SETUP_MANIFEST_SHA" \
+            --server-sha256 "$M6_SERVER_SHA" --vsix-sha256 "$M6_VSIX_SHA" --output "$RUNNER_TEMP/m6-installed-editor"
+      - name: Actual Windows installed VSIX in native GUI editor
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $handoff = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm6-editor-handoff'))
+          $archive = [IO.Path]::GetFullPath((Join-Path (Join-Path $env:RUNNER_TEMP 'm6-editor-material') 'editor.zip'))
+          $output = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'm6-installed-editor'))
+          node scripts/m6/installed-editor.mjs `
+            --handoff $handoff `
+            --editor-archive $archive `
+            --source-commit $env:M6_SOURCE_COMMIT --source-tree $env:M6_SOURCE_TREE `
+            --source-epoch $env:M6_SOURCE_EPOCH `
+            --setup-archive-sha256 $env:M6_SETUP_ARCHIVE_SHA --setup-manifest-sha256 $env:M6_SETUP_MANIFEST_SHA `
+            --server-sha256 $env:M6_SERVER_SHA --vsix-sha256 $env:M6_VSIX_SHA --output $output
+          if ($LASTEXITCODE) { throw 'Required installed-editor acceptance failed' }
+      - name: Retain actual source-bound editor observations and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m6-installed-editor-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m6-installed-editor
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/ROOT_RESULT.json
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/SERVICE.*
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/REQUEST.json
+            ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/GRANT.json
+            ${{ runner.temp }}/m6-editor-material/EDITOR_ARCHIVE.json
+            ${{ runner.temp }}/m6-editor-material/official-editor-download.*
+          if-no-files-found: error
+          retention-days: 90
+          include-hidden-files: true

@@ -1,13 +1,13 @@
 //! Exact target artifact inventory staged by the atomic command transaction.
 
 use super::{
-    BuildRequest, CommandFailure, CommandKind, ManifestTarget, PreparedArtifacts,
+    BuildInputs, CommandFailure, CommandKind, ManifestTarget, PreparedArtifacts,
     PublishedTargetArtifact, TargetSelection, Transaction, request_error,
 };
 
 pub(super) fn write_prepared_artifacts(
     transaction: &Transaction,
-    request: &BuildRequest,
+    request: &BuildInputs,
     command: CommandKind,
     prepared: &PreparedArtifacts,
 ) -> Result<(Vec<PublishedTargetArtifact>, Option<usize>), CommandFailure> {
@@ -88,4 +88,17 @@ pub(super) fn write_prepared_artifacts(
         )?);
     }
     Ok((artifacts, core_offset))
+}
+
+pub(super) fn manifest_name_is_supported(name: &str) -> bool {
+    matches!(
+        name,
+        super::MANIFEST_NAME
+            | super::BROWSER_MANIFEST_NAME
+            | super::CONTROL_FLOW_MANIFEST_NAME
+            | crate::OWNERSHIP_MANIFEST_NAME
+            | crate::COMMAND_H1_MANIFEST_NAME
+            | "zryna-wasi-server-manifest-v1.json"
+            | "zryna-wasi-server-manifest-v2.json"
+    )
 }

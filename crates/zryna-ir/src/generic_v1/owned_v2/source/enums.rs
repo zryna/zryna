@@ -150,6 +150,9 @@ impl<'b> Builder<'_, 'b> {
             return Err(reject("inexact enum match coverage"));
         }
         let entry = self.block;
+        // Match retains the same complete lexical/availability/loan state as a branch.
+        // Charge before each copy, including full binding keys and expanded value IDs.
+        self.charge_branch_state()?;
         let saved = self.locals.clone();
         let prior_scope = self.scope_start;
         if mode == raw::MatchMode::Value && self.affine[scrutinee.id as usize] {
@@ -170,6 +173,7 @@ impl<'b> Builder<'_, 'b> {
             {
                 return Err(reject("duplicate/foreign enum match arm"));
             }
+            self.charge_branch_state()?;
             self.locals = saved.clone();
             self.scope_start = saved.len();
             self.alive.clone_from(&saved_alive);
@@ -210,6 +214,7 @@ impl<'b> Builder<'_, 'b> {
                 return Err(super::owners::ownership("loan cannot escape match result"));
             }
             self.close_scope(from, Some(value.id), arm.span)?;
+            self.charge_branch_state()?;
             outputs.push((self.block, value, self.alive.clone()));
             successors.push(raw::Arm {
                 ordinal: u32::try_from(ordinal).map_err(|_| Failure::InternalFailure)?,
@@ -224,12 +229,14 @@ impl<'b> Builder<'_, 'b> {
         if outputs.iter().any(|(_, v, _)| v.ty != result_type) {
             return Err(reject("different enum arm result types"));
         }
+        self.charge_branch_state()?;
         let mut common = saved_alive.clone();
         for (id, available) in common.iter_mut().enumerate() {
             *available &= outputs.iter().all(|(_, _, s)| s.get(id).copied().unwrap_or(false));
         }
         for (block, value, state) in &outputs {
             self.block = *block;
+            self.charge_branch_state()?;
             self.alive.clone_from(state);
             self.alive.resize(self.next as usize, false);
             self.loans = saved_loans.clone();
@@ -250,6 +257,7 @@ impl<'b> Builder<'_, 'b> {
                 self.consume(value.id)?;
             }
         }
+        self.charge_branch_state()?;
         self.alive = common;
         self.alive.resize(self.next as usize, false);
         self.loans = saved_loans;

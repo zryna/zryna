@@ -6,6 +6,7 @@ import {
   maxTypeSyntaxNesting,
   maxFixedArrayLength,
   maxFixedArrayLengthSpellingBytes,
+  AdapterError,
   failBudget,
   failInvariant,
   spanFromOffsets,
@@ -142,7 +143,10 @@ export function genericList(node, items, sourceFile, file, collector, values) {
 
 export function normalizeTypeArguments(node, sourceFile, file, collector, typeSyntax, budgets, depth = 0) {
   if (!node.typeArguments) return null;
-  if (node.typeArguments.length < 1 || node.typeArguments.length > 2) {
+  if (node.typeArguments.length > 2) {
+    rejectExtraTypeItem('ZRYNA-M7001', node.typeArguments[2], sourceFile, file, 'type arguments');
+  }
+  if (node.typeArguments.length < 1) {
     collector.unsupported(node, sourceFile, file, 'bounded type arguments');
   }
   const arguments_ = node.typeArguments.map(argument => normalizeType(argument,
@@ -153,7 +157,10 @@ export function normalizeTypeArguments(node, sourceFile, file, collector, typeSy
 
 export function normalizeTypeParameters(node, sourceFile, file, collector) {
   if (!node.typeParameters) return null;
-  if (node.typeParameters.length < 1 || node.typeParameters.length > 2) {
+  if (node.typeParameters.length > 2) {
+    rejectExtraTypeItem('ZRYNA-D7001', node.typeParameters[2].name, sourceFile, file, 'type parameters');
+  }
+  if (node.typeParameters.length < 1) {
     collector.unsupported(node, sourceFile, file, 'bounded type parameters');
   }
   const parameters = node.typeParameters.map(parameter => {
@@ -171,4 +178,12 @@ export function normalizeTypeParameters(node, sourceFile, file, collector) {
     };
   });
   return genericList(node, node.typeParameters, sourceFile, file, collector, { parameters });
+}
+
+// This source-producer rejection emits no DTO. The existing transport error remains advisory;
+// it cannot replace the compiler's complete source barrier or grant declaration/type authority.
+function rejectExtraTypeItem(code, node, sourceFile, file, kind) {
+  const span = nodeSpan(node, sourceFile, file);
+  throw new AdapterError(code,
+    `at most two ${kind} are admitted at file ${span.file} bytes ${span.start}..${span.end}`);
 }

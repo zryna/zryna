@@ -15,7 +15,9 @@ use crate::source_session::{ModuleSourceRoot, ModuleSourceSession};
 use crate::workspace_source::{MAX_DIRECTORY_ENTRIES, StableSource};
 pub(crate) mod entry;
 pub(crate) mod native_sources;
+mod provider_budget;
 pub use entry::{discover_module_closure, discover_native_import_only_closure};
+use provider_budget::{ProviderCallPhase, account_provider_work};
 
 /// Maximum modules in one M2 closure.
 pub const MAX_MODULE_FILES: usize = 4_096;
@@ -23,7 +25,7 @@ pub const MAX_MODULE_FILES: usize = 4_096;
 pub const MAX_MODULE_SOURCE_BYTES: usize = 8 * 1_024 * 1_024;
 /// Maximum fixed-point discovery rounds.
 pub const MAX_MODULE_DISCOVERY_ROUNDS: usize = 4_096;
-/// Maximum provider calls including the one final full-map call.
+/// Maximum physical provider analyses including final full-map authentication.
 pub const MAX_MODULE_PROVIDER_CALLS: usize = 4_097;
 /// Maximum aggregate wall-clock duration of one module-closure discovery operation.
 pub const MAX_MODULE_DISCOVERY_WALL_TIME: Duration = Duration::from_mins(2);
@@ -347,6 +349,7 @@ pub(crate) fn discover_module_closure_with_clock<
     let mut aggregate_bytes = 0_usize;
     let mut provider_bytes = 0_usize;
     let mut provider_calls = 0_usize;
+    let analysis_work_units = frontend.analysis_work_units();
     let mut rounds = 0_usize;
     let mut import_declarations = 0_usize;
     let mut edge_manifest_bytes = 0_usize;
@@ -380,8 +383,14 @@ pub(crate) fn discover_module_closure_with_clock<
             });
             batch_stable.insert(path, stable);
         }
-        account_provider_bytes(&mut provider_bytes, batch_bytes)?;
-        account_provider_call(&mut provider_calls, ProviderCallPhase::Discovery)?;
+        account_provider_work(
+            &mut provider_calls,
+            &mut provider_bytes,
+            batch_bytes,
+            aggregate_bytes,
+            analysis_work_units,
+            ProviderCallPhase::Discovery,
+        )?;
         let batch_map = SourceMap::build(batch_sources).map_err(|_| invariant_rejection())?;
         source_session.validate_provider_batch(&batch_map).map_err(rejected)?;
         let remaining = remaining_discovery_wall_time(
@@ -448,8 +457,14 @@ pub(crate) fn discover_module_closure_with_clock<
         })
         .collect();
     let sources = SourceMap::build(final_inputs).map_err(|_| invariant_rejection())?;
-    account_provider_bytes(&mut provider_bytes, aggregate_bytes)?;
-    account_provider_call(&mut provider_calls, ProviderCallPhase::Final)?;
+    account_provider_work(
+        &mut provider_calls,
+        &mut provider_bytes,
+        aggregate_bytes,
+        aggregate_bytes,
+        analysis_work_units,
+        ProviderCallPhase::Final,
+    )?;
     let remaining = remaining_discovery_wall_time(
         discovery_started,
         now(),
@@ -718,43 +733,6 @@ fn checked_increment(value: usize) -> Result<usize, ModuleClosureError> {
     checked_add(value, 1)
 }
 
-#[derive(Clone, Copy)]
-enum ProviderCallPhase {
-    Discovery,
-    Final,
-}
-
-fn account_provider_call(
-    calls: &mut usize,
-    phase: ProviderCallPhase,
-) -> Result<(), ModuleClosureError> {
-    *calls = checked_increment(*calls)?;
-    let exhausted = match phase {
-        ProviderCallPhase::Discovery => *calls >= MAX_MODULE_PROVIDER_CALLS,
-        ProviderCallPhase::Final => *calls > MAX_MODULE_PROVIDER_CALLS,
-    };
-    if exhausted {
-        let message = match phase {
-            ProviderCallPhase::Discovery => {
-                "module discovery left no provider call for final authentication"
-            }
-            ProviderCallPhase::Final => "module discovery exceeded the fixed provider-call budget",
-        };
-        return Err(budget_rejection(message));
-    }
-    Ok(())
-}
-
-fn account_provider_bytes(total: &mut usize, input: usize) -> Result<(), ModuleClosureError> {
-    *total = checked_add(*total, input)?;
-    if *total > MAX_MODULE_PROVIDER_SOURCE_BYTES {
-        return Err(budget_rejection(
-            "module discovery exceeded the cumulative provider source-byte budget",
-        ));
-    }
-    Ok(())
-}
-
 fn account_edge_manifest_bytes(
     total: &mut usize,
     importer: &str,
@@ -861,136 +839,4 @@ fn module_diagnostic(
 }
 
 #[cfg(test)]
-mod tests {
-    use std::collections::HashSet;
-
-    use zryna_source::{NormalizedSourcePath, resolve_explicit_zry_import};
-
-    use super::{
-        EdgeIdentity, MAX_MODULE_IMPORT_EDGES, MAX_MODULE_PROVIDER_CALLS,
-        MAX_MODULE_PROVIDER_SOURCE_BYTES, ProviderCallPhase, ResolvedEdge, account_provider_bytes,
-        account_provider_call, register_edge,
-    };
-
-    fn path(value: &str) -> NormalizedSourcePath {
-        NormalizedSourcePath::new(value).expect("test path must be normalized")
-    }
-
-    #[test]
-    fn resolver_accepts_only_explicit_normalized_in_root_zry_paths() {
-        let importer = path("src/nested/main.zry");
-        for (specifier, expected) in [
-            ("./dep.zry", "src/nested/dep.zry"),
-            ("./child/../dep.zry", "src/nested/dep.zry"),
-            ("../shared.zry", "src/shared.zry"),
-            ("../../root.zry", "root.zry"),
-        ] {
-            assert_eq!(
-                resolve_explicit_zry_import(&importer, specifier)
-                    .expect("specifier must resolve")
-                    .as_str(),
-                expected
-            );
-        }
-
-        for rejected in [
-            "",
-            "dep.zry",
-            "/dep.zry",
-            "C:/dep.zry",
-            "//server/dep.zry",
-            "https://example.invalid/dep.zry",
-            "./dep",
-            "./dep.ZRY",
-            "./dep.zry?query",
-            "./dep.zry#fragment",
-            ".\\dep.zry",
-            "../../../escape.zry",
-        ] {
-            assert!(
-                resolve_explicit_zry_import(&importer, rejected).is_err(),
-                "specifier must be rejected: {rejected}"
-            );
-        }
-    }
-
-    #[test]
-    fn edge_registry_accepts_exact_limit_and_rejects_duplicate_or_first_extra_edge() {
-        let importer = path("main.zry");
-        let target = path("dep.zry");
-        let mut identities = HashSet::new();
-        let mut edges = Vec::<ResolvedEdge>::new();
-        for index in 0..MAX_MODULE_IMPORT_EDGES {
-            register_edge(
-                &mut identities,
-                &mut edges,
-                EdgeIdentity {
-                    importer: importer.clone(),
-                    specifier: "./dep.zry".to_owned(),
-                    imported: "value".to_owned(),
-                    local: format!("local{index}"),
-                },
-                target.clone(),
-            )
-            .expect("every edge through the exact limit must succeed");
-        }
-        assert_eq!(identities.len(), MAX_MODULE_IMPORT_EDGES);
-        assert_eq!(edges.len(), MAX_MODULE_IMPORT_EDGES);
-
-        let duplicate = register_edge(
-            &mut identities,
-            &mut edges,
-            EdgeIdentity {
-                importer: importer.clone(),
-                specifier: "./dep.zry".to_owned(),
-                imported: "value".to_owned(),
-                local: "local0".to_owned(),
-            },
-            target.clone(),
-        )
-        .expect_err("a duplicate remains a duplicate at the exact limit");
-        assert_eq!(duplicate.diagnostics()[0].code(), "ZRYNA-D3006");
-
-        let extra = register_edge(
-            &mut identities,
-            &mut edges,
-            EdgeIdentity {
-                importer,
-                specifier: "./dep.zry".to_owned(),
-                imported: "value".to_owned(),
-                local: "firstExtra".to_owned(),
-            },
-            target,
-        )
-        .expect_err("the first extra edge must fail");
-        assert_eq!(extra.diagnostics()[0].code(), "ZRYNA-D3201");
-    }
-
-    #[test]
-    fn provider_accounting_accepts_exact_call_and_byte_limits_and_rejects_first_extra() {
-        let mut calls = 0;
-        for _ in 0..MAX_MODULE_PROVIDER_CALLS - 1 {
-            account_provider_call(&mut calls, ProviderCallPhase::Discovery)
-                .expect("every discovery call that reserves the final call must succeed");
-        }
-        account_provider_call(&mut calls, ProviderCallPhase::Final)
-            .expect("the exact final provider call must succeed");
-        assert_eq!(calls, MAX_MODULE_PROVIDER_CALLS);
-        let extra_call = account_provider_call(&mut calls, ProviderCallPhase::Final)
-            .expect_err("the first extra provider call must fail");
-        assert_eq!(extra_call.diagnostics()[0].code(), "ZRYNA-D3201");
-
-        let mut no_final_call = MAX_MODULE_PROVIDER_CALLS - 1;
-        let reserved_call = account_provider_call(&mut no_final_call, ProviderCallPhase::Discovery)
-            .expect_err("discovery must reserve exactly one final provider call");
-        assert_eq!(reserved_call.diagnostics()[0].code(), "ZRYNA-D3201");
-
-        let mut bytes = 0;
-        account_provider_bytes(&mut bytes, MAX_MODULE_PROVIDER_SOURCE_BYTES)
-            .expect("the exact cumulative provider-byte limit must succeed");
-        assert_eq!(bytes, MAX_MODULE_PROVIDER_SOURCE_BYTES);
-        let extra_byte = account_provider_bytes(&mut bytes, 1)
-            .expect_err("the first extra cumulative provider byte must fail");
-        assert_eq!(extra_byte.diagnostics()[0].code(), "ZRYNA-D3201");
-    }
-}
+mod tests;

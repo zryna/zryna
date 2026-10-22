@@ -1,0 +1,180 @@
+name: Playground compiler publication
+
+on:
+  push:
+    tags: [v0.1.0-playground-compiler.3]
+  workflow_dispatch:
+    inputs:
+      ci_run:
+        description: Successful full CI run on this exact current main source
+        required: true
+        type: string
+      ci_attempt:
+        description: Exact successful full CI attempt
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: playground-compiler-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  admit:
+    name: admit exact compiler source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.workflow_sha }}', path: tooling}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.sha }}', path: source}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: {node-version: 22.22.1}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with: {version: 11.18.0}
+      - run: pnpm --dir tooling install --frozen-lockfile
+      - name: Verify publisher admission and material hostile cases
+        run: node --test --test-concurrency=1 tooling/scripts/m6/compiler-release/*.test.mjs
+      - name: Authenticate current main, full CI and protected tag selections
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          M6_CI_RUN: ${{ inputs.ci_run }}
+          M6_CI_ATTEMPT: ${{ inputs.ci_attempt }}
+        run: node tooling/scripts/m6/compiler-release/cli.mjs admit --source-root "$GITHUB_WORKSPACE/source" --output "$RUNNER_TEMP/admission"
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compiler-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/admission
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  build:
+    name: independent compiler replica ${{ matrix.replica }}
+    needs: admit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.workflow_sha }}', path: tooling}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.sha }}', path: source}
+      - name: Select isolated compiler Cargo home
+        run: printf 'CARGO_HOME=%s\n' "$RUNNER_TEMP/compiler-cargo" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with: {toolchain: 1.97.1, targets: x86_64-unknown-linux-gnu}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: {node-version: 22.22.1}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with: {version: 11.18.0}
+      - run: pnpm --dir tooling install --frozen-lockfile
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: compiler-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/admission
+      - name: Fetch original locked crates into this independent empty cache
+        working-directory: source
+        run: cargo fetch --locked --target x86_64-unknown-linux-gnu
+      - name: Authenticate fixed upstream license material
+        run: node tooling/scripts/m6/compiler-release/upstream-license.mjs "$RUNNER_TEMP/wasmtime-LICENSE"
+      - name: Validate complete dependency cache and build fixed offline release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          M6_WASMTIME_LICENSE: ${{ runner.temp }}/wasmtime-LICENSE
+        run: node tooling/scripts/m6/compiler-release/cli.mjs build --source-root "$GITHUB_WORKSPACE/source" --cargo-home "$CARGO_HOME" --admission-root "$RUNNER_TEMP/admission" --replica '${{ matrix.replica }}' --output "$RUNNER_TEMP/build"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: compiler-build-${{ matrix.replica }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/build
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  assemble:
+    name: compare independent release bytes
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.workflow_sha }}', path: tooling}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.sha }}', path: source}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: {node-version: 22.22.1}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with: {version: 11.18.0}
+      - run: pnpm --dir tooling install --frozen-lockfile
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-admission-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/admission'}
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-build-1-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/first'}
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-build-2-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/second'}
+      - name: Compare real independent artifacts and assemble compiler-only publication
+        run: node tooling/scripts/m6/compiler-release/cli.mjs assemble --source-root "$GITHUB_WORKSPACE/source" --admission-root "$RUNNER_TEMP/admission" --first-root "$RUNNER_TEMP/first" --second-root "$RUNNER_TEMP/second" --output "$RUNNER_TEMP/assembled"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compiler-assembled-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/assembled
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    name: publish protected immutable compiler prerelease
+    if: github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-playground-compiler.3'
+    needs: assemble
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.workflow_sha }}', path: tooling}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0, persist-credentials: false, ref: '${{ github.sha }}', path: source}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: {node-version: 22.22.1}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with: {version: 11.18.0}
+      - run: pnpm --dir tooling install --frozen-lockfile
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-admission-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/admission'}
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-build-1-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/first'}
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-build-2-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/second'}
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with: {name: 'compiler-assembled-${{ github.run_id }}-${{ github.run_attempt }}', path: '${{ runner.temp }}/assembled'}
+      - name: Reauthenticate, reassemble, sign with actual OIDC and publish once
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node tooling/scripts/m6/compiler-release/cli.mjs publish --source-root "$GITHUB_WORKSPACE/source" --admission-root "$RUNNER_TEMP/admission" --first-root "$RUNNER_TEMP/first" --second-root "$RUNNER_TEMP/second" --assembled-root "$RUNNER_TEMP/assembled" --output "$RUNNER_TEMP/publication"
+      - name: Retain raw signing and publication observations including failures
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compiler-publication-observations-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/publication
+            ${{ runner.temp }}/publication-observations
+            ${{ runner.temp }}/publication-admission
+            ${{ runner.temp }}/publication-signer
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

@@ -2,10 +2,14 @@
 
 use std::{sync::Arc, time::Instant};
 
-use super::{
-    Error,
-    registry::{Entry, Shared},
-};
+#[cfg(test)]
+use super::registry::Entry;
+
+use super::{Error, registry::Shared};
+
+#[cfg(test)]
+#[path = "../server_transport/lifecycle_publication_tests.rs"]
+mod publication_tests;
 
 /// A lease into one registry; stale handles cannot select a replacement request.
 pub(crate) struct Request {
@@ -28,6 +32,38 @@ impl Cancellation {
 }
 
 impl Request {
+    /// Commit a bounded transport response while retaining the reservation. The callback must
+    /// close its socket and destroy transport buffers before returning, including on failure.
+    /// It must not reenter this registry. Cancellation before this lock suppresses publication;
+    /// cancellation after commit begins interrupts transport I/O and awaits its bounded cleanup.
+    /// Bytes already committed to a socket cannot be recalled.
+    pub(crate) fn publish(
+        self,
+        status: u16,
+        publish: impl FnOnce() -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        let mut publish = Some(publish);
+        let (entry, result) = {
+            let mut state = self.shared.lock()?;
+            state.active()?;
+            let entry = state.entries.get(&self.id).ok_or(Error::Inactive)?;
+            let result = if entry.deadline <= Instant::now() {
+                Err(Error::Deadline)
+            } else if !(200..=599).contains(&status) {
+                Err(Error::Malformed)
+            } else {
+                publish.take().expect("publication callback consumed once")()
+            };
+            let entry = state.remove(self.id).ok_or(Error::Inactive)?;
+            (entry, result)
+        };
+        // A rejected candidate still owns the callback's transport state. Destroy it outside
+        // the registry lock, before retiring the entry and making its reservation reusable.
+        drop(publish);
+        self.shared.retire(entry)?;
+        result
+    }
+
     pub(crate) fn cancellation(&self) -> Cancellation {
         Cancellation { shared: Arc::clone(&self.shared), id: self.id }
     }
@@ -49,19 +85,21 @@ impl Request {
     }
 
     /// Copy into caller-provided bounded storage; retain no references to registry buffers.
+    #[cfg(test)]
     pub(crate) fn copy_input(&self, output: &mut [u8]) -> Result<usize, Error> {
         self.check()?;
         let state = self.shared.lock()?;
         state.active()?;
-        let entry = state.entries.get(&self.id).ok_or(Error::Inactive)?;
-        if entry.deadline <= Instant::now() {
+        let Entry { _body: body, deadline, .. } =
+            state.entries.get(&self.id).ok_or(Error::Inactive)?;
+        if *deadline <= Instant::now() {
             return Err(Error::Deadline);
         }
-        if output.len() < entry.body.len() {
+        if output.len() < body.len() {
             return Err(Error::Limit);
         }
-        output[..entry.body.len()].copy_from_slice(&entry.body);
-        Ok(entry.body.len())
+        output[..body.len()].copy_from_slice(body);
+        Ok(body.len())
     }
 
     /// Transfer one trusted adapter resource. This API does not verify or grant that resource.
@@ -88,6 +126,7 @@ impl Request {
 
     /// Consuming response publication, linearized against cancellation and host termination.
     /// An invalid or oversized response also consumes and cleans up the request.
+    #[cfg(test)]
     pub(crate) fn finish(self, status: u16, body: &[u8]) -> Result<Vec<u8>, Error> {
         let (entry, response) = {
             let mut state = self.shared.lock()?;
@@ -120,11 +159,12 @@ impl Request {
         response
     }
 
+    #[cfg(test)]
     pub(crate) fn route(&self) -> Result<(String, String), Error> {
         self.check()?;
         let state = self.shared.lock()?;
         state.active()?;
-        let Entry { method, path, deadline, .. } =
+        let Entry { _method: method, _path: path, deadline, .. } =
             state.entries.get(&self.id).ok_or(Error::Inactive)?;
         if *deadline <= Instant::now() {
             return Err(Error::Deadline);

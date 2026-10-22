@@ -3,6 +3,24 @@
   "bundleSchema": "zryna.docs.bundle.v1",
   "documents": [
     {
+      "id": "examples/wasi-command",
+      "source": "examples/wasi-command/README.md",
+      "path": "documents/examples/wasi-command.md",
+      "title": "Bounded H1 command examples"
+    },
+    {
+      "id": "examples/wasi-server-clock",
+      "source": "examples/wasi-server/CLOCK_EXAMPLE.md",
+      "path": "documents/examples/wasi-server-clock.md",
+      "title": "Denied and granted clock status example"
+    },
+    {
+      "id": "examples/wasi-server-status",
+      "source": "examples/wasi-server/README.md",
+      "path": "documents/examples/wasi-server-status.md",
+      "title": "Finite local status service"
+    },
+    {
       "id": "reference/aggregate-layout-v1",
       "source": "spec/memory-model/AGGREGATE_LAYOUT_V1.md",
       "path": "documents/reference/aggregate-layout-v1.md",
@@ -243,10 +261,46 @@
       "title": "M3 Shared and Weak evidence matrix"
     },
     {
+      "id": "reference/m4-conformance",
+      "source": "docs/M4_CONFORMANCE.md",
+      "path": "documents/reference/m4-conformance.md",
+      "title": "Public M4 conformance and publication"
+    },
+    {
+      "id": "reference/m4-support",
+      "source": "docs/M4_SUPPORT.md",
+      "path": "documents/reference/m4-support.md",
+      "title": "Fixed public M4 support contract"
+    },
+    {
+      "id": "reference/m6-conformance",
+      "source": "spec/tooling/M6_CONFORMANCE_V1.md",
+      "path": "documents/reference/m6-conformance.md",
+      "title": "M6 tooling conformance v1"
+    },
+    {
+      "id": "reference/m6-reviewed-source-v2",
+      "source": "spec/tooling/M6_REVIEWED_SOURCE_V2.md",
+      "path": "documents/reference/m6-reviewed-source-v2.md",
+      "title": "M6 reviewed-source playground route v2"
+    },
+    {
+      "id": "reference/m6-tooling",
+      "source": "docs/M6_TOOLING.md",
+      "path": "documents/reference/m6-tooling.md",
+      "title": "M6 tooling support and evidence"
+    },
+    {
       "id": "reference/memory-model",
       "source": "spec/memory-model/OVERVIEW.md",
       "path": "documents/reference/memory-model.md",
       "title": "Memory model direction"
+    },
+    {
+      "id": "reference/native-provider-migration",
+      "source": "docs/NATIVE_PROVIDER_MIGRATION.md",
+      "path": "documents/reference/native-provider-migration.md",
+      "title": "Native provider migration and installation"
     },
     {
       "id": "reference/ownership-runtime-v1",
@@ -265,6 +319,30 @@
       "source": "docs/SYNTAX_PROTOCOL_V4.md",
       "path": "documents/reference/syntax-protocol-v4.md",
       "title": "Syntax protocol v4"
+    },
+    {
+      "id": "reference/wasi-command-getting-started",
+      "source": "docs/WASI_COMMAND_GETTING_STARTED.md",
+      "path": "documents/reference/wasi-command-getting-started.md",
+      "title": "Bounded WASI command walkthrough"
+    },
+    {
+      "id": "reference/wasi-command-manifest-v1",
+      "source": "docs/WASI_COMMAND_MANIFEST_V1.md",
+      "path": "documents/reference/wasi-command-manifest-v1.md",
+      "title": "WASI command execution manifest v1"
+    },
+    {
+      "id": "reference/wasi-server-clock-status-v1",
+      "source": "docs/WASI_SERVER_CLOCK_STATUS_V1.md",
+      "path": "documents/reference/wasi-server-clock-status-v1.md",
+      "title": "Bounded server clock and status profile"
+    },
+    {
+      "id": "reference/wasi-server-status-v1",
+      "source": "docs/WASI_SERVER_STATUS_V1.md",
+      "path": "documents/reference/wasi-server-status-v1.md",
+      "title": "Bounded source-checkout server status profile"
     },
     {
       "id": "status/current",

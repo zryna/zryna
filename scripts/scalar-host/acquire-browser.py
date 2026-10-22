@@ -24,6 +24,12 @@ def check_deadline(deadline):
         raise TimeoutError("browser acquisition exceeded 120 seconds")
 
 
+def write_receipt(path, receipt):
+    text = json.dumps(receipt, indent=2, ensure_ascii=False)
+    path.write_bytes((text + "\n").encode("utf-8"))
+    return text
+
+
 class PublisherRedirects(urllib.request.HTTPRedirectHandler):
     def __init__(self, allowed_urls, deadline):
         super().__init__()
@@ -173,9 +179,8 @@ def main():
                "inventorySha256": hashlib.sha256(inventory).hexdigest(),
                "archiveBytes": archive.stat().st_size, "fileCount": len(files),
                "expandedBytes": sum(entry["bytes"] for entry in files), "notices": notices}
-    receipt_text = json.dumps(receipt, indent=2)
     check_deadline(deadline)
-    (output / "receipt.json").write_text(receipt_text + "\n")
+    receipt_text = write_receipt(output / "receipt.json", receipt)
     check_deadline(deadline)
     print(receipt_text)
     check_deadline(deadline)

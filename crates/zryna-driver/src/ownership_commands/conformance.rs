@@ -2,7 +2,7 @@
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeMap, fs, path::Path};
+use std::{fs, path::Path};
 use zryna_abi::{ScalarOutcome, ScalarValue};
 
 use super::execute_and_publish_run;
@@ -15,8 +15,11 @@ use crate::{
     ownership_publication::publish_data_ownership_build,
 };
 
+mod artifact_inventory;
 mod authority;
+use artifact_inventory::inventory;
 mod faults;
+mod native_fault_parity;
 
 const REGISTRY: &str = include_str!("../../../../tests/m3-conformance-v1.json");
 
@@ -83,31 +86,6 @@ fn assert_no_artifacts(root: &Path) {
             "failure left a final or private partial artifact"
         );
     }
-}
-
-fn inventory(root: &Path) -> BTreeMap<String, Vec<u8>> {
-    fn visit(base: &Path, path: &Path, files: &mut BTreeMap<String, Vec<u8>>) {
-        for entry in fs::read_dir(path).expect("inventory") {
-            let path = entry.expect("entry").path();
-            let metadata = fs::symlink_metadata(&path).expect("metadata");
-            assert!(!metadata.file_type().is_symlink());
-            if metadata.is_dir() {
-                visit(base, &path, files);
-            } else {
-                assert!(metadata.is_file());
-                files.insert(
-                    path.strip_prefix(base)
-                        .expect("contained path")
-                        .to_string_lossy()
-                        .replace('\\', "/"),
-                    fs::read(path).expect("bytes"),
-                );
-            }
-        }
-    }
-    let mut files = BTreeMap::new();
-    visit(root, root, &mut files);
-    files
 }
 
 #[test]

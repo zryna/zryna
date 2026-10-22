@@ -51,13 +51,13 @@ function architectureReceipt() {
   });
 }
 
-function fixture() {
+function fixture({ productionCandidate = false } = {}) {
   const sourceRoot = resolve('source');
   const runnerTemp = resolve('runner-temp');
   const cargoHome = resolve('bootstrap-cargo-home');
   const source = {
     repository: 'https://github.com/zryna/zryna',
-    ref: 'refs/tags/v0.2.3',
+    ref: productionCandidate ? 'refs/heads/main' : 'refs/tags/v0.2.3',
     commit: COMMIT,
     tree: TREE,
     sourceDateEpoch: 1234,
@@ -120,6 +120,7 @@ function fixture() {
     ZRYNA_REPLICA: '1',
     ZRYNA_TARGET: TARGET,
   };
+  let materialContext;
   const calls = { acquisition: 0, archive: 0, audit: 0, seed: 0, spawn: 0 };
   const executable = join(runnerTemp, `zryna-production-${TARGET}-77-1`,
     'target', TARGET, 'release', 'zryna');
@@ -153,7 +154,8 @@ function fixture() {
       calls.archive += 1;
       return { kind: 'authenticated-archive-capability' };
     },
-    async acquireMaterials({ archiveCapability }) {
+    async acquireMaterials({ archiveCapability, ...context }) {
+      materialContext = context;
       calls.acquisition += 1;
       assert.equal(archiveCapability.kind, 'authenticated-archive-capability');
       return {
@@ -190,7 +192,7 @@ function fixture() {
     },
   });
   return {
-    calls, environment, expectedPrepared, provisioner, receipt, recipe, recipeBytes,
+    calls, materialContext: () => materialContext, environment, expectedPrepared, provisioner, receipt, recipe, recipeBytes,
     source, sourceRoot, target,
   };
 }
@@ -273,4 +275,22 @@ test('rejects duplicate or cross-source use of a pending authenticated capture',
     replica: 1,
     preparedDistribution: value.expectedPrepared,
   }), /D422-PROVISION: compile does not match one authenticated material capture/);
+});
+
+
+test('main-candidate acquisition receives the actual receipt recipe and candidate context', async () => {
+  const value = fixture({ productionCandidate: true });
+  await value.provisioner.captureReleaseMaterials({
+    recipe: value.recipe, recipeBytes: value.recipeBytes, sourceRoot: value.sourceRoot,
+    source: value.source, target: value.target, architectureReceipt: value.receipt,
+    productionCandidate: true,
+  });
+  const context = value.materialContext();
+  assert.equal(context.productionCandidate, true);
+  assert.equal(context.sourceRef, 'refs/heads/main');
+  assert.deepEqual(context.architectureReceipt, parseCanonical(value.receipt.toString('utf8')));
+  assert.deepEqual(context.distribution.source, value.source);
+  assert.deepEqual(context.distribution.target, value.target);
+  assert.deepEqual(context.distribution.recipe,
+    { format: value.recipe.format, sha256: sha256(value.recipeBytes) });
 });

@@ -59,8 +59,6 @@ fn malformed_or_excluded_generic_sources_reject_the_entire_candidate() {
         "interface Choice<T extends ZrynaValue> extends ZrynaEnum { some: T }",
         "function f<T>(x: T): T { return x; }",
         "function f<T extends ZrynaValue = i32>(x: T): T { return x; }",
-        "function f<T extends ZrynaValue, E extends ZrynaValue, U extends ZrynaValue>(): i32 { return 1; }",
-        "function f(): i32 { return identity<i32, i32, i32>(1); }",
         "function f(): i32 { return identity<>(1); }",
         "function f<T extends ZrynaValue>(x: T): T { return\nx; }",
         "function f(): i32 { return 1 }",

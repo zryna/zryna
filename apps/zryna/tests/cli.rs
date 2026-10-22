@@ -7,7 +7,10 @@ use std::{
     env, fs,
     path::{Path, PathBuf},
     process::{Command, Output},
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        Mutex, MutexGuard,
+        atomic::{AtomicU64, Ordering},
+    },
 };
 
 #[cfg(unix)]
@@ -18,16 +21,23 @@ use sha2::Digest;
 use zryna_abi::{RawHostScalar, ScalarTarget, ScalarType, ScalarValue, normalize_result};
 
 static NEXT_CASE: AtomicU64 = AtomicU64::new(0);
+// Source sessions authenticate the shared cache parent for the fixture's whole lifetime.
+static WORKSPACE_CASE_LOCK: Mutex<()> = Mutex::new(());
+#[path = "fixtures/browser_byte_boundary.rs"]
+mod browser_byte_boundary;
 
 struct WorkspaceCase {
     root: PathBuf,
     source_relative: String,
     owned_paths: Vec<PathBuf>,
     unique: String,
+    _shared_source_parent: MutexGuard<'static, ()>,
 }
 
 impl WorkspaceCase {
     fn new() -> Self {
+        let shared_source_parent =
+            WORKSPACE_CASE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .canonicalize()
@@ -40,7 +50,13 @@ impl WorkspaceCase {
             .expect("test source directory must be created");
         fs::write(&source, include_str!("../../../examples/universal/add.zry"))
             .expect("test source must be written");
-        Self { root, source_relative, owned_paths: Vec::new(), unique }
+        Self {
+            root,
+            source_relative,
+            owned_paths: Vec::new(),
+            unique,
+            _shared_source_parent: shared_source_parent,
+        }
     }
 
     fn control_flow() -> Self {
@@ -587,6 +603,8 @@ fn run_browser_component_fixture(browser_root: Option<&Path>) {
         .output()
         .expect("browser component fixture must start");
     assert_success(&output);
+    drop(case);
+    browser_byte_boundary::run(browser_root);
 }
 
 #[test]
@@ -1055,10 +1073,20 @@ fn help_and_required_target_and_node_are_stable() {
     assert_eq!(missing_target.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&missing_target.stderr).contains("--target"));
 
+    let workspace = WorkspaceCase::new();
     let missing_node = zryna()
-        .args(["build", "src/main.zry", "--target", "javascript"])
+        .args([
+            "build",
+            &workspace.source_relative,
+            "--target",
+            "javascript",
+            "--provider",
+            "bootstrap",
+        ])
+        .arg("--root")
+        .arg(&workspace.root)
         .output()
-        .expect("missing-node command must start");
+        .expect("missing compatibility runtime command must start");
     assert_eq!(missing_node.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&missing_node.stderr).contains("--node"));
 }
@@ -1997,6 +2025,8 @@ fn project_mutation_after_frontend_admission_stops_before_target_execution() {
             "src/main.zry",
             "--target",
             "javascript",
+            "--provider",
+            "bootstrap",
             "--name",
             "mutating-run",
             "--export",

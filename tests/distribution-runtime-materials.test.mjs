@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import test from 'node:test';
+import './distribution-rust-candidate-cases.mjs';
 import { gzipSync } from 'node:zlib';
 import { captureTarGzipMembers } from '../scripts/distribution/npm-materials.mjs';
 import { nodeExpandedArchive, nodeMaterialMembers }

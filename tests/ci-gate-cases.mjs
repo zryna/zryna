@@ -1,9 +1,12 @@
+import { withoutM4Workflow } from './m4-workflow-cases.mjs';
+import { withoutInstalledEditorWorkflow, withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import { withoutBootstrapTiming } from './npm-timing-workflow-cases.mjs';
+import { withoutPlaygroundContracts } from './playground-ci-cases.mjs';
 import { withoutNativeSourceResources } from './native-source-resource-runner.test.mjs';
 import { withoutStabilityTests } from './stability-gates-test-selection.test.mjs';
 import { withoutNativeRecipeTests } from './native-recipe-test-selection.test.mjs';
@@ -11,7 +14,7 @@ import { withoutNativeRecipeTests } from './native-recipe-test-selection.test.mj
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(withoutPortableSetup(withoutNativeSourceResources(
-  withoutStabilityTests(withoutNativeRecipeTests(document.toJS())))));
+  withoutStabilityTests(withoutNativeRecipeTests(withoutM4Workflow(withoutOrdinarySanitizerPrefix(document.toJS())))))));
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {
@@ -32,34 +35,42 @@ function withoutPortableSetup(candidate) {
     uses: './.github/workflows/portable-setup.yml',
   });
   delete original.jobs['portable-setup'];
-  return original;
+  return withoutInstalledEditorWorkflow(original);
 }
 
-function withoutPreflightBudgets(candidate) {
-  const original = structuredClone(candidate);
-  const job = original.jobs.preflight;
-  assert.deepEqual(Object.keys(job).sort(), ['name', 'runs-on', 'steps', 'timeout-minutes']);
-  assert.equal(job['timeout-minutes'], 40);
-  const bootstrap = job.steps.filter(step => step.uses?.startsWith('pnpm/action-setup@'));
-  const execution = job.steps.filter(step => step.run === 'node scripts/run-preflight.mjs --compiler-contracts');
-  assert.equal(bootstrap.length, 1);
-  assert.equal(execution.length, 1);
-  assert.deepEqual(bootstrap[0], { ...pnpmStep, 'timeout-minutes': 10 });
-  assert.deepEqual(execution[0], { run: 'node scripts/run-preflight.mjs --compiler-contracts', 'timeout-minutes': 25 });
-  assert.equal(job.steps.at(-1), execution[0]);
-  assert(job.steps.indexOf(bootstrap[0]) < job.steps.indexOf(execution[0]));
-  assert.equal(job['timeout-minutes'] - bootstrap[0]['timeout-minutes'] - execution[0]['timeout-minutes'], 5);
-  delete bootstrap[0]['timeout-minutes'];
-  delete execution[0]['timeout-minutes'];
-  for (const other of Object.values(original.jobs)) {
-    for (const step of other.steps) assert.equal(step['timeout-minutes'], undefined);
-  }
-  return original;
-}
 
 test('preflight separates bounded bootstrap and execution budgets without changing commands', () => {
   assert.doesNotThrow(() => withoutPreflightBudgets(budgetWorkflow));
   assert.equal(workflow.jobs.preflight['timeout-minutes'], 40);
+});
+
+test('preflight omits debug symbols without overriding compiler or test checks', () => {
+  for (const key of ['CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG']) {
+    for (const value of [undefined, null, true, false, '0', 1, 2, '${{ 0 }}']) {
+      const changed = structuredClone(budgetWorkflow);
+      if (value === undefined) delete changed.jobs.preflight.env[key];
+      else changed.jobs.preflight.env[key] = value;
+      assert.throws(() => withoutPreflightBudgets(changed));
+    }
+  }
+  for (const key of ['CARGO_PROFILE_DEV_DEBUG_ASSERTIONS', 'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS',
+    'CARGO_PROFILE_DEV_OVERFLOW_CHECKS', 'CARGO_PROFILE_TEST_OVERFLOW_CHECKS',
+    'CARGO_PROFILE_DEV_OPT_LEVEL', 'CARGO_PROFILE_TEST_OPT_LEVEL', 'RUSTFLAGS', 'RUST_TEST_THREADS']) {
+    const changed = structuredClone(budgetWorkflow);
+    changed.jobs.preflight.env[key] = 'false';
+    assert.throws(() => withoutPreflightBudgets(changed));
+  }
+  const changed = structuredClone(budgetWorkflow);
+  delete changed.jobs.preflight.env;
+  assert.throws(() => withoutPreflightBudgets(changed));
+  for (const target of [w => w, w => w.jobs.rust,
+    w => w.jobs.preflight.steps.at(-1)]) {
+    const relocated = structuredClone(budgetWorkflow);
+    const symbols = relocated.jobs.preflight.env;
+    delete relocated.jobs.preflight.env;
+    target(relocated).env = symbols;
+    assert.throws(() => withoutPreflightBudgets(relocated));
+  }
 });
 
 test('preflight budget removal, relocation, bypass and ambiguous targets fail closed', () => {
@@ -444,17 +455,19 @@ test('M0 aggregate checks out the pinned verifier before execution', () => {
 
 test('routing preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
-  const original = withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow));
+  const original = withoutPlaygroundContracts(withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow)));
   const editorIndex = original.jobs.rust.steps.findIndex(step => step.name === "Verify and package editor client");
+  const packageSteps = original.jobs['package-release-contract'].steps;
+  const buildPlanIndex = packageSteps.findIndex(step => step.run === 'pnpm package:contract') + 1;
+  assert.deepEqual(packageSteps[buildPlanIndex], { run: 'pnpm build-plan:contract' });
+  packageSteps.splice(buildPlanIndex, 1);
   assert(editorIndex >= 0);
   assert.deepEqual(original.jobs.rust.steps[editorIndex], {
     name: "Verify and package editor client", run: "pnpm editor:check\npnpm editor:package\n",
   });
   assert.equal(original.jobs.rust.steps[editorIndex + 1].run, "node scripts/run-m0-conformance.mjs");
   original.jobs.rust.steps.splice(editorIndex, 1);
-  assert.deepEqual(original.env, {
-    ZRYNA_STRUCTURE_BASE: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}",
-  });
+  assert.deepEqual(original.env, { ZRYNA_STRUCTURE_BASE: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.structure_base }}" });
   delete original.env;
   for (const job of Object.values(original.jobs)) {
     for (const step of job.steps) {
@@ -490,9 +503,7 @@ test('routing preserves all other pinned workflow authority', () => {
   original.jobs.adapter.steps[0].run = 'test "$PLATFORM_RESULT" = success';
   function canonical(value) {
     if (Array.isArray(value)) return value.map(canonical);
-    if (value !== null && typeof value === 'object') return Object.fromEntries(
-      Object.keys(value).sort().map(key => [key, canonical(value[key])]),
-    );
+    if (value !== null && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])]));
     return value;
   }
   const digest = createHash('sha256').update(JSON.stringify(canonical(original))).digest('hex');

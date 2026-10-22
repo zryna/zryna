@@ -145,7 +145,7 @@ fn condition_consumption_incoming_loan_changes_and_borrowed_header_roots_reject(
         "const item:String=\"α\"; while(test(item)) {} return 7;",
         "const item:String=\"α\"; const view:Borrow<String> =borrow(item); while(flag) { view; } return 7;",
         "let count:i32=7; const view:Borrow<i32> =borrow(count); while(flag) {} return count;",
-        "let item:Option<i32> =Option.none<i32>(); while(flag) { item=Option.some<i32>(7); } return 7;",
+        "let item:Option<String> =Option.none<String>(); while(flag) { item=Option.some<String>(\"next\"); } return 7;",
     ] {
         let source = format!(
             "function test(value:String):bool {{ return false; }} export function root(flag:bool):i32 {{ {body} }}"

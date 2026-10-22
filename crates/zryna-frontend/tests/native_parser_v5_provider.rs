@@ -114,14 +114,14 @@ fn pinned_live_v5_matches_all_frozen_raw_dtos_in_fresh_processes() {
 }
 
 #[test]
-fn retained_ninety_five_m3_sources_match_live_raw_v5() {
+fn retained_ninety_seven_m3_sources_match_live_raw_v5() {
     let fixtures = m3::sources();
     let projects = fixtures
         .iter()
         .map(|(path, text)| vec![SourceFileInput { path: path.clone(), text: text.clone() }])
         .collect::<Vec<_>>();
     let replies = worker(&projects);
-    assert_eq!(replies.len(), 95);
+    assert_eq!(replies.len(), 97);
     for (index, _) in fixtures.iter().enumerate() {
         compare(projects[index].clone(), &replies[index], true);
     }

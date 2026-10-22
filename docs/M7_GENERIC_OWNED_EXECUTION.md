@@ -324,3 +324,15 @@ to 64KiB each and their combined bytes to the 32MiB wire lower bound; encoding s
 complete message overhead. Opaque original checking retains no literal bytes. A genuine source
 under 800KiB demanding 65 distinct instances of eight 64KiB literals is rejected before copying
 literal 513, rather than materializing every body before checking aggregate budgets.
+
+The private [recursive concrete Copy packet](../tests/m7-generic-owned-concrete-copy/README.md)
+extends whole-place branch and loop transport to recursively concrete bool/i32/Option/Result
+values. Original checking uses the existing recursive affinity rules before layout, including
+unused templates; closed IR independently requires Copy from its exact sealed layout. String
+payloads, opaque parameters and borrowed destinations remain excluded. Existing typed edges,
+complete owner/loan restoration, scalar ABI and target lane/resource ceilings remain effective.
+Header credit is 3+2L for complete key length L, preserving the scalar five-unit cost and
+precharging both composite key copies. The new source-first packet fixes zero/one/two-loop
+observations, simultaneous nested carriers, retained owners/loans, all reachable allocation
+failures and pristine retries. Its exact-revision execution must be recorded separately; the
+packet and source-admission change alone do not establish three-target or full #416 acceptance.

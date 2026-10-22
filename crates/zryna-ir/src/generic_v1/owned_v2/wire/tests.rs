@@ -1,5 +1,6 @@
 //! Independent raw wire attacks cannot construct a backend authority.
 use super::*;
+mod enum_state_budget;
 fn claim() -> raw::Program {
     raw::Program {
         graph: crate::generic_v1::raw::Program {

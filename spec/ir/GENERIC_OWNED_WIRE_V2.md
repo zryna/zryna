@@ -61,12 +61,14 @@ Loans cannot return or be transferred as ordinary CFG edge arguments. Retained l
 identical incoming state. Joined owner state must match exactly.
 
 Structured source branches use existing bool Branch and Jump edges with ordinary typed
-block parameters for changed mutable original concrete bool/i32, Option<i32> or Result<i32,bool>
-places. An unchanged continuing arm passes its incoming value; a returning arm contributes no
+block parameters for changed mutable original concrete bool/i32 and recursively Copy
+Option/Result places. Original source affinity checks every possible payload before layout;
+independent closed IR Copy verification still requires the exact sealed layout's zero drop kind.
+An unchanged continuing arm passes its incoming value; a returning arm contributes no
 join edge. Both returning arms return directly without an unreachable join. Arms close lexical
 locals before transport; complete retained owner identities, availability, loans and parents
 must agree exactly. No wire opcode or type carrier changes and no owner phi repair is inserted.
-Original opaque types, including Option<T> and Result<i32,T>, gain no join capability from Copy
+Original opaque types, including nested Option<T> and Result<i32,T>, gain no join capability from Copy
 specialization. Non-Copy owners, other aggregate replacements and loan-carrying edge arguments
 remain excluded. Borrowed roots reject at the assignment target before replacement evaluation.
 
@@ -86,17 +88,19 @@ repair or repeated replay is used. Ordinary loan-carrying edges remain rejected.
 capability alone cannot issue an owned seal: complete source replay remains mandatory.
 Typed CFG dominance, edge arity and inherited nesting limits remain separate mandatory checks.
 
-Bounded source while replay uses existing Jump, bool Branch and scalar block parameters. Only
-mutable bool/i32 places receive header parameters (at most 256); parameter/index/key and both edge
-operand inventories are charged before allocation. Complete retained state uses the existing
+Bounded source while replay uses existing Jump, bool Branch and complete typed block parameters.
+Mutable original concrete bool/i32 and recursively Copy Option/Result places receive header
+parameters (at most 256). For complete key length L, 3+2L units charge the index, both edge
+operand inventories and both key copies before allocation; fresh value identities retain their
+separate arena credit. One-byte scalar keys keep their prior five-unit cost. Complete retained state uses the existing
 aggregate source state credit, including binding key bytes and Copy availability. Conditions
 execute at the repeated header, retain any internal match CFG, close temporaries and preserve
 incoming owner/loan state. Continuing bodies close lexical locals and restore exact incoming
-availability, noncarried binding identities, loans and loan parents. Scalar Copy binding IDs alone
-may change. Terminal body paths return directly; the false path restores header scalar values and
+availability, noncarried binding identities, loans and loan parents. Concrete Copy binding IDs alone
+may change. Terminal body paths return directly; the false path restores complete header values and
 incoming opaque state for continuation. Original symbolic checking applies even to unused
-templates, before closed Copy substitution. Owner/aggregate header replacement, borrowed mutable
-scalar roots, branch-dependent repair, break/continue and unstructured CFG remain rejected.
+templates, before closed Copy substitution. Non-Copy/opaque header replacement, borrowed mutable
+roots, branch-dependent owner repair, break/continue and unstructured CFG remain rejected.
 
 Steps occur before a fallible instruction or at successful return. `position` equals the
 instruction index, or the instruction count for return. A failure step ends current loans and

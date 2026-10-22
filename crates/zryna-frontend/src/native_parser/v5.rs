@@ -100,6 +100,7 @@ fn valid_specifier(value: &str) -> bool {
 }
 
 struct FileParser<'a> {
+    sources: &'a SourceMap,
     external_module: bool,
     in_function: bool,
     text: &'a str,
@@ -228,6 +229,7 @@ fn parse_candidate(
             return Err(unsupported(None, "native source path differs from the source map"));
         }
         let mut parser = FileParser {
+            sources,
             external_module: names::external_module(&file.tokens().collect::<Vec<_>>()),
             in_function: false,
             text: source.text(),

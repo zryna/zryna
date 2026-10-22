@@ -497,6 +497,26 @@ implementation, conformance and activation. This is `specified-only`; #167 and t
 preserves explicit host-outcome, u64 and async implementation gates. No runtime, generator, selector, publication or M3
 gate change is included, and existing pinned WIT worlds remain unchanged.
 
+Issue #400's [bounded WASI command change](WASI_COMMAND_GETTING_STARTED.md) introduces public
+activation when integrated: one file and `main(): bool`, empty grants or one explicitly
+private literal-key environment value, fixed limits and checkout/new complete-installation
+execution. [Independent review and final revision evidence](WASI_COMMAND_H1_REVIEW.md) are
+recorded separately. Existing immutable beta archives remain excluded. This command-profile
+evidence does not establish whole-M4 conformance/publication;
+[the M4 conformance record](M4_CONFORMANCE.md) and #402 define that separate authority.
+
+Issue #401's bounded server change introduces public Linux x64/Windows x64 source-checkout
+support when integrated after #400 and the required combined-revision review and exact-revision
+gates. `server-status-v1` admits one no-argument i32 status export (200–599, empty body) with empty
+guest grants; `server-clock-status-v1` adds one actual monotonic read per admitted request through
+the generated arrangement and separate private guest request/root approval. Both retain separate
+configuration-bound listener approval, finite 127.0.0.1 budgets and create-only v1/v2 records after
+observed teardown. See the [status contract](WASI_SERVER_STATUS_V1.md),
+[clock contract](WASI_SERVER_CLOCK_STATUS_V1.md) and
+[denied/granted example](../examples/wasi-server/CLOCK_EXAMPLE.md). No source clock intrinsic,
+installed server execution or production deployment is added. Whole-M4 conformance and public
+matrix/publication use [the separate M4 conformance record](M4_CONFORMANCE.md) and #402 authority.
+
 Completion gate: components expose self-described interfaces and receive no filesystem, network, clock, randomness, or environment capability unless the selected profile declares it.
 
 ## M5 — Packages and Reproducible Releases
@@ -537,6 +557,16 @@ isolation ownership and later adversarial gates. Acceptance retains #168/#360 so
 and #361's validated target/runtime-only source-plan boundary; native recipes additionally need its optional appendix
 and relevant #364 ABI decisions. Registry hosting and M6 playground implementation stay deferred.
 This policy draft creates no resolver, sandbox, execution mode or public support.
+
+The explicit [native compile recipe library API](NATIVE_RECIPES_V0.md) now separates
+source/ABI-bound planning, caller-selected trust modes, independent operator approval and a
+fixed Linux x86-64 two-role Docker session. Its compile-only result requires audited output
+and confirmed cleanup. Local Linux production-API qualification passed two fresh successful
+compilations and specific output, compiler-error and actual 30-second timeout controls.
+Issue acceptance additionally requires independent review and full policy/foundation and
+supported-host CI for the exact candidate; local session evidence alone does not certify those
+gates. No CLI/profile, native cache, release, linking, loading or playground recipe activation
+is added.
 
 Completion gate: a clean environment reproduces and verifies every published artifact from a tagged source revision.
 
@@ -639,3 +669,13 @@ evidence; it is not inferred from preview or beta usage.
 Completion gate: one immutable `v1.0.0` release satisfies the frozen compatibility contract,
 supported-platform matrix, reproducibility and security evidence, distribution audit, and tested
 support and rollback procedures.
+
+## M4 support and closure authority
+
+[The fixed M4 matrix](M4_SUPPORT.md) and `zryna support --json` project the same
+checked registry. This is a static contract with six modes and two bounded hosted contracts;
+it does not authenticate this checkout's execution, CI, installation, signing or publication.
+[The conformance record](M4_CONFORMANCE.md) defines the separate exact-revision evidence needed
+for closure. Existing M0–M3 profiles and their historical support contracts remain unchanged.
+Installed component/browser/server, existing immutable beta H1, other browsers, desktop Windows,
+general cloud hosting, signed public releases and production admission remain excluded.

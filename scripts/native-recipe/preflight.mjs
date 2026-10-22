@@ -19,8 +19,8 @@ export function preflightNativeRecipe(request) {
       request.expectedRecipeSha256 !== review.recipeSha256) {
     reject('TRUST-NATIVE', 'independent approval of the exact recipe identity is required');
   }
-  // The accepted #361 schema permits only provisional-pending-364. Neither an approval
-  // digest nor caller-provided booleans can prove appendix acceptance, #417 conformance,
+  // The integrated #361 specification states grant no native execution. Neither an approval
+  // digest nor caller-provided booleans can prove #417 conformance,
   // retained executable identity or actual OS enforcement. There is deliberately no success path.
   reject('TRUST-NATIVE', 'native appendix acceptance and authenticated ABI/host enforcement are unavailable');
 }

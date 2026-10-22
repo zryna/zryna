@@ -1,15 +1,16 @@
 //! Shared sealed ownership lowering and backend preparation.
 
 use super::{
-    ArtifactOutputRoot, Checkpoint, CommandFailure, CommandFailureKind, DataOwnershipBuildRequest,
+    ArtifactOutputRoot, Checkpoint, CommandFailure, CommandFailureKind,
     DataOwnershipCandidateSuccess, Diagnostic, DispatchPhase, Invocation, NATIVE_TARGET,
     NativeProcessLimits, PreparedDataOwnershipArtifacts, ScalarValue,
     VerifiedOwnershipModuleClosure, discover_linux_native_toolchain, failure,
     prepare_data_ownership_executable,
 };
 
-pub(super) fn prepare_closure(
-    request: &DataOwnershipBuildRequest,
+pub(crate) fn prepare_closure(
+    request: &crate::pipeline::BuildInputs,
+    node_runtime: Option<std::path::PathBuf>,
     closure: VerifiedOwnershipModuleClosure,
     run: Option<(String, Vec<ScalarValue>)>,
     checkpoint: Checkpoint<'_>,
@@ -46,7 +47,7 @@ pub(super) fn prepare_closure(
         run.map_or((None, Vec::new()), |(name, args)| (Some(name), args));
     Ok(DataOwnershipCandidateSuccess {
         workspace_root: request.workspace_root.clone(),
-        node_runtime: request.node_runtime.clone(),
+        node_runtime,
         closure,
         program,
         artifacts,
@@ -59,7 +60,7 @@ pub(super) fn prepare_closure(
 
 fn compile_selected(
     program: &zryna_semantics::data_ownership_v1::VerifiedProgram,
-    request: &DataOwnershipBuildRequest,
+    request: &crate::pipeline::BuildInputs,
     invocation: Option<Invocation>,
     checkpoint: Checkpoint<'_>,
 ) -> Result<PreparedDataOwnershipArtifacts, CommandFailure> {

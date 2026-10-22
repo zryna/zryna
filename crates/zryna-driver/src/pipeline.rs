@@ -35,15 +35,22 @@ use crate::{
 };
 
 mod artifacts;
+mod command_h1;
 mod control_flow;
-mod preparation;
+pub(crate) mod preparation;
 mod project;
+pub(crate) mod providers;
+mod request;
 mod scalar;
+pub(crate) use request::{BuildInputs, require_target_runtime};
+use request::{validate_build_inputs, validate_request};
+mod target;
 use artifacts::write_prepared_artifacts;
 pub(crate) use control_flow::execute_installed as execute_installed_control_flow;
 use preparation::{PreparedArtifacts, analyze, configured_frontend};
 pub(crate) use project::{build_project_request, run_project_request};
 pub(crate) use scalar::execute_installed as execute_installed_scalar;
+use target::ManifestTarget;
 
 const MANIFEST_NAME: &str = "zryna-manifest-v1.json";
 const MANIFEST_PROFILE: &str = "zryna-m1-cli-v1";
@@ -349,26 +356,6 @@ impl CommandSuccess {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "lowercase")]
-enum ManifestTarget {
-    JavaScript,
-    WebAssembly,
-    Native,
-    Component,
-}
-
-impl ManifestTarget {
-    const fn as_str(self) -> &'static str {
-        match self {
-            Self::JavaScript => "javascript",
-            Self::WebAssembly => "webassembly",
-            Self::Native => "native",
-            Self::Component => "component",
-        }
-    }
-}
-
 #[derive(Serialize)]
 struct Manifest<'a> {
     version: u8,
@@ -616,7 +603,15 @@ where
     checkpoint(ControlFlowPhase::Discovery)?;
     let closure = discover_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| module_closure_failure(&error))?;
-    control_flow::finish(request, run, &node, &output_root, &final_bundle, &closure, checkpoint)
+    control_flow::finish(
+        &BuildInputs::from(request),
+        run,
+        Some(&node),
+        &output_root,
+        &final_bundle,
+        &closure,
+        checkpoint,
+    )
 }
 
 fn compile_control_flow_selected(
@@ -728,9 +723,9 @@ fn execute_after_architecture(
         admission.revalidate()?;
     }
     scalar::finish(
-        request,
+        &BuildInputs::from(request),
         run,
-        &node,
+        Some(&node),
         &output_root,
         &final_bundle,
         &source_text,
@@ -756,48 +751,6 @@ fn validate_architecture(root: &Path) -> Result<(), CommandFailure> {
             diagnostics: report.diagnostics,
         })
     }
-}
-
-fn validate_request(
-    request: &BuildRequest,
-    command: CommandKind,
-) -> Result<ValidatedRequest, CommandFailure> {
-    if !request.workspace_root.is_absolute() {
-        return Err(request_error(
-            "ZRYNA-C1001",
-            "workspace root must be absolute",
-            "resolve --root to an absolute real directory before dispatch",
-        ));
-    }
-    if command == CommandKind::Run && request.targets.component() {
-        return Err(unsupported_component_request(
-            "component artifacts are build-only until a reviewed host profile is activated",
-        ));
-    }
-    validate_artifact_stem(&request.artifact_stem)
-        .map_err(|diagnostic| failure(CommandFailureKind::Request, diagnostic))?;
-    if request.entrypoint.contains('\\') {
-        return Err(entrypoint_error("entrypoint must use portable forward slashes"));
-    }
-    let has_noncanonical_segment = request
-        .entrypoint
-        .split('/')
-        .any(|segment| segment.is_empty() || matches!(segment, "." | ".."));
-    let entry = Path::new(&request.entrypoint);
-    if has_noncanonical_segment
-        || entry.is_absolute()
-        || entry.extension().and_then(|value| value.to_str()) != Some("zry")
-        || entry.components().any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(entrypoint_error(
-            "entrypoint must be one portable workspace-relative .zry path",
-        ));
-    }
-    validate_real_directory(&request.workspace_root)
-        .map_err(|diagnostic| failure(CommandFailureKind::Request, diagnostic))?;
-    let source_path = request.workspace_root.join(entry);
-    validate_source_chain(&request.workspace_root, &source_path)?;
-    Ok(ValidatedRequest { source_path })
 }
 
 fn validate_source_chain(root: &Path, source: &Path) -> Result<(), CommandFailure> {
@@ -969,11 +922,18 @@ fn source_size_error() -> CommandFailure {
     )
 }
 
-fn configured_frontend_v3(
+pub(crate) fn configured_frontend_v3(
     request: &ControlFlowBuildRequest,
     node: &NodeRuntimeCapability,
 ) -> Result<WorkerFrontendV3, CommandFailure> {
-    let adapter_root = request.workspace_root.join("adapters/typescript-6");
+    configured_frontend_v3_at(&request.workspace_root, node)
+}
+
+pub(crate) fn configured_frontend_v3_at(
+    compiler_root: &Path,
+    node: &NodeRuntimeCapability,
+) -> Result<WorkerFrontendV3, CommandFailure> {
+    let adapter_root = compiler_root.join("adapters/typescript-6");
     validate_real_directory(&adapter_root)
         .map_err(|diagnostic| failure(CommandFailureKind::Preparation, diagnostic))?;
     let worker_entrypoint = adapter_root.join("src/worker-v3.mjs");
@@ -1010,11 +970,11 @@ fn configured_frontend_v3(
 
 #[allow(clippy::too_many_arguments)]
 fn commit_control_flow_prepared(
-    request: &ControlFlowBuildRequest,
+    request: &BuildInputs,
     command: CommandKind,
     run: Option<&RunInvocation>,
     invocation: Option<&zryna_abi::VerifiedInvocation<'_>>,
-    node: &NodeRuntimeCapability,
+    node: Option<&NodeRuntimeCapability>,
     output_root: &ArtifactOutputRoot,
     final_bundle: &Path,
     closure: &crate::VerifiedModuleClosure,
@@ -1109,7 +1069,7 @@ fn commit_control_flow_prepared(
 
 fn write_control_flow_artifacts(
     transaction: &Transaction,
-    request: &ControlFlowBuildRequest,
+    request: &BuildInputs,
     command: CommandKind,
     prepared: &PreparedControlFlowArtifacts,
 ) -> Result<Vec<PublishedTargetArtifact>, CommandFailure> {
@@ -1164,8 +1124,8 @@ fn write_control_flow_artifacts(
 }
 
 fn execute_control_flow_targets(
-    request: &ControlFlowBuildRequest,
-    node: &NodeRuntimeCapability,
+    request: &BuildInputs,
+    node: Option<&NodeRuntimeCapability>,
     output_root: &ArtifactOutputRoot,
     transaction: &Transaction,
     prepared: &PreparedControlFlowArtifacts,
@@ -1175,8 +1135,12 @@ fn execute_control_flow_targets(
     let mut results = Vec::with_capacity(request.targets.ordered().len());
     if request.targets.javascript() {
         checkpoint(ControlFlowPhase::JavaScriptExecution)?;
-        let outcome =
-            invoke_scalar_esm(prepared.javascript.as_ref(), node, transaction.path(), invocation)?;
+        let outcome = invoke_scalar_esm(
+            prepared.javascript.as_ref(),
+            require_target_runtime(node)?,
+            transaction.path(),
+            invocation,
+        )?;
         results.push(TargetResult { target: ManifestTarget::JavaScript, outcome });
     }
     if request.targets.webassembly() {
@@ -1189,7 +1153,7 @@ fn execute_control_flow_targets(
                 "report this compiler invariant failure",
             )
         })?;
-        let frame = node
+        let frame = require_target_runtime(node)?
             .run_webassembly_module(&harness, artifact.bytes(), transaction.path())
             .map_err(runtime_failure)?;
         results.push(TargetResult {
@@ -1286,11 +1250,11 @@ pub(super) fn hex_sha256(bytes: &[u8; 32]) -> String {
 
 #[allow(clippy::too_many_arguments)]
 fn commit_prepared(
-    request: &BuildRequest,
+    request: &BuildInputs,
     command: CommandKind,
     run: Option<&RunInvocation>,
     invocation: Option<&zryna_abi::VerifiedInvocation<'_>>,
-    node: &NodeRuntimeCapability,
+    node: Option<&NodeRuntimeCapability>,
     output_root: &ArtifactOutputRoot,
     final_bundle: &Path,
     source_text: &str,
@@ -1401,8 +1365,8 @@ fn commit_prepared(
 }
 
 fn execute_targets(
-    request: &BuildRequest,
-    node: &NodeRuntimeCapability,
+    request: &BuildInputs,
+    node: Option<&NodeRuntimeCapability>,
     output_root: &ArtifactOutputRoot,
     transaction: &Transaction,
     prepared: &PreparedArtifacts,
@@ -1415,7 +1379,7 @@ fn execute_targets(
         let harness = render_javascript_harness(&request.artifact_stem, invocation)?;
         let harness_path = transaction.write_runtime_harness("javascript", &harness)?;
         let result_type = invocation.export().result();
-        let carrier = node
+        let carrier = require_target_runtime(node)?
             .run_javascript_module(&harness_path, transaction.path(), result_type)
             .map_err(runtime_failure)?;
         results.push(TargetResult {
@@ -1433,7 +1397,7 @@ fn execute_targets(
                 "report this compiler invariant failure",
             )
         })?;
-        let frame = node
+        let frame = require_target_runtime(node)?
             .run_webassembly_module(&harness, artifact.bytes(), transaction.path())
             .map_err(runtime_failure)?;
         results.push(TargetResult {
@@ -1626,13 +1590,7 @@ impl Transaction {
         bytes: &[u8],
     ) -> Result<(), CommandFailure> {
         self.revalidate_stage()?;
-        if !matches!(
-            manifest_name,
-            MANIFEST_NAME
-                | BROWSER_MANIFEST_NAME
-                | CONTROL_FLOW_MANIFEST_NAME
-                | crate::OWNERSHIP_MANIFEST_NAME
-        ) || self.manifest.borrow().is_some()
+        if !artifacts::manifest_name_is_supported(manifest_name) || self.manifest.borrow().is_some()
         {
             return Err(transaction_error("manifest name is not a closed unique version"));
         }

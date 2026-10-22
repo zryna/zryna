@@ -217,6 +217,27 @@ allocators, and executable M3 profiles remain unavailable.
 The exact authority tuple, raw vocabulary, limits, diagnostics, and verified-view contract are
 documented in [`M3_DATA_OWNERSHIP_IR.md`](../../docs/M3_DATA_OWNERSHIP_IR.md).
 
+## Command H1 compiler authority
+
+`command_h1_v1::verify` separately admits complete command source, the sole exported
+`main(): bool`, and at most one source-authenticated literal-key environment operation.
+The reserved `EnvLookupV1` is a closed owned enum with `Found(String)` and `Missing`;
+source and IR exhaustive matches must agree. Ordinary `data_ownership_v1::verify` rejects
+the environment opcode and the distinct `CommandH1V1` runtime identity.
+
+The command wrapper exposes immutable owned-body views without an ordinary M3 program accessor.
+Its issuing identity is process-local and preserved by clones; it is not an artifact hash or grant.
+Its closed memory witness specifies 256 pages with static bytes below 65536, language bytes below
+15728640, and a final 1 MiB canonical arena. This witness does not implement an allocator.
+Source declarations retain the 4096 limit; command mode reserves exactly one additional nominal
+slot when its builtin outcome is used. Other ownership/CFG/type/cleanup limits remain enforced.
+
+This is the compiler authority for the
+[bounded runtime contract](../../docs/WASI_COMMAND_H1_CONTRACT_DRAFT.md), whose five owner
+decisions were accepted on 2026-10-09. [Implementation review and final revision evidence](../../docs/WASI_COMMAND_H1_REVIEW.md)
+remain distinct from that scope acceptance.
+It does not instantiate a host, approve grants, execute WASI, or activate public CLI support.
+
 ## Staged closed-generic IR validation
 
 The separate `generic_v1` module supplies independent validation checks for the

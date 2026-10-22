@@ -2,6 +2,16 @@
 
 Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
 See [the public M3 surface](docs/M3_PUBLIC_PROFILE.md) and [the beginner guide](docs/M3_GETTING_STARTED.md).
+
+This change introduces the [bounded WASI command profile](docs/WASI_COMMAND_GETTING_STARTED.md)
+when integrated: one source file, empty grants or one explicit private environment key, and
+checkout or newly verified complete-installation execution. Its
+[review and integration record](docs/WASI_COMMAND_H1_REVIEW.md) tracks the remaining final checks.
+Existing immutable beta archives do not gain command support.
+The [bounded server profiles](docs/WASI_SERVER_STATUS_V1.md) introduce explicit source-checkout
+loopback status and separately approved one-read clock/status support at reviewed #401
+integration. Their [review record](docs/WASI_SERVER_REVIEW.md) retains the required final gates;
+whole-M4 conformance and publication remain #402.
 The component checkpoints below retain their historical implementation boundaries; they do not
 limit or independently expand the integrated public surface. M0–M2 remain unchanged.
 
@@ -35,7 +45,7 @@ verified Universal IR
     └── native lowering → MIR → codegen → executable
 ```
 
-The TypeScript 6 adapter is a bootstrap reader, not the language authority. It does not define Zryna types, build Zryna IR, or emit JavaScript. A future TypeScript 7 provider and a native Zryna frontend must implement the same versioned frontend contract.
+Current source checkouts use the native frontend by default. The TypeScript 6 adapter remains an explicit bootstrap/compare reader; neither provider defines Zryna types, builds Zryna IR, or emits JavaScript. Both use the same versioned frontend contracts. See [native provider migration](docs/NATIVE_PROVIDER_MIGRATION.md) for setup and qualification evidence.
 
 ## Non-negotiable rules
 
@@ -293,14 +303,15 @@ walkthrough using the checked-in addition and control-flow examples.
 
 The public CLI accepts exactly one workspace-relative `.zry` entrypoint and requires an explicit
 target. That is the complete M1 source set when `--profile` is omitted and the root of one explicit
-relative-import module graph under `--profile control-flow-v1`. These examples use an exact Node.js
-22.22.1 executable:
+relative-import module graph under `--profile control-flow-v1`. Compilation uses the native frontend
+without Node.js or pnpm. The JavaScript/WebAssembly run targets require an exact Node.js 22.22.1
+executable:
 
 ```bash
-cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all --node /absolute/path/to/node
-cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component --node /absolute/path/to/node
+cargo run --locked -p zryna -- build examples/universal/add.zry --target all --name add-all
+cargo run --locked -p zryna -- build examples/universal/add.zry --target component --name add-component
 cargo run --locked -p zryna -- run examples/universal/add.zry --target all --name add-all --export add --arg=i32:20 --arg=i32:22 --node /absolute/path/to/node
-cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2 --node /absolute/path/to/node
+cargo run --locked -p zryna -- build src/main.zry --profile control-flow-v1 --target all --name app-m2
 ```
 
 Selected M1 builds publish `.mjs`, core `.wasm`, `.o`, or component `.wasm`; `all` remains the
@@ -321,7 +332,7 @@ publication boundary does not broaden the compiler's implemented surface.
 Requirements:
 
 - Rust 1.97.1
-- exact Node.js 22.22.1 for the authenticated frontend and CLI JavaScript/WebAssembly host
+- exact Node.js 22.22.1 for bootstrap differential/conformance checks and CLI JavaScript/WebAssembly execution
 - pnpm 11.18.0
 - Linux `/usr/bin/gcc` targeting `x86_64-linux-gnu` (GCC 12–15) with GNU ld 2.38–2.46 for native
   executable conformance; pure object generation does not require it
@@ -446,3 +457,8 @@ Zryna is an independent project and is not affiliated with, endorsed by, or spon
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+[The fixed M4 support contract](docs/M4_SUPPORT.md) and `zryna support --json` expose the
+same bounded matrix. [M4 conformance](docs/M4_CONFORMANCE.md) keeps exact-revision execution,
+hosted checks and live publication separate from this static report. Neither the report nor
+source presence closes #402 or creates a signed release or production admission.

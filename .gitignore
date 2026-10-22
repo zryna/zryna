@@ -5,6 +5,7 @@
 /adapters/typescript-6/node_modules/
 *.log
 .DS_Store
+__pycache__/
 
 /editors/vscode-zryna/node_modules/
 /editors/vscode-zryna/*.vsix

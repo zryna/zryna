@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { isAbsolute } from 'node:path';
 import { orderedPaths, sha256 } from '../distribution/canonical.mjs';
+import { providerPaths } from '../distribution/inventory.mjs';
 
 const MAX_GIT_FILE = 16 * 1024 * 1024;
 const MAX_CRATE = 64 * 1024 * 1024;
@@ -12,6 +13,25 @@ const SOURCE_FILES = Object.freeze([
   ['NOTICE', 'NOTICE'],
   ['adapters/typescript-6/src/limits-v3.mjs', 'lib/zryna/bootstrap/limits-v3.mjs'],
   ['adapters/typescript-6/src/limits-v4.mjs', 'lib/zryna/bootstrap/limits-v4.mjs'],
+  ['adapters/typescript-6/src/v4/boundary/configuration.mjs', 'lib/zryna/bootstrap/v4/boundary/configuration.mjs'],
+  ['adapters/typescript-6/src/v4/boundary/dispatch.mjs', 'lib/zryna/bootstrap/v4/boundary/dispatch.mjs'],
+  ['adapters/typescript-6/src/v4/boundary/errors.mjs', 'lib/zryna/bootstrap/v4/boundary/errors.mjs'],
+  ['adapters/typescript-6/src/v4/boundary/request.mjs', 'lib/zryna/bootstrap/v4/boundary/request.mjs'],
+  ['adapters/typescript-6/src/v4/boundary/transport.mjs', 'lib/zryna/bootstrap/v4/boundary/transport.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/constructions.mjs', 'lib/zryna/bootstrap/v4/syntax/constructions.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/data-declarations.mjs', 'lib/zryna/bootstrap/v4/syntax/data-declarations.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/diagnostics.mjs', 'lib/zryna/bootstrap/v4/syntax/diagnostics.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/expression-arena.mjs', 'lib/zryna/bootstrap/v4/syntax/expression-arena.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/expressions.mjs', 'lib/zryna/bootstrap/v4/syntax/expressions.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/functions.mjs', 'lib/zryna/bootstrap/v4/syntax/functions.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/imports.mjs', 'lib/zryna/bootstrap/v4/syntax/imports.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/matches.mjs', 'lib/zryna/bootstrap/v4/syntax/matches.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/names.mjs', 'lib/zryna/bootstrap/v4/syntax/names.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/source.mjs', 'lib/zryna/bootstrap/v4/syntax/source.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/spans.mjs', 'lib/zryna/bootstrap/v4/syntax/spans.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/statements.mjs', 'lib/zryna/bootstrap/v4/syntax/statements.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/tokens.mjs', 'lib/zryna/bootstrap/v4/syntax/tokens.mjs'],
+  ['adapters/typescript-6/src/v4/syntax/types.mjs', 'lib/zryna/bootstrap/v4/syntax/types.mjs'],
   ['adapters/typescript-6/src/worker-v3.mjs', 'lib/zryna/bootstrap/worker-v3.mjs'],
   ['adapters/typescript-6/src/worker-v4.mjs', 'lib/zryna/bootstrap/worker-v4.mjs'],
   ['adapters/typescript-6/src/worker.mjs', 'lib/zryna/bootstrap/worker.mjs'],
@@ -157,18 +177,28 @@ function upstreamLicenseDescriptor(records) {
 }
 
 export async function acquireQualificationMaterials({
-  sourceRoot, sourceCommit, target, archiveCapability,
+  sourceRoot, sourceCommit, sourceRef = 'refs/tags/v0.2.3', target, archiveCapability,
+  productionCandidate = false, distribution, architectureReceipt,
   fetchImpl = fetch, spawn = spawnSync, requestTimeoutMs = REQUEST_TIMEOUT, adapters,
 }) {
   if (!isAbsolute(sourceRoot ?? '') || !/^[0-9a-f]{40}$/.test(sourceCommit ?? '')
     || !['x86_64-unknown-linux-gnu', 'x86_64-pc-windows-msvc'].includes(target)) {
     reject('exact source root, commit, and target are required');
   }
+  const providers = new Set(providerPaths(sourceRef));
+  const sourceFiles = SOURCE_FILES.filter(([, path]) => !path.startsWith('lib/zryna/bootstrap/')
+    || providers.has(path));
   const implementation = adapters ?? await defaultAdapters();
   for (const name of ['typeScriptMaterialDescriptors', 'captureTypeScriptMaterials',
     'captureNodeMaterials', 'captureRustMaterials', 'rustMaterials']) {
     if (typeof implementation[name] !== 'function') reject(`material adapter ${name} is missing`);
   }
+  if (productionCandidate && (productionCandidate !== true || sourceRef !== 'refs/heads/main'
+    || distribution?.source?.ref !== sourceRef || distribution?.source?.commit !== sourceCommit)) {
+    reject('candidate material source differs');
+  }
+  const materialContext = { productionCandidate, distribution, architectureReceipt };
+  const rustRecords = implementation.rustMaterials(target, materialContext);
   const request = (descriptor) => fetchQualificationResource(descriptor,
     { fetchImpl, requestTimeoutMs });
   const npm = implementation.typeScriptMaterialDescriptors();
@@ -199,7 +229,6 @@ export async function acquireQualificationMaterials({
   const nodeArchive = await request({ url: nodeUrl, maximum: nodeRecord.archiveSize,
     size: nodeRecord.archiveSize, digest: nodeRecord.archiveSha256,
     label: `Node archive ${target}` });
-  const rustRecords = implementation.rustMaterials(target);
   const rustCaptures = [];
   for (const record of rustRecords) {
     const identity = `${record.name}-${record.version}`;
@@ -217,12 +246,12 @@ export async function acquireQualificationMaterials({
   const upstreamLicense = await request({ ...upstreamLicenseDescriptor(rustRecords),
     label: 'Wasmtime license' });
   const files = [
-    ...SOURCE_FILES.map(([sourcePath, path]) => ({
+    ...sourceFiles.map(([sourcePath, path]) => ({
       path, mode: 0o644, data: sourceBlob(spawn, sourceRoot, sourceCommit, sourcePath),
     })),
     ...await implementation.captureNodeMaterials(target, nodeArchive, archiveCapability),
     ...implementation.captureTypeScriptMaterials(npmInputs),
-    ...implementation.captureRustMaterials(target, rustCaptures, upstreamLicense),
+    ...implementation.captureRustMaterials(target, rustCaptures, upstreamLicense, materialContext),
   ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
   orderedPaths(files.map(({ path }) => path));
   if (files.some(({ mode, data }) => ![0o644, 0o755].includes(mode)

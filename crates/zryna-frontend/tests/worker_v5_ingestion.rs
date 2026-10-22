@@ -232,6 +232,17 @@ fn independent_wire_mutations_fail_before_source_authority() {
 }
 
 #[test]
+fn source_producer_error_codes_remain_untrusted_transport_rejections() {
+    for mode in ["provider-declaration-reject", "provider-argument-reject"] {
+        let error = hostile(mode, WorkerLimitsV5::default(), None)
+            .analyze_verified_v5(&fixture("reference").0)
+            .expect_err("a provider error cannot authenticate source semantics");
+        assert_eq!(error.failure(), WorkerFailure::ProviderRejected);
+        assert!(error.diagnostics().is_empty(), "provider-selected D/M codes are advisory");
+    }
+}
+
+#[test]
 fn source_forgery_and_changed_source_fail_at_the_authenticated_boundary() {
     let (sources, _) = fixture("reference");
     let error = hostile("span", WorkerLimitsV5::default(), None)

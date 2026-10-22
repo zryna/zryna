@@ -25,6 +25,13 @@ for await (const line of createInterface({ input: process.stdin })) {
   if (mode === 'missing-nullable') delete result.files[1].functions[0].type_parameters;
   if (mode === 'wrong-schema') result.schema_version = 4;
   if (mode === 'provider-reject') { send({ id: request.id, error: { code: 'ZRYNA-F2002', message: 'unsupported source' } }); continue; }
+  if (mode === 'provider-declaration-reject' || mode === 'provider-argument-reject') {
+    send({ id: request.id, error: {
+      code: mode === 'provider-declaration-reject' ? 'ZRYNA-D7001' : 'ZRYNA-M7001',
+      message: 'untrusted rejection at file 0 bytes 0..1',
+    } });
+    continue;
+  }
   if (mode === 'invalid-utf8') { process.stdout.write(Buffer.from([0xff, 0x0a])); continue; }
   if (mode === 'timeout') { await new Promise(resolve => setTimeout(resolve, 30_000)); continue; }
   const response = { id: mode === 'wrong-id' ? 999 : request.id, result };

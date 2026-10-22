@@ -99,7 +99,16 @@ impl FileParser<'_> {
         name: &syntax::RawIdentifierSyntax,
         role: Role,
     ) -> Result<(), ParseError> {
-        let text = name.text.as_str();
+        if !self.allows_name(&name.text, role) {
+            return Err(unsupported(
+                self.tokens.get(self.position.saturating_sub(1)).copied(),
+                "identifier is excluded in this v5 source role",
+            ));
+        }
+        Ok(())
+    }
+
+    pub(super) fn allows_name(&self, text: &str, role: Role) -> bool {
         let invalid = if matches!(role, Role::Type) {
             self.external_module && (strict_word(text) || !self.in_function && text == "await")
         } else {
@@ -122,13 +131,7 @@ impl FileParser<'_> {
                     Role::Type => unreachable!("type role handled above"),
                 }
         };
-        if invalid {
-            return Err(unsupported(
-                self.tokens.get(self.position.saturating_sub(1)).copied(),
-                "identifier is excluded in this v5 source role",
-            ));
-        }
-        Ok(())
+        !invalid
     }
 }
 

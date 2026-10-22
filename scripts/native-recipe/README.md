@@ -6,6 +6,14 @@ package manifest, #168 provenance field, serialized recipe schema, CLI selector,
 executor, cache admission or publication path. The current driver continues to
 reject package recipes. PR #506's source-only trust regressions remain separate.
 
+These JavaScript prerequisite checkers remain deliberately non-executing. The separate typed
+[Rust native recipe API](../../docs/NATIVE_RECIPES_V0.md) now owns explicit source/ABI planning,
+independent operator approval and Linux-only session enforcement. Its existence does not add a
+success path here, approve package recipes or turn the synthetic checks below into host proof.
+The historical #417/specification-only blockers described below apply to this checker's
+unavailable authority channel; they do not describe the current compiler/interop integration.
+
+
 `describeNativeRecipe` independently validates the complete plan against the
 branded #168 package authority, takes an immutable private snapshot, and derives
 a domain-separated review digest. The digest binds the whole plan key, exact
@@ -20,8 +28,8 @@ validation failures, verifies the complete source material closure, denies
 pure-source and playground recipes, checks exact declared tool/input byte maps,
 and requires the independent caller's expected recipe digest. The digest must
 come from operator policy, never a package or colocated checksum. Even an exact
-match then rejects as `TRUST-NATIVE`: the native appendix still has
-`provisional-pending-364` status, and #417 plus actual host enforcement have no
+match then rejects as `TRUST-NATIVE`: the integrated specification-only native
+appendix grants no execution, and #417 plus actual host enforcement have no
 authenticated integration capability here. Caller-supplied approval, sandbox
 and FFI booleans cannot unlock execution. Policy reason identifiers are internal
 contract categories, not new public compiler diagnostic codes.

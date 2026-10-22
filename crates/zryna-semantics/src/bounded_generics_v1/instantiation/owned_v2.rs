@@ -7,6 +7,8 @@ mod clone_attacks;
 #[cfg(test)]
 mod clones;
 #[cfg(test)]
+mod concrete_copy_transport;
+#[cfg(test)]
 mod copy_enum_phi;
 #[cfg(test)]
 mod copy_enum_phi_frozen;

@@ -1,3 +1,4 @@
+import { expectedDocuments } from './docs-bundle/publication-inventory.mjs';
 import assert from 'node:assert/strict';
 import { cp, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -7,8 +8,11 @@ import './code-navigation-cases.mjs';
 import './cross-target-profile-contract.test.mjs';
 import './minimal-library-contract.test.mjs';
 import './js-wasm-adapter-contract.test.mjs';
+import './docs-playground.test.mjs';
+import './docs-playground-output.test.mjs';
 import './native-c-review-contract.test.mjs';
 import './beta-documentation-contract.test.mjs';
+import './m4-public-docs.test.mjs';
 
 import {
   compilerWorkspaceRoot,
@@ -234,56 +238,7 @@ test('registry exports the exact implemented and planned publication inventory',
   const registry = await loadRegistry(compilerWorkspaceRoot);
   assert.deepEqual(
     registry.documents,
-    [
-      { id: 'reference/aggregate-layout-v1', source: 'spec/memory-model/AGGREGATE_LAYOUT_V1.md', path: 'documents/reference/aggregate-layout-v1.md', title: 'Aggregate layout v1' },
-      { id: 'reference/architecture', source: 'docs/ARCHITECTURE.md', path: 'documents/reference/architecture.md', title: 'Compiler architecture' },
-      { id: 'reference/browser-component-v1', source: 'docs/BROWSER_COMPONENT_V1.md', path: 'documents/reference/browser-component-v1.md', title: 'Browser scalar component profile v1' },
-      { id: 'reference/cli', source: 'docs/CLI.md', path: 'documents/reference/cli.md', title: 'CLI reference' },
-      { id: 'reference/control-flow-modules-v1', source: 'spec/language/CONTROL_FLOW_MODULES_V1.md', path: 'documents/reference/control-flow-modules-v1.md', title: 'Scalar control flow and modules v1' },
-      { id: 'reference/data-ownership-v1', source: 'spec/language/DATA_OWNERSHIP_V1.md', path: 'documents/reference/data-ownership-v1.md', title: 'Data and ownership v1' },
-      { id: 'reference/developer-preview', source: 'docs/DEVELOPER_PREVIEW.md', path: 'documents/reference/developer-preview.md', title: 'v0.1.0 Developer Preview policy' },
-      { id: 'reference/documentation-bundles', source: 'docs/DOCUMENTATION_BUNDLES.md', path: 'documents/reference/documentation-bundles.md', title: 'Compiler documentation bundles' },
-      { id: 'reference/frontends', source: 'docs/FRONTENDS.md', path: 'documents/reference/frontends.md', title: 'Frontend providers' },
-      { id: 'reference/getting-started', source: 'docs/GETTING_STARTED.md', path: 'documents/reference/getting-started.md', title: 'Run your first Zryna programs' },
-      { id: 'reference/language-overview', source: 'spec/language/OVERVIEW.md', path: 'documents/reference/language-overview.md', title: 'Language overview' },
-      { id: 'reference/language-server', source: 'docs/LANGUAGE_SERVER.md', path: 'documents/reference/language-server.md', title: 'Language server protocol v1' },
-      { id: 'reference/m2-conformance', source: 'docs/M2_CONFORMANCE.md', path: 'documents/reference/m2-conformance.md', title: 'M2 three-target conformance' },
-      { id: 'reference/m2-control-flow-semantics', source: 'docs/M2_CONTROL_FLOW_SEMANTICS.md', path: 'documents/reference/m2-control-flow-semantics.md', title: 'M2 control-flow semantics' },
-      { id: 'reference/m2-javascript-backend', source: 'docs/M2_JAVASCRIPT_BACKEND.md', path: 'documents/reference/m2-javascript-backend.md', title: 'M2 deterministic JavaScript backend' },
-      { id: 'reference/m2-manifest-v2', source: 'docs/M2_MANIFEST_V2.md', path: 'documents/reference/m2-manifest-v2.md', title: 'M2 manifest and atomic bundles' },
-      { id: 'reference/m2-module-closure', source: 'docs/M2_MODULE_CLOSURE.md', path: 'documents/reference/m2-module-closure.md', title: 'M2 deterministic module closure' },
-      { id: 'reference/m2-native-backend', source: 'docs/M2_NATIVE_BACKEND.md', path: 'documents/reference/m2-native-backend.md', title: 'M2 Linux x86-64 native backend' },
-      { id: 'reference/m2-native-mir', source: 'docs/M2_NATIVE_MIR.md', path: 'documents/reference/m2-native-mir.md', title: 'M2 verified native MIR' },
-      { id: 'reference/m2-straight-line-semantics', source: 'docs/M2_STRAIGHT_LINE_SEMANTICS.md', path: 'documents/reference/m2-straight-line-semantics.md', title: 'M2 straight-line semantics' },
-      { id: 'reference/m2-webassembly-backend', source: 'docs/M2_WEBASSEMBLY_BACKEND.md', path: 'documents/reference/m2-webassembly-backend.md', title: 'M2 direct core WebAssembly backend' },
-      { id: 'reference/m3-borrowing-semantics', source: 'docs/M3_BORROWING_SEMANTICS.md', path: 'documents/reference/m3-borrowing-semantics.md', title: 'M3 bounded borrowing semantics' },
-      { id: 'reference/m3-candidate-driver', source: 'docs/M3_CANDIDATE_DRIVER.md', path: 'documents/reference/m3-candidate-driver.md', title: 'M3 driver and manifest v3' },
-      { id: 'reference/m3-conformance', source: 'docs/M3_CONFORMANCE.md', path: 'documents/reference/m3-conformance.md', title: 'M3 fixed-oracle conformance' },
-      { id: 'reference/m3-copy-aggregate-semantics', source: 'docs/M3_COPY_AGGREGATE_SEMANTICS.md', path: 'documents/reference/m3-copy-aggregate-semantics.md', title: 'M3 Copy aggregate semantics' },
-      { id: 'reference/m3-data-ownership-ir', source: 'docs/M3_DATA_OWNERSHIP_IR.md', path: 'documents/reference/m3-data-ownership-ir.md', title: 'M3 verified data and ownership IR' },
-      { id: 'reference/m3-generic-clone-core', source: 'docs/M3_GENERIC_CLONE_CORE.md', path: 'documents/reference/m3-generic-clone-core.md', title: 'M3 canonical structural clone' },
-      { id: 'reference/m3-generic-function-operations', source: 'docs/M3_GENERIC_FUNCTION_OPERATIONS.md', path: 'documents/reference/m3-generic-function-operations.md', title: 'M3 private generic function operations' },
-      { id: 'reference/m3-generic-static-places', source: 'docs/M3_GENERIC_STATIC_PLACES.md', path: 'documents/reference/m3-generic-static-places.md', title: 'M3 complete generic static subobjects' },
-      { id: 'reference/m3-generic-vec-operations', source: 'docs/M3_GENERIC_VEC_OPERATIONS.md', path: 'documents/reference/m3-generic-vec-operations.md', title: 'M3 ordinary generic Vec operations' },
-      { id: 'reference/m3-getting-started', source: 'docs/M3_GETTING_STARTED.md', path: 'documents/reference/m3-getting-started.md', title: 'Your first M3 programs' },
-      { id: 'reference/m3-indexed-borrow-authority', source: 'docs/M3_INDEXED_BORROW_AUTHORITY.md', path: 'documents/reference/m3-indexed-borrow-authority.md', title: 'M3 indexed borrow authority' },
-      { id: 'reference/m3-opaque-handle-slots', source: 'docs/M3_OPAQUE_HANDLE_SLOTS.md', path: 'documents/reference/m3-opaque-handle-slots.md', title: 'M3 opaque typed handle slots' },
-      { id: 'reference/m3-owned-data-semantics', source: 'docs/M3_OWNED_DATA_SEMANTICS.md', path: 'documents/reference/m3-owned-data-semantics.md', title: 'M3 owned data semantics' },
-      { id: 'reference/m3-ownership-composition-evidence', source: 'docs/M3_OWNERSHIP_COMPOSITION_EVIDENCE.md', path: 'documents/reference/m3-ownership-composition-evidence.md', title: 'M3 ownership composition evidence' },
-      { id: 'reference/m3-ownership-composition', source: 'docs/M3_OWNERSHIP_COMPOSITION.md', path: 'documents/reference/m3-ownership-composition.md', title: 'M3 ownership composition interfaces' },
-      { id: 'reference/m3-ownership-runtime-abi', source: 'docs/M3_OWNERSHIP_RUNTIME_ABI.md', path: 'documents/reference/m3-ownership-runtime-abi.md', title: 'M3 ownership runtime ABI authority' },
-      { id: 'reference/m3-public-profile', source: 'docs/M3_PUBLIC_PROFILE.md', path: 'documents/reference/m3-public-profile.md', title: 'Public DataOwnershipV1 profile' },
-      { id: 'reference/m3-shared-weak-authority', source: 'docs/M3_SHARED_WEAK_AUTHORITY.md', path: 'documents/reference/m3-shared-weak-authority.md', title: 'M3 Shared and Weak authority contract' },
-      { id: 'reference/m3-shared-weak-evidence', source: 'docs/M3_SHARED_WEAK_EVIDENCE.md', path: 'documents/reference/m3-shared-weak-evidence.md', title: 'M3 Shared and Weak evidence matrix' },
-      { id: 'reference/memory-model', source: 'spec/memory-model/OVERVIEW.md', path: 'documents/reference/memory-model.md', title: 'Memory model direction' },
-      { id: 'reference/ownership-runtime-v1', source: 'spec/abi/OWNERSHIP_RUNTIME_V1.md', path: 'documents/reference/ownership-runtime-v1.md', title: 'Ownership runtime ABI v1' },
-      { id: 'reference/scalar-abi-v1', source: 'spec/abi/SCALAR_V1.md', path: 'documents/reference/scalar-abi-v1.md', title: 'Scalar ABI v1' },
-      { id: 'reference/syntax-protocol-v4', source: 'docs/SYNTAX_PROTOCOL_V4.md', path: 'documents/reference/syntax-protocol-v4.md', title: 'Syntax protocol v4' },
-      { id: 'status/current', source: 'docs/STATUS.md', path: 'documents/status/current.md', title: 'Compiler status' },
-      { id: 'status/m0-conformance', source: 'docs/M0_CONFORMANCE.md', path: 'documents/status/m0-conformance.md', title: 'M0 architecture conformance' },
-      { id: 'status/m1-conformance', source: 'docs/M1_CONFORMANCE.md', path: 'documents/status/m1-conformance.md', title: 'M1 three-target conformance' },
-      { id: 'status/roadmap', source: 'docs/ROADMAP.md', path: 'documents/status/roadmap.md', title: 'Roadmap' },
-    ],
+    expectedDocuments,
   );
 });
 

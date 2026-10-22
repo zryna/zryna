@@ -1,0 +1,21 @@
+export function transport<T extends ZrynaValue>(enabled:bool,repeat:bool,value:T):i32 {
+  const guard:String="guard";
+  const view:Borrow<String> =borrow(guard);
+  let left:Option<Result<bool,i32>> =Option.some<Result<bool,i32>>(Result.ok<bool,i32>(true));
+  let right:Option<Result<bool,i32>> =Option.some<Result<bool,i32>>(Result.err<bool,i32>(7));
+  let mark:Option<bool> =Option.some<bool>(false);
+  if(enabled) { mark=Option.none<bool>(); }
+  let go:bool=enabled;
+  let again:bool=repeat;
+  while(go) {
+    const step:String="step";
+    const saved:Option<Result<bool,i32>> =left;
+    left=right;
+    right=saved;
+    if(again) { again=false; } else { go=false; }
+  }
+  const a:i32=match(left,{"Option.none":()=>101,"Option.some":(inner)=>match(inner,{"Result.ok":(tag)=>11,"Result.err":(code)=>code})});
+  const b:i32=match(right,{"Option.none":()=>103,"Option.some":(inner)=>match(inner,{"Result.ok":(tag)=>31,"Result.err":(code)=>code})});
+  const c:i32=match(mark,{"Option.none":()=>3,"Option.some":(tag)=>5});
+  return a+b+c;
+}

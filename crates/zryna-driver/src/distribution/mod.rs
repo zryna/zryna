@@ -3,6 +3,7 @@
 //! Initial archive authentication belongs to the external release verifier. A compiler cannot
 //! authenticate its own initial execution by consulting a mutable adjacent manifest.
 
+mod command_h1;
 mod commands;
 mod filesystem;
 mod identity;
@@ -14,6 +15,7 @@ mod source;
 mod stage;
 mod wire;
 
+pub use command_h1::InstalledCommandH1Request;
 pub use commands::InstalledCommandSuccess;
 pub(crate) use provider::InstalledExecution;
 pub(crate) use request::InstalledAdmission;
@@ -101,7 +103,7 @@ impl InstalledCompiler {
 
     pub(crate) fn runtime(&self) -> Result<crate::runtime::NodeRuntimeCapability, Diagnostic> {
         self.revalidate()?;
-        let path = self.distribution.node_path();
+        let path = self.distribution.node_path()?;
         let expected = crate::runtime::ExpectedRuntime {
             sha256: self.tree.digest(path)?.to_owned(),
             size: self.tree.size(path)?,

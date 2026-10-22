@@ -33,6 +33,13 @@ impl FileParser<'_> {
     }
 
     pub(super) fn type_at_depth(&mut self, depth: u32) -> Result<u32, ParseError> {
+        // FixedArray otherwise enters its specialized parser before the ordinary argument path.
+        // Check its complete original list before replaying the element or length.
+        if self.current().is_some_and(|token| self.spelling(token) == "FixedArray")
+            && self.next().is_some_and(|token| token.kind() == TokenKind::LessThan)
+        {
+            self.check_argument_arity(self.position + 2)?;
+        }
         if depth > syntax::MAX_NESTING_DEPTH {
             return Err(resource("type syntax exceeds the nesting limit"));
         }

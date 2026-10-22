@@ -2,16 +2,18 @@
 
 use std::{fs, path::PathBuf};
 
+mod frontend;
 pub(crate) mod installed;
-mod preparation;
+pub(crate) mod preparation;
+pub(crate) use frontend::configured_frontend_at;
+use frontend::configured_frontend_v4;
+#[cfg(test)]
+use frontend::configured_test_frontend_v4;
 
 use zryna_abi::{Invocation, ScalarValue};
 use zryna_backend_native::data_ownership_v1::ValidatedDataOwnershipObjectArtifact;
 use zryna_diagnostics::Diagnostic;
-use zryna_frontend::{
-    ProviderExpectationV4, VerifiedFrontendProviderV4, WorkerFrontendV4, WorkerLimitsV4,
-    WorkerSpecV4,
-};
+use zryna_frontend::VerifiedFrontendProviderV4;
 use zryna_source::NormalizedSourcePath;
 
 use crate::{
@@ -19,7 +21,7 @@ use crate::{
     PreparedDataOwnershipExecutable, TargetSelection, VerifiedOwnershipModuleClosure,
     WorkspaceSourceRoot, check_workspace, discover_linux_native_toolchain,
     discover_ownership_module_closure, prepare_data_ownership_executable,
-    runtime::{NodeRuntimeCapability, node_compatible_path},
+    runtime::NodeRuntimeCapability,
 };
 
 /// Exact profile identity retained by every internal candidate request.
@@ -90,7 +92,7 @@ impl PreparedDataOwnershipArtifacts {
 #[derive(Debug)]
 pub(crate) struct DataOwnershipCandidateSuccess {
     workspace_root: PathBuf,
-    node_runtime: PathBuf,
+    node_runtime: Option<PathBuf>,
     closure: VerifiedOwnershipModuleClosure,
     program: zryna_semantics::data_ownership_v1::VerifiedProgram,
     artifacts: PreparedDataOwnershipArtifacts,
@@ -108,8 +110,8 @@ impl DataOwnershipCandidateSuccess {
     }
     /// Returns the authenticated direct Node.js executable requested for this command.
     #[must_use]
-    pub(crate) fn node_runtime(&self) -> &std::path::Path {
-        &self.node_runtime
+    pub(crate) fn node_runtime(&self) -> Option<&std::path::Path> {
+        self.node_runtime.as_deref()
     }
     /// Returns the single final source/syntax authority shared by every selected backend.
     #[must_use]
@@ -149,7 +151,7 @@ impl DataOwnershipCandidateSuccess {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum DispatchPhase {
+pub(crate) enum DispatchPhase {
     JavaScript,
     WebAssembly,
     Native,
@@ -219,59 +221,19 @@ where
     let frontend = frontend_factory(request, &node)?;
     let closure = discover_ownership_module_closure(&source_root, entrypoint, &frontend)
         .map_err(|error| closure_failure(&error))?;
-    preparation::prepare_closure(request, closure, run, checkpoint, &|| {
-        node.revalidate().map_err(|item| failure(CommandFailureKind::Preparation, item))
-    })
-}
-
-fn configured_frontend_v4(
-    request: &DataOwnershipBuildRequest,
-    node: &NodeRuntimeCapability,
-) -> Result<WorkerFrontendV4, CommandFailure> {
-    let adapter = request.workspace_root.join("adapters/typescript-6");
-    configured_frontend_at(&adapter, node)
-}
-
-#[cfg(test)]
-fn configured_test_frontend_v4(
-    _request: &DataOwnershipBuildRequest,
-    node: &NodeRuntimeCapability,
-) -> Result<WorkerFrontendV4, CommandFailure> {
-    configured_frontend_at(&test_support::adapter_root(), node)
-}
-
-fn configured_frontend_at(
-    adapter: &std::path::Path,
-    node: &NodeRuntimeCapability,
-) -> Result<WorkerFrontendV4, CommandFailure> {
-    let worker = adapter.join("src/worker-v4.mjs");
-    for (path, label) in [(adapter, "adapter directory"), (worker.as_path(), "worker entrypoint")] {
-        let metadata = fs::symlink_metadata(path)
-            .map_err(|_| preparation_error(format!("DataOwnershipV1 {label} is unavailable")))?;
-        if (path == adapter && !metadata.is_dir())
-            || (path == worker && !metadata.is_file())
-            || is_link_like(&metadata)
-        {
-            return Err(preparation_error(format!("DataOwnershipV1 {label} is not a real path")));
-        }
-    }
-    let expected =
-        ProviderExpectationV4::new("typescript-6", "6.0.3").map_err(|error| CommandFailure {
-            kind: CommandFailureKind::Preparation,
-            diagnostics: error.diagnostics().to_vec(),
-        })?;
-    let spec = WorkerSpecV4::new(
-        node.executable().map_err(|item| failure(CommandFailureKind::Preparation, item))?,
-        vec![node_compatible_path(&worker).into_os_string()],
-        node_compatible_path(adapter),
-        expected,
-        WorkerLimitsV4::default(),
+    preparation::prepare_closure(
+        &crate::pipeline::BuildInputs {
+            workspace_root: request.workspace_root.clone(),
+            entrypoint: request.entrypoint.clone(),
+            artifact_stem: request.artifact_stem.clone(),
+            targets: request.targets,
+        },
+        Some(request.node_runtime.clone()),
+        closure,
+        run,
+        checkpoint,
+        &|| node.revalidate().map_err(|item| failure(CommandFailureKind::Preparation, item)),
     )
-    .map_err(|error| CommandFailure {
-        kind: CommandFailureKind::Preparation,
-        diagnostics: error.diagnostics().to_vec(),
-    })?;
-    Ok(WorkerFrontendV4::new(spec))
 }
 
 fn validate_request(request: &DataOwnershipBuildRequest) -> Result<(), CommandFailure> {

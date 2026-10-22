@@ -15,7 +15,7 @@ use zryna_driver::{
 };
 
 pub(super) fn execute(
-    options: CompileOptions,
+    mut options: CompileOptions,
     run: Option<(String, Vec<ScalarValue>)>,
 ) -> ExitCode {
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
@@ -24,6 +24,34 @@ pub(super) fn execute(
         Ok(installation) => installation,
         Err(error) => return render_cli_failure(command, json, 2, &[error]),
     };
+    if installation.is_native_provider() {
+        let provider = options.provider.take().map(Into::into).unwrap_or_default();
+        let node = options.node.take();
+        let request = match request(options) {
+            Ok(request) => request,
+            Err(error) => return render_cli_failure(command, json, 2, &[error]),
+        };
+        let result = match run {
+            None => installation.build_with_provider(&request, provider, node),
+            Some((export, arguments)) => {
+                installation.run_with_provider(&request, export, arguments, provider, node)
+            }
+        };
+        return super::render_provider_result(result, command, json);
+    }
+    if matches!(options.provider, Some(super::CliProvider::Native | super::CliProvider::Compare)) {
+        return render_cli_failure(
+            command,
+            json,
+            2,
+            &[Diagnostic::error(
+                "ZRYNA-C2001",
+                None,
+                "legacy installations retain the authenticated bootstrap provider",
+                "use a native distribution for native or comparison admission",
+            )],
+        );
+    }
     let request = match request(options) {
         Ok(request) => request,
         Err(error) => return render_cli_failure(command, json, 2, &[error]),
@@ -42,7 +70,7 @@ pub(super) fn execute(
 }
 
 fn request(options: CompileOptions) -> Result<InstalledBuildRequest, Diagnostic> {
-    if options.profile == Some(CliProfile::BrowserComponentV1) {
+    if matches!(options.profile, Some(CliProfile::BrowserComponentV1 | CliProfile::CommandH1V1)) {
         return Err(Diagnostic::error(
             "ZRYNA-C2001",
             None,
@@ -64,12 +92,12 @@ fn request(options: CompileOptions) -> Result<InstalledBuildRequest, Diagnostic>
         )?,
         artifact_stem: options.name.unwrap_or_else(|| profile::default_stem(&options.entrypoint)),
         entrypoint: options.entrypoint,
-        targets: options.target.into(),
+        targets: options.target.ordinary()?,
         profile: match options.profile {
             None => InstalledProfile::I32,
             Some(CliProfile::ControlFlowV1) => InstalledProfile::ControlFlow,
             Some(CliProfile::DataOwnershipV1) => InstalledProfile::DataOwnership,
-            Some(CliProfile::BrowserComponentV1) => {
+            Some(CliProfile::BrowserComponentV1 | CliProfile::CommandH1V1) => {
                 unreachable!("rejected before request construction")
             }
         },
@@ -88,6 +116,7 @@ mod tests {
             root: None,
             project_root: Some(std::env::temp_dir().join("installed-project")),
             name: None,
+            provider: None,
             node: None,
             json: false,
         }

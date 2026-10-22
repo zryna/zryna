@@ -1,0 +1,3 @@
+export function zero(input:i32):i32 { return transport<String>(false,false,"owner")+input; }
+export function one(input:i32):i32 { return transport<String>(true,false,"owner")+input; }
+export function two(input:i32):i32 { return transport<String>(true,true,"owner")+input; }

@@ -57,6 +57,10 @@ pub fn discover_native_straight_line_closure(
 }
 
 pub(crate) trait ClosureFrontendV3 {
+    fn analysis_work_units(&self) -> usize {
+        1
+    }
+
     fn minimum_analysis_timeout(&self) -> Duration;
     fn analyze(
         &self,
@@ -66,6 +70,10 @@ pub(crate) trait ClosureFrontendV3 {
 }
 
 impl<Provider: VerifiedFrontendProviderV3 + ?Sized> ClosureFrontendV3 for Provider {
+    fn analysis_work_units(&self) -> usize {
+        VerifiedFrontendProviderV3::analysis_work_units(self)
+    }
+
     fn minimum_analysis_timeout(&self) -> Duration {
         VerifiedFrontendProviderV3::minimum_analysis_timeout(self)
     }

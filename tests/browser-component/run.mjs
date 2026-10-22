@@ -34,7 +34,24 @@ async function corpus(instantiate, componentBytes) {
   catch (error) { rejected.push(error.message === 'ZRYNA-B3991'); }
   try { await instantiate(componentBytes, { deadlineMs: 0 }); rejected.push(false); }
   catch (error) { rejected.push(error.message === 'ZRYNA-B3993'); }
-  return { actual, rejected };
+  // A 1 ms option may expire during real asynchronous work. Validation uses TypeError;
+  // elapsed-deadline enforcement uses Error. This proves admission, not 1 ms completion.
+  let minimumAdmitted;
+  try {
+    await instantiate(componentBytes, { deadlineMs: 1 });
+    minimumAdmitted = true;
+  } catch (error) {
+    minimumAdmitted = error.constructor === Error && error.message === 'ZRYNA-B3993';
+  }
+  const maximum = await instantiate(componentBytes, { deadlineMs: 30000 });
+  let firstExtraRejected = false;
+  try { await instantiate(componentBytes, { deadlineMs: 30001 }); }
+  catch (error) {
+    firstExtraRejected = error instanceof TypeError && error.message === 'ZRYNA-B3993';
+  }
+  const deadlineAdmission = { minimum1: minimumAdmitted,
+    maximum30000: maximum.add(20, 22), firstExtra30001: firstExtraRejected };
+  return { actual, rejected, deadlineAdmission };
 }
 
 const node = await corpus(module.instantiateBrowserComponent, new Uint8Array(bytes));
@@ -42,7 +59,8 @@ const hostileNode = await import(`data:text/javascript;base64,${Buffer.from(host
 try { await hostileNode.instantiateBrowserComponent(new Uint8Array(bytes)); node.rejected.push(false); }
 catch (error) { node.rejected.push(error.message === 'ZRYNA-B3995'); }
 assert.deepEqual(node, { actual: [42, -2147483648, 2147483647, 0, -5],
-  rejected: Array(14).fill(true) });
+  rejected: Array(14).fill(true),
+  deadlineAdmission: { minimum1: true, maximum30000: 42, firstExtra30001: true } });
 if (browserRoot) {
   const executablePath = await verifyBrowser(browserRoot);
   assert.equal(require('playwright-core/package.json').version, pin.runnerVersion);
@@ -104,7 +122,24 @@ if (browserRoot) {
           try { await hostile.instantiateBrowserComponent(bytes); rejected.push(false); }
           catch (error) { rejected.push(error.message === 'ZRYNA-B3995'); }
         } finally { URL.revokeObjectURL(hostileUrl); }
-        return { actual, rejected };
+        // A 1 ms option may expire during real asynchronous work. Validation uses TypeError;
+        // elapsed-deadline enforcement uses Error. This proves admission, not 1 ms completion.
+        let minimumAdmitted;
+        try {
+          await loaded.instantiateBrowserComponent(bytes, { deadlineMs: 1 });
+          minimumAdmitted = true;
+        } catch (error) {
+          minimumAdmitted = error.constructor === Error && error.message === 'ZRYNA-B3993';
+        }
+        const maximum = await loaded.instantiateBrowserComponent(bytes, { deadlineMs: 30000 });
+        let firstExtraRejected = false;
+        try { await loaded.instantiateBrowserComponent(bytes, { deadlineMs: 30001 }); }
+        catch (error) {
+          firstExtraRejected = error instanceof TypeError && error.message === 'ZRYNA-B3993';
+        }
+        const deadlineAdmission = { minimum1: minimumAdmitted,
+          maximum30000: maximum.add(20, 22), firstExtra30001: firstExtraRejected };
+        return { actual, rejected, deadlineAdmission };
       } finally { URL.revokeObjectURL(url); }
     }, { source: loader, hostileSource, component: Array.from(bytes) });
     assert.deepEqual(browserResult, node);

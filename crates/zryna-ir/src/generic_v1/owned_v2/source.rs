@@ -12,6 +12,7 @@ use zryna_syntax::{v4::RawStatementKind, v5::RawFunctionSyntax};
 
 mod branches;
 mod clones;
+mod copy;
 mod enums;
 mod expressions;
 mod loops;

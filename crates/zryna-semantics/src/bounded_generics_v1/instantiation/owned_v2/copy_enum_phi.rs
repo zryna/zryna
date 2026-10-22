@@ -46,15 +46,10 @@ fn concrete_copy_enum_continuations_have_exact_stable_whole_place_parameters() {
 }
 
 #[test]
-fn finite_copy_enum_joins_do_not_grant_owned_or_additional_copy_type_capabilities() {
+fn concrete_copy_enum_joins_preserve_owned_exclusions_and_admit_recursive_copy() {
     for body in [
         "let item:Option<String> =Option.none<String>(); if(flag){item=Option.none<String>();} return 0;",
         "let item:Result<i32,String> =Result.ok<i32,String>(1); if(flag){item=Result.ok<i32,String>(2);} return 0;",
-        "let item:Option<bool> =Option.some<bool>(true); if(flag){item=Option.none<bool>();} return 0;",
-        "let item:Result<bool,i32> =Result.ok<bool,i32>(true); if(flag){item=Result.err<bool,i32>(2);} return 0;",
-        "let item:Option<Option<i32>> =Option.none<Option<i32>>(); if(flag){item=Option.none<Option<i32>>();} return 0;",
-        "let item:Option<i32> =Option.some<i32>(1); while(false){item=Option.none<i32>();} return 0;",
-        "let item:Result<i32,bool> =Result.ok<i32,bool>(1); while(false){item=Result.err<i32,bool>(true);} return 0;",
     ] {
         let source = format!("export function root(flag:bool):i32 {{{body}}}");
         let Failure::Diagnostics(errors) =
@@ -64,6 +59,16 @@ fn finite_copy_enum_joins_do_not_grant_owned_or_additional_copy_type_capabilitie
         };
         assert_eq!(errors[0].code, "ZRYNA-M7007");
         assert!(errors[0].primary_span().is_some());
+    }
+    for body in [
+        "let item:Option<bool> =Option.some<bool>(true); if(flag){item=Option.none<bool>();} return 0;",
+        "let item:Result<bool,i32> =Result.ok<bool,i32>(true); if(flag){item=Result.err<bool,i32>(2);} return 0;",
+        "let item:Option<Option<i32>> =Option.none<Option<i32>>(); if(flag){item=Option.none<Option<i32>>();} return 0;",
+        "let item:Option<i32> =Option.some<i32>(1); while(false){item=Option.none<i32>();} return 0;",
+        "let item:Result<i32,bool> =Result.ok<i32,bool>(1); while(false){item=Result.err<i32,bool>(true);} return 0;",
+    ] {
+        let source = format!("export function root(flag:bool):i32 {{{body}}}");
+        claim(&[("main.zry", &source)]).expect("recursive concrete Copy transport is admitted");
     }
 }
 

@@ -11,6 +11,7 @@ export const CONTRACT_LANES = Object.freeze([
   'package_release',
   'provider_v4',
   'wit',
+  'm4',
 ]);
 
 const ALL_LANES_PATHS = Object.freeze([
@@ -29,6 +30,20 @@ const KNOWN_UNRELATED_PATHS = Object.freeze([
 ]);
 
 const LANE_PATHS = Object.freeze({
+  m4: Object.freeze([
+    /^README\.md$/,
+    /^docs\/DOCUMENTATION_BUNDLES\.md$/,
+    /^apps\/zryna\//,
+    /^crates\//,
+    /^adapters\/typescript-6\//,
+    /^scripts\/(?:m4|scalar-host|distribution|wit-capabilities)\//,
+    /^scripts\/(?:check|run)-m[0-4]-[^/]+\.mjs$/,
+    /^tests\/(?:m4[^/]*|browser-component|scalar-host|installed-command-qualification|wit-capability[^/]*)(?:\/|\.)/,
+    /^schemas\/zryna-m4-[^/]+\.schema\.json$/,
+    /^spec\/(?:wit|abi|wasi|interop)\//,
+    /^docs\/(?:M4_|BROWSER_COMPONENT_|WASI_COMMAND_|WASI_SERVER_|STATUS\.md$|ROADMAP\.md$|CLI\.md$|website-bundle-v1\.json$)/,
+    /^examples\/(?:browser-component|wasi-command|wasi-server)\//,
+  ]),
   diagnostics: Object.freeze([
     /^crates\/zryna-(?:diagnostics|source)\//,
     /^schemas\/zryna-diagnostics-v2\.schema\.json$/,
@@ -121,17 +136,18 @@ export function classifyWorkflowPaths(paths, { full = false } = {}) {
     if (!isPortablePath(changedPath) || ALL_LANES_PATHS.some((pattern) => pattern.test(changedPath))) {
       return everyLane(true);
     }
-    let matchedLane = false;
+    let matchedFoundationLane = false;
     for (const lane of CONTRACT_LANES) {
       if (LANE_PATHS[lane].some((pattern) => pattern.test(changedPath))) {
         result[lane] = true;
-        matchedLane = true;
+        if (lane !== 'm4') matchedFoundationLane = true;
       }
     }
     // Other crates cannot enter these contract graphs without a captured member or root
     // manifest change. New scripts, tests, schemas, and normative specs are intentionally
     // absent from this allowlist, so an unclassified helper defaults to every lane.
-    if (!matchedLane && !KNOWN_UNRELATED_PATHS.some((pattern) => pattern.test(changedPath))) {
+    // M4 is additive: matching it must not suppress the foundation fallback.
+    if (!matchedFoundationLane && !KNOWN_UNRELATED_PATHS.some((pattern) => pattern.test(changedPath))) {
       return everyLane(true);
     }
   }

@@ -36,7 +36,7 @@ export function validateDistribution(record, {
   digestValue(record.recipe.sha256);
   requireValue(Array.isArray(record.files), 'distribution payload');
   requireValue(record.files.length <= LIMITS.files - 4, 'complete archive file count budget');
-  validateTuples(record.files, record.target.triple, { complete: true });
+  validateTuples(record.files, record.target.triple, { complete: true, sourceRef: record.source.ref });
   validateBootstrapPins(record.files, record.target.triple);
   requireValue(record.files.every(file => ![paths.cli, 'metadata/distribution.json',
     'metadata/inventory.json', 'metadata/checksums.sha256'].includes(file.path)), 'cyclic payload');
@@ -56,7 +56,9 @@ export function prepare({ version, source, target, recipe, files }, capturedFile
   const sourceReceipt = validateSourceReceipt(
     capturedFiles.find(file => file.path === 'metadata/architecture-receipt.json').data, record,
   );
-  validateRustMaterials(files, target.triple, sourceReceipt, record.version);
+  validateRustMaterials(files, target.triple, sourceReceipt, record.version, {
+    productionCandidate: options?.productionCandidate === true, distribution: record,
+  });
   requireValue(capturedFiles.find(file => file.path === 'VERSION').data.equals(Buffer.from(`${version}\n`)),
     'VERSION does not match distribution');
   const distribution = bytes(record);

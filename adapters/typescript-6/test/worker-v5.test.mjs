@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import Ajv2020 from 'ajv/dist/2020.js';
+import './worker-v5-arity.test.mjs';
 
 const adapter = new URL('../', import.meta.url);
 const fixtures = new URL('../../../tests/m7-syntax-fixtures/', import.meta.url);
@@ -91,10 +92,8 @@ test('v5 omitted arguments and unknown bounds remain syntax, without inferred se
 
 test('unrepresentable exclusions reject through provider channel and recover deterministically', () => {
   const sources = [
-    'function id<T extends ZrynaValue, E extends ZrynaValue, V extends ZrynaValue>(v: T): T { return v; }',
     'function id<T = i32>(v: T): T { return v; }',
     'function id<out T extends ZrynaValue>(v: T): T { return v; }',
-    'function p(): i32 { return id<i32, i32, i32>(7); }',
     'function p(): i32 { return Option<i32>.some(7); }',
     'function p(): i32 { return match(7, { "Option.some": (x) => { return x; } }); }',
     'function p(): i32 { const x = 7; return x; }',

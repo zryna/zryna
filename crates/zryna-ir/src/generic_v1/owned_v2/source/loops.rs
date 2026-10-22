@@ -1,5 +1,5 @@
-//! Repeated headers carry scalar Copy places; opaque ownership never receives a phi.
-use super::{Builder, Closed, Failure, raw, reject, reserve};
+//! Repeated headers carry concrete Copy places; opaque ownership never receives a phi.
+use super::{Builder, Closed, Failure, copy, raw, reject, reserve};
 use zryna_source::UntrustedSpan;
 
 impl Builder<'_, '_> {
@@ -67,7 +67,7 @@ impl Builder<'_, '_> {
                 let value = &self.locals[index].value;
                 if !self.alive[value.id as usize] {
                     return Err(self.locate(
-                        super::owners::ownership("unavailable scalar loop header argument"),
+                        super::owners::ownership("unavailable Copy loop header argument"),
                         span,
                     ));
                 }
@@ -76,7 +76,7 @@ impl Builder<'_, '_> {
             self.blocks[self.block].terminator =
                 raw::Terminator::Jump(raw::Edge { target: header_id, arguments });
         }
-        // The false path observes header parameters, never body-only identities or loans.
+        // The false path observes complete header parameters, never body-only identities or loans.
         self.charge_branch_state()?;
         self.locals = saved;
         self.alive = alive;
@@ -102,16 +102,36 @@ impl Builder<'_, '_> {
         &mut self,
         span: UntrustedSpan,
     ) -> Result<(Vec<usize>, Vec<u32>), Failure> {
-        let count = self.locals.iter().filter(|b| scalar_place(b)).count();
-        if count > crate::data_ownership_v1::MAX_BLOCK_PARAMETERS {
-            return Err(crate::generic_v1::budget("scalar loop header parameter ceiling"));
+        let mut count = 0usize;
+        let mut units = 0usize;
+        let mut composite = false;
+        for binding in &self.locals {
+            if let Some(key) = carried_key(binding)? {
+                count = count.checked_add(1).ok_or_else(header_credit_overflow)?;
+                composite |= key.len() > 1;
+                // Index and both edge operand inventories, plus both complete type-key
+                // clones in value/definition construction. One-byte scalar cost stays five;
+                // fresh value identities also retain their independent value-arena charge.
+                units = key
+                    .len()
+                    .checked_mul(2)
+                    .and_then(|keys| keys.checked_add(3))
+                    .and_then(|entry| units.checked_add(entry))
+                    .ok_or_else(header_credit_overflow)?;
+            }
         }
-        // Charge indexes, scalar keys, parameter identities and both edge operand vectors.
-        self.budget.branch_state(count.checked_mul(5).ok_or(Failure::InternalFailure)?)?;
+        if count > crate::data_ownership_v1::MAX_BLOCK_PARAMETERS {
+            return Err(crate::generic_v1::budget(if composite {
+                "concrete Copy loop header parameter ceiling"
+            } else {
+                "scalar loop header parameter ceiling"
+            }));
+        }
+        self.budget.branch_state(units)?;
         let mut carried = reserve(count)?;
         let mut arguments = reserve(count)?;
         for (index, binding) in self.locals.iter().enumerate() {
-            if scalar_place(binding) {
+            if carried_key(binding)?.is_some() {
                 if !self.alive[binding.value.id as usize]
                     || self.loans.values().any(|(root, _)| *root == binding.value.id)
                 {
@@ -128,7 +148,10 @@ impl Builder<'_, '_> {
     }
 }
 
-fn scalar_place(binding: &super::Binding<'_>) -> bool {
-    binding.mutable
-        && matches!(&binding.value.ty, Closed::Stored(key) if matches!(key.as_slice(), [0 | 1]))
+fn carried_key<'a>(binding: &'a super::Binding<'_>) -> Result<Option<&'a [u8]>, Failure> {
+    if binding.mutable { copy::key(&binding.value.ty) } else { Ok(None) }
+}
+
+fn header_credit_overflow() -> Failure {
+    crate::generic_v1::budget("Copy loop header credit overflow")
 }

@@ -1,10 +1,36 @@
 # Replaceable frontend providers
 
-## Why TypeScript 6 is temporary
+Current source checkouts select the compiler-owned native lexer/parser by default. Native
+compilation requires neither Node.js nor pnpm. The driver retains the running compiler image
+and invokes its fixed syntax worker through the same bounded `WorkerFrontend` transport and
+version-specific syntax verifier used by the bootstrap provider. Neither provider owns language
+semantics, module resolution, IR, layout, ownership rules, or backend selection.
 
-The bootstrap adapter uses the public TypeScript 6 API to avoid reimplementing parsing, source
-locations, and basic declarations before the first backend slice exists. It performs no module
-resolution and is selected for available API access, not runtime speed.
+`--provider native` selects this default explicitly. `--provider bootstrap` selects the pinned
+TypeScript 6 adapter and requires the direct Node.js 22.22.1 executable plus locked adapter
+dependencies. `--provider compare` runs both providers over the same authoritative source map
+and requires exact equality of their independently verified snapshots before semantic dispatch.
+A provider failure or disagreement stops compilation; it never selects a fallback. Install the
+compatibility dependencies with pnpm 11.18.0 and `pnpm install --frozen-lockfile` when using those
+explicit modes or running the contributor conformance suites.
+
+JavaScript and core WebAssembly **execution** still require a separately selected Node.js target
+host. Native linking and execution retain their documented SDK and platform requirements. These
+runtime requirements do not make Node a native frontend dependency. Source-checkout command and
+server profiles also select native syntax by default; their Wasmtime execution, private guest
+requests, listener approvals, finite budgets, and create-only records retain their existing rules.
+See [the CLI](CLI.md#compiler-provider-selection), [command execution](WASI_COMMAND_GETTING_STARTED.md),
+and [bounded server profiles](WASI_SERVER_STATUS_V1.md).
+
+Native v2 source-candidate installations contain no bootstrap or Node payload and reject
+bootstrap/compare selection. Existing immutable v1 installations retain their original provider
+and runtime contracts. See [migration and qualification evidence](NATIVE_PROVIDER_MIGRATION.md).
+
+## TypeScript 6 compatibility
+
+The bootstrap adapter uses the public TypeScript 6 API for parsing, source locations, and basic
+declarations. It remains an explicit compatibility and differential-conformance provider. It
+performs no module resolution and is selected for available API access, not runtime speed.
 
 The adapter wrapper and its actual compiler implementation are locked, and the worker reports the
 runtime compiler version in its exact protocol-v2 handshake. It may return only ZRYNA-owned
@@ -25,9 +51,10 @@ handshake
 ```
 
 A provider version mismatch, crash, malformed message, incomplete project file set, or reported
-unsupported syntax fails closed. Until the independent native frontend exists, completeness inside
-each source file is a conformance property of the exact pinned provider rather than something the
-provider-neutral DTO verifier can independently reconstruct from source text.
+unsupported syntax fails closed. Completeness inside each source file remains a parser
+conformance property: the provider-neutral DTO verifier does not independently reconstruct every
+source subtree. Native/bootstrap differential qualification exercises that boundary without
+weakening either syntax verifier.
 
 ## Source-coordinate contract
 
@@ -54,15 +81,16 @@ live in `zryna-syntax`, below all provider implementations. See
 | Executable function bodies | unavailable | contract and verifier implemented |
 | TypeScript 6 emission | legacy declaration path | implemented and fail closed |
 | Semantic lowering | unavailable | implemented for the first strict one-file subset |
-| Native Zryna provider | unavailable | eventual provider target |
+| Native Zryna provider | unavailable | current default; separate v3/v4 modes preserve their exact protocols |
 
 Selecting v2 requires an exact v2 handshake. No compiler path silently upgrades a v1 response.
 Provider error diagnostics stop compilation before semantic lowering. Provider warnings remain
 observable on successful source-to-verified-IR results. The pinned TypeScript 6 suite proves that
 its recognized unsupported constructs produce such an error and that expression
 rollback leaves no smaller accepted arena. A structurally valid provider that silently omits an
-arbitrary source subtree is outside what the DTO verifier alone can prove; differential provider
-conformance and the future native parser close that remaining trust assumption.
+arbitrary source subtree is outside what the DTO verifier alone can prove. Both parsers remain
+subject to their frozen conformance and differential qualification gates; native selection does
+not turn a raw DTO into compiler authority.
 
 ## Worker discovery and lifecycle
 
@@ -116,22 +144,28 @@ protocol-v2 M1 compiler and CLI path.
 Because all later phases depend on ZRYNA-owned verified syntax and IR, replacing the bootstrap
 provider must not modify semantic behavior or any backend.
 
-The first native implementation checkpoint is `zryna_frontend::native_lexer`. It either consumes
-an existing authoritative `SourceMap`, or validates bounded raw bytes through `admit_and_lex` and
-returns the newly owned `SourceMap` with its bound lexical project. Raw admission checks canonical
-paths and byte limits before strict UTF-8 conversion. An invalid or truncated encoding receives an
-exact pre-authority `RawByteSpan`; it is not a forged source-map `Span`. Lexing retains source-ordered tokens and formatter-relevant trivia
-with opaque UTF-8 spans. It covers only the frozen protocol-v4 lexical spellings, deterministic
-malformed-input recovery, the frozen 8 MiB aggregate source ceiling, and fixed token, trivia,
-project, and diagnostic ceilings. It preserves every admitted UTF-8 byte exactly. The routed
-provider-v4 proof compares every native token kind and UTF-8 byte range directly with a live witness
-from the exact pinned TypeScript 6 scanner. Its negative case also proves the same offending lexical
-range while retaining the provider's `ZRYNA-F2002` and native lexer's `ZRYNA-F1501` ownership-specific
-diagnostic identities. This test-only comparison adds no TypeScript production dependency. The
-native lexer does not yet parse the
-conformance corpus, emit a raw snapshot, implement the provider handshake, or alter TypeScript 6 authority.
-The next native checkpoint is a bounded parser that consumes this stream and constructs candidate
-protocol-v4 DTOs for verification and conformance comparison.
+The native implementation uses `zryna_frontend::native_lexer` and its bounded v2/v3/v4 parsers.
+Lexing consumes an authoritative `SourceMap`; raw admission through `admit_and_lex` first checks
+canonical paths, byte limits and strict UTF-8. Invalid or truncated encoding receives an exact
+pre-authority `RawByteSpan`, rather than a forged source-map `Span`. Source-ordered tokens and
+trivia retain opaque UTF-8 spans, with the frozen 8 MiB aggregate source ceiling and fixed token,
+trivia and diagnostic limits.
+
+The compiler-owned worker receives only bounded source text over stdin and emits untrusted
+candidate DTOs. It performs no filesystem discovery or import resolution. Fatal lexical/parser
+failures are protocol rejections carrying their owning diagnostic identity; recoverable syntax
+diagnostics remain in the original candidate result. The matching existing syntax verifier must
+admit the complete candidate before any semantic or backend work. Lexer witness checks preserve
+the bootstrap scanner's `ZRYNA-F2002` and native lexer's `ZRYNA-F1501` identities rather than
+renaming one owner's diagnostics to match another's.
+
+Source image identity, worker process containment, response/source limits and publication
+checkpoints remain enforced for native selection. Compare mode charges both physical analyses
+against the module-discovery call, cumulative source-byte and timeout budgets.
+The frozen public source and graph registries define the required syntax, diagnostic, verified-IR,
+artifact, runtime and installation qualification. Implementation availability is separate from a
+passing qualification receipt; consult [migration and evidence](NATIVE_PROVIDER_MIGRATION.md) for
+what each acceptance lane proves.
 
 ## Protocol v3 and internal module discovery
 
@@ -161,7 +195,7 @@ through the explicit profile and its manifest-v2 atomic transaction.
 
 ## Protocol v4 data and ownership syntax
 
-Protocol v4 is a separate internal M3 contract. It adds a module-flat, canonical type-syntax
+Protocol v4 is a separate M3 contract. It adds a module-flat, canonical type-syntax
 arena; nominal struct and enum declaration syntax; fixed arrays and compiler-known owned,
 borrowed, shared, and weak container spellings; and source-faithful construction, projection,
 match, and weak-upgrade forms. The pinned TypeScript 6 worker uses parser AST shape and exact UTF-8
@@ -173,6 +207,6 @@ The matching Rust transport requires exact protocol version `4` and the capabili
 `data_ownership_syntax_v1: true`. Its bounded decoder and source-map verifier reject the complete
 response on unknown fields, malformed or non-source-faithful spans, noncanonical arenas,
 prototype-sensitive names, or the first item beyond a frozen limit. Protocols v2 and v3 remain
-independent and unchanged. Protocol v4 is not selected by the public driver or CLI; later M3
-semantics may consume only its opaque verified snapshot. See
+independent and unchanged. The public data-ownership profile and command profile select v4
+explicitly; their semantic phases consume only its opaque verified snapshot. See
 [syntax protocol v4](SYNTAX_PROTOCOL_V4.md).

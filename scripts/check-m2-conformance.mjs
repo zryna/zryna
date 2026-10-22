@@ -96,7 +96,7 @@ const evidenceSourcesByCommand = new Map([
   ['adapter-boundaries', [{ path: 'adapters/typescript-6/test/worker-v3.test.mjs' }]],
   ['driver-pipeline', [{ path: 'crates/zryna-driver/src/pipeline.rs', module: 'pipeline::tests' }]],
   ['module-closure', [
-    { path: 'crates/zryna-driver/src/module_closure.rs', module: 'module_closure::tests' },
+    { path: 'crates/zryna-driver/src/module_closure/tests.rs', module: 'module_closure::tests' },
     { path: 'crates/zryna-driver/src/module_closure_tests.rs', module: 'module_closure_tests' },
   ]],
   ['native-mir', [{ path: 'crates/zryna-native-mir/src/control_flow_v1.rs', module: 'control_flow_v1::tests' }]],
