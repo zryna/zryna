@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "3074da92e0ff93ee67343184cfb1b8d79c1ad33e1ec31bc2d5efbd6661e05843",
+  "registrySha256": "45b6c01f537a0ffa6ea95d7a8e79a2ddd98bde5d863b1f3f100b992fa62fb2dc",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3274,8 +3274,8 @@
     },
     {
       "path": "Cargo.lock",
-      "bytes": 51965,
-      "sha256": "9545d525d63767831ae8611166c3294e0059d17ffde0961ba9b66e6237be7476"
+      "bytes": 51997,
+      "sha256": "55cc6cbefb84ff9057520f65b453b1a0dcc82a32a93e2fc2401f85e2a9b361ea"
     },
     {
       "path": "Cargo.toml",
@@ -3294,8 +3294,8 @@
     },
     {
       "path": "adapters/typescript-6/package.json",
-      "bytes": 1849,
-      "sha256": "b29e03bce446f6fab1169e3c2cf476952d636b57cfc9a1ae8ea5ef549875afaa"
+      "bytes": 2254,
+      "sha256": "556b4eef1b0495e1865f9cbcf8cd6368a38b9192662717fd8504aab1ede0db90"
     },
     {
       "path": "adapters/typescript-6/src/limits-v3.mjs",
@@ -3889,8 +3889,8 @@
     },
     {
       "path": "crates/zryna-backend-webassembly/src/lib.rs",
-      "bytes": 62611,
-      "sha256": "fbaf2ade46e72cfb615e3a22052914d4fae9ca2f12dc0de8ec5ee7f82257bd82"
+      "bytes": 62603,
+      "sha256": "dea2ff30d1bf390ace52e67566bd2784a8d442132b0be6dad3ee9f060d016a11"
     },
     {
       "path": "crates/zryna-backend-webassembly/src/scalar_audit.rs",
@@ -4679,8 +4679,8 @@
     },
     {
       "path": "crates/zryna-ir/Cargo.toml",
-      "bytes": 439,
-      "sha256": "eb52e5024fc6fa2f2680fa34ef69cd23a3db3056bc63aab56cdf7aedcbfac51b"
+      "bytes": 513,
+      "sha256": "c9eefaea33bb446fe4d41bd616238ea6a57b962c42a3f5aa85633dff0afefd63"
     },
     {
       "path": "crates/zryna-ir/src/expression_order.rs",
@@ -4689,8 +4689,8 @@
     },
     {
       "path": "crates/zryna-ir/src/lib.rs",
-      "bytes": 42608,
-      "sha256": "a01a1930004d3e45b4a3eed9183ecbf9f3717ec4c52bc767cfb422a488b582fe"
+      "bytes": 42360,
+      "sha256": "59e4ce49d0b3c24b7c665e70bd9539eb63d81b59e5e345bc027979a400426116"
     },
     {
       "path": "crates/zryna-layout/Cargo.toml",
@@ -4764,8 +4764,8 @@
     },
     {
       "path": "docs/CODE_NAVIGATION.md",
-      "bytes": 36867,
-      "sha256": "1423ea67b74fde8820b09506177abf49084d1fbd7dcc89ede81b436903c77934"
+      "bytes": 37805,
+      "sha256": "41be784c9d2344854fa2e00097968a94c919cd0f03909db3b00e30ddba059f46"
     },
     {
       "path": "docs/DOCUMENTATION_BUNDLES.md",
@@ -5010,12 +5010,12 @@
     {
       "path": "scripts/distribution/command-h1-rust-binding-v1.json",
       "bytes": 994,
-      "sha256": "41065082c185e09063aad15c9b5be7b371a853ba7b91f2c1f456dbcd55d224cd"
+      "sha256": "121a6ef38c54a0f9e385c381fd668fd14f451277163b14f01e3ddc6cfe7c702b"
     },
     {
       "path": "scripts/distribution/command-h1-rust-binding.mjs",
       "bytes": 1707,
-      "sha256": "ecedf63ba17c299dda3731318e6fff314e042db9fff1db3a3af80675d93ee750"
+      "sha256": "80175febff542e6e793734b8ed5547ae09ba52fab585c8a2f5db8fe911630c3a"
     },
     {
       "path": "scripts/distribution/documents.mjs",
@@ -5809,8 +5809,8 @@
     },
     {
       "path": "zryna.workspace.json",
-      "bytes": 6745,
-      "sha256": "c2f01314c1596bc3da2b5b22e73e62642cb51d740111d6553acf7c25a6881593"
+      "bytes": 6776,
+      "sha256": "2e02e2e2ea00de83873e41df976de1e9ab2bafffcc20725e2c794ee324d40c8e"
     }
   ],
   "requiredExternalEvidence": [

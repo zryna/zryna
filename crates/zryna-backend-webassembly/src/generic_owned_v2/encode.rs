@@ -9,6 +9,8 @@ use wasm_encoder::{BlockType, Instruction as Op};
 use zryna_diagnostics::Diagnostic;
 use zryna_ir::generic_v1::raw;
 
+mod wrappers;
+
 pub(super) fn module(layout: &Layout<'_, '_>) -> Result<Vec<u8>, Diagnostic> {
     let mut module = Bytes::new();
     module.extend(b"\0asm\x01\0\0\0")?;
@@ -60,7 +62,7 @@ pub(super) fn module(layout: &Layout<'_, '_>) -> Result<Vec<u8>, Diagnostic> {
         code.extend(&body.bytes)?;
     }
     for function in layout.program.export_functions() {
-        let body = wrapper(layout, *function)?;
+        let body = wrappers::wrapper(layout, *function)?;
         code.count(body.bytes.len())?;
         code.extend(&body.bytes)?;
     }
@@ -263,54 +265,4 @@ fn call(
     }
     body.op(&Op::End)?;
     Ok(())
-}
-
-fn wrapper(layout: &Layout<'_, '_>, index: usize) -> Result<Bytes, Diagnostic> {
-    let function = &layout.program.functions()[index];
-    let mut body = Bytes::new();
-    body.extend(&[1])?;
-    body.u32(1)?;
-    body.extend(&[0x7f])?;
-    for (i, p) in function.parameters.iter().enumerate() {
-        if *p == raw::Type::Stored(0) {
-            bool_guard(&mut body, &Op::LocalGet(u32::try_from(i).map_err(|_| super::budget())?))?;
-        }
-    }
-    body.op(&Op::GlobalGet(layout.return_lanes))?;
-    body.op(&Op::If(BlockType::Empty))?;
-    body.op(&Op::Unreachable)?;
-    body.op(&Op::End)?;
-    body.op(&Op::I32Const(1))?;
-    body.op(&Op::GlobalSet(layout.return_lanes))?;
-    for i in 0..function.parameters.len() {
-        body.op(&Op::LocalGet(u32::try_from(i).map_err(|_| super::budget())?))?;
-    }
-    body.op(&Op::Call(u32::try_from(index).map_err(|_| super::budget())? + 3))?;
-    body.op(&Op::LocalSet(u32::try_from(function.parameters.len()).map_err(|_| super::budget())?))?;
-    body.op(&Op::I32Const(0))?;
-    body.op(&Op::GlobalSet(layout.return_lanes))?;
-    body.op(&Op::LocalGet(u32::try_from(function.parameters.len()).map_err(|_| super::budget())?))?;
-    body.op(&Op::If(BlockType::Empty))?;
-    body.op(&Op::Unreachable)?;
-    body.op(&Op::End)?;
-    if function.result == raw::Type::Stored(0) {
-        bool_guard(&mut body, &Op::GlobalGet(0))?;
-    }
-    body.op(&Op::GlobalGet(0))?;
-    body.op(&Op::End)?;
-    Ok(body)
-}
-
-fn bool_guard(body: &mut Bytes, carrier: &Op<'_>) -> Result<(), Diagnostic> {
-    body.op(carrier)?;
-    body.op(&Op::I32Const(0))?;
-    body.op(&Op::I32Eq)?;
-    body.op(carrier)?;
-    body.op(&Op::I32Const(1))?;
-    body.op(&Op::I32Eq)?;
-    body.op(&Op::I32Or)?;
-    body.op(&Op::If(BlockType::Empty))?;
-    body.op(&Op::Else)?;
-    body.op(&Op::Unreachable)?;
-    body.op(&Op::End)
 }
