@@ -46,12 +46,15 @@ impl Identity {
     }
 
     pub(super) fn assert_gone(&self) {
-        // The owning worker has joined, but a concurrent fork can still hold its
-        // inherited listener until exec applies CLOEXEC. Drain existing spawns
-        // before the bounded namespace-wide probe; later spawns cannot inherit
-        // the already-closed parent FD. Release before any assertion can panic.
+        // Synchronize with existing child creation after the owning worker has
+        // joined. The strict probe below still rejects every surviving inode;
+        // acquiring this gate does not itself establish listener closure.
         #[cfg(target_arch = "x86_64")]
         drop(zryna_process::snapshot_writer().expect("listener closure spawn synchronization"));
+        self.assert_gone_probe();
+    }
+
+    fn assert_gone_probe(&self) {
         let deadline = Instant::now() + PROBE_TIME;
         assert_eq!(std::process::id(), self.process, "original listener owning process");
         let rows = snapshot(deadline);
@@ -174,41 +177,76 @@ fn parse(bytes: &[u8]) -> Vec<Row> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::panic::catch_unwind;
+    use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
+
+    fn without_listener_inheritance(fixture: impl FnOnce() + UnwindSafe) {
+        // Acquire before creating any fixture listener: earlier children cannot
+        // inherit it, and later child creation waits until the fixture finishes.
+        #[cfg(target_arch = "x86_64")]
+        let guard = zryna_process::snapshot_writer().expect("listener fixture spawn exclusion");
+        let result = catch_unwind(fixture);
+        // Release normally even when a fixture fails, so its panic cannot poison
+        // the shared gate and obscure the original failure in unrelated tests.
+        #[cfg(target_arch = "x86_64")]
+        drop(guard);
+        if let Err(panic) = result {
+            resume_unwind(panic);
+        }
+    }
 
     #[test]
     fn actual_live_original_listener_cannot_receive_gone_credit() {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("live original listener");
-        let original = Identity::capture(&listener);
-        assert!(catch_unwind(|| original.assert_gone()).is_err());
-        drop(listener);
-        original.assert_gone();
+        without_listener_inheritance(|| {
+            let listener = TcpListener::bind("127.0.0.1:0").expect("live original listener");
+            let original = Identity::capture(&listener);
+            assert!(catch_unwind(|| original.assert_gone_probe()).is_err());
+            drop(listener);
+            original.assert_gone_probe();
+        });
     }
 
     #[test]
     fn cloned_original_listener_remains_live_after_first_handle_drops() {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("cloned original listener");
-        let original = Identity::capture(&listener);
-        let alias = listener.try_clone().expect("test-only live alias negative");
-        drop(listener);
-        assert!(catch_unwind(|| original.assert_gone()).is_err());
-        drop(alias);
-        original.assert_gone();
+        without_listener_inheritance(|| {
+            let listener = TcpListener::bind("127.0.0.1:0").expect("cloned original listener");
+            let original = Identity::capture(&listener);
+            let alias = listener.try_clone().expect("test-only live alias negative");
+            drop(listener);
+            assert!(catch_unwind(|| original.assert_gone_probe()).is_err());
+            drop(alias);
+            original.assert_gone_probe();
+        });
     }
 
     #[test]
     fn different_inode_at_same_endpoint_is_not_the_original_listener() {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("old original listener");
-        let original = Identity::capture(&listener);
-        let address = listener.local_addr().expect("old endpoint");
-        drop(listener);
-        let replacement = TcpListener::bind(address).expect("new listener at exact old endpoint");
-        let replacement_identity = Identity::capture(&replacement);
-        assert_ne!(original.inode, replacement_identity.inode, "distinct actual socket identities");
-        original.assert_gone();
-        assert!(catch_unwind(|| replacement_identity.assert_gone()).is_err());
-        // The old strict endpoint probe still rejects a real live peer. No waiver or retry.
-        assert!(catch_unwind(|| super::super::assert_listener_closed(address)).is_err());
+        without_listener_inheritance(|| {
+            let listener = TcpListener::bind("127.0.0.1:0").expect("old original listener");
+            let original = Identity::capture(&listener);
+            let address = listener.local_addr().expect("old endpoint");
+            drop(listener);
+            let replacement =
+                TcpListener::bind(address).expect("new listener at exact old endpoint");
+            let replacement_identity = Identity::capture(&replacement);
+            assert_ne!(
+                original.inode, replacement_identity.inode,
+                "distinct actual socket identities"
+            );
+            original.assert_gone_probe();
+            assert!(catch_unwind(|| replacement_identity.assert_gone_probe()).is_err());
+            // The old strict endpoint probe still rejects a real live peer. No waiver or retry.
+            assert!(catch_unwind(|| super::super::assert_listener_closed(address)).is_err());
+        });
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn fixture_panic_preserves_shared_spawn_gate() {
+        assert!(
+            catch_unwind(|| without_listener_inheritance(|| panic!("fixture failure"))).is_err()
+        );
+        zryna_process::spawn(|| Ok(()))
+            .expect("shared spawn gate remains usable after fixture panic");
     }
 
     fn table(row: &str) -> Vec<u8> {
