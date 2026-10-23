@@ -1,0 +1,16 @@
+interface Pair<T extends ZrynaValue> extends ZrynaStruct { value: T; }
+interface Signal extends ZrynaEnum { quiet: ZrynaNone; yes: String; }
+export function entry(): i32 {
+  { const root0: bool = true; const loan0: Borrow<bool> = borrow(root0); const copied0: bool = clone(loan0); }
+  { const root1: i32 = 7; const loan1: Borrow<i32> = borrow(root1); const copied1: i32 = clone(loan1); }
+  { const root2: String = "text"; const loan2: Borrow<String> = borrow(root2); const copied2: String = clone(loan2); }
+  { const root3: Pair<String> = Pair<String>({ value: "field" }); const loan3: Borrow<Pair<String>> = borrow(root3); const copied3: Pair<String> = clone(loan3); }
+  { const root4: Signal = Signal.yes("payload"); const loan4: Borrow<Signal> = borrow(root4); const copied4: Signal = clone(loan4); }
+  { const root5: Option<String> = Option.some<String>("option"); const loan5: Borrow<Option<String>> = borrow(root5); const copied5: Option<String> = clone(loan5); }
+  { const root6: Result<String, i32> = Result.ok<String, i32>("result"); const loan6: Borrow<Result<String, i32>> = borrow(root6); const copied6: Result<String, i32> = clone(loan6); }
+  { const root7: FixedArray<String, 2> = FixedArray<String, 2>(["a", "b"]); const loan7: Borrow<FixedArray<String, 2>> = borrow(root7); const copied7: FixedArray<String, 2> = clone(loan7); }
+  { const root8: Vec<String> = Vec<String>(["element"]); const loan8: Borrow<Vec<String>> = borrow(root8); const copied8: Vec<String> = clone(loan8); }
+  { const root9: Shared<String> = shared("shared"); const loan9: Borrow<Shared<String>> = borrow(root9); const copied9: Shared<String> = clone(loan9); }
+  { const owner: Shared<String> = shared("weak"); const root10: Weak<String> = downgrade(owner); const loan10: Borrow<Weak<String>> = borrow(root10); const copied10: Weak<String> = clone(loan10); }
+  return 97;
+}

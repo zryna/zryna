@@ -1,0 +1,92 @@
+{
+  "status": "accepted source identity references; independent fixture emission still required for all pending cases",
+  "catalogue_sha256": "c248a56812f33bd32a587482e9fe577784f66931a132a207c7d64f8523f9ea0a",
+  "source_cases": [
+    {
+      "id": "nominal-struct",
+      "source": "export interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }",
+      "parserErrors": 0,
+      "decision": "admit",
+      "code": null,
+      "primaryToken": null,
+      "primaryOccurrence": null
+    },
+    {
+      "id": "struct-construction",
+      "source": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function score(): i32 { const box: Box<i32> = Box<i32>({ value: 7 }); return box.value; }",
+      "parserErrors": 0,
+      "decision": "admit",
+      "code": null,
+      "primaryToken": null,
+      "primaryOccurrence": null
+    },
+    {
+      "id": "finite-supplied-nesting",
+      "source": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } const value: Box<Box<i32>> = Box<Box<i32>>({ value: Box<i32>({ value: 7 }) });",
+      "parserErrors": 0,
+      "decision": "admit",
+      "code": null,
+      "primaryToken": null,
+      "primaryOccurrence": null
+    }
+  ],
+  "cross_module_cases": [
+    {
+      "id": "diamond-shared-instances",
+      "files": [
+        {
+          "path": "a.zry",
+          "source": "import { Box, identity } from \"./values.zry\"; export function left(): i32 { const box: Box<i32> = Box<i32>({ value: identity<i32>(7) }); return box.value; }"
+        },
+        {
+          "path": "b.zry",
+          "source": "import { Box, identity } from \"./values.zry\"; export function right(): i32 { const box: Box<i32> = Box<i32>({ value: identity<i32>(7) }); return box.value; }"
+        },
+        {
+          "path": "main.zry",
+          "source": "import { left } from \"./a.zry\"; import { right } from \"./b.zry\"; export function score(): i32 { return left() + right(); }"
+        },
+        {
+          "path": "values.zry",
+          "source": "export interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } export function identity<T extends ZrynaValue>(value: T): T { return value; }"
+        }
+      ],
+      "expectedFunctionKeys": [
+        "400300000000000000010000000100000001"
+      ],
+      "expectedDataKeys": [
+        "120300000000000000010000000100000001"
+      ],
+      "expectedExecutableExports": [
+        "a.zry:left",
+        "b.zry:right",
+        "main.zry:score"
+      ],
+      "expectedObservation": "i32:14",
+      "forbiddenEntrypoints": [
+        "values.zry:identity",
+        "values.zry:identity<i32>"
+      ],
+      "rejectionCode": "ZRYNA-M7005"
+    }
+  ],
+  "constructor_fault": {
+    "id": "constructor-fault",
+    "scenario": "Earlier live root; generic two-String struct left field succeeds, right clone reports ALLOCATION; no right result is initialized.",
+    "outcome": "zryna.trap.allocation-v1",
+    "trace": [
+      "release:left",
+      "release:earlier-root"
+    ]
+  },
+  "empty_struct_authority": {
+    "decision": "reject",
+    "code": "ZRYNA-D7001",
+    "citations": [
+      "spec/language/BOUNDED_GENERICS_OPTION_RESULT_V1.md:75",
+      "spec/language/BOUNDED_GENERICS_DECISIONS_V1.md:21",
+      "spec/language/DATA_OWNERSHIP_V1.md:68",
+      "spec/memory-model/AGGREGATE_LAYOUT_V1.md:128"
+    ]
+  }
+}

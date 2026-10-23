@@ -1,0 +1,2 @@
+function copy(loan: Borrow<String>): String { return clone(loan); }
+export function entry(): i32 { const root: String = "root"; { const loan: Borrow<String> = borrow(root); const child: Borrow<String> = borrow(loan); const first: String = copy(child); const second: String = clone(loan); const third: String = clone(root); } return 31; }

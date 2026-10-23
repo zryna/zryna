@@ -1,0 +1,7 @@
+export function entry(): i32 {
+  let owner: String = "old";
+  const later: String = "later";
+  owner = "new";
+  const taken: String = owner;
+  return 19;
+}

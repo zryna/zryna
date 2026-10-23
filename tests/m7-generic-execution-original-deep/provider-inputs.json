@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/tmp/m416-nested-nominal-proposal/fixtures/emit-provider-packets.py",
+    "bytes": 5148,
+    "sha256": "7b73f53c6c884589ce37de6352303caab695b27b50e31ae6537f15fc6ec47bcb"
+  },
+  {
+    "path": "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+    "bytes": 16059472,
+    "sha256": "27d5ff7f8f012d2addaaeaa61c3a14aac5062d627f015b7ed73166e8cba7ea45"
+  },
+  {
+    "path": "/tmp/m416-nominal-transport-candidate/schemas/zryna-syntax-v5.schema.json",
+    "bytes": 42762,
+    "sha256": "922bb3fed447cc730cce2054e440b80bef158f07b052c75161a56b54ffe08736"
+  }
+]

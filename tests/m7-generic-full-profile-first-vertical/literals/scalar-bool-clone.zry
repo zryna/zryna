@@ -1,0 +1,9 @@
+export function entry(): i32 {
+  const value: bool = true;
+  const copied: bool = clone(value);
+  if (value) {
+    if (copied) { return 7; }
+    return 8;
+  }
+  return 9;
+}

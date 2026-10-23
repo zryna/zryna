@@ -1,0 +1,50 @@
+{
+  "status": "Independent runtime expectation frozen before all syntax-provider or compiler processes; unexecuted",
+  "case": "compact-dag-n04",
+  "accept": true,
+  "result": 7,
+  "allocationAttempts": [
+    {
+      "attempt": 1,
+      "role": "source.value.left.left.left.left.left",
+      "operation": "literal",
+      "bytes": "L"
+    },
+    {
+      "attempt": 2,
+      "role": "copied.value.left.left.left.left.left",
+      "operation": "clone",
+      "bytes": "L"
+    }
+  ],
+  "successReleaseAttemptIds": [
+    2,
+    1
+  ],
+  "faults": [
+    {
+      "failAttempt": 1,
+      "returnsScalar": false,
+      "releaseAttemptIds": [],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 2,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        2,
+        1
+      ]
+    }
+  ],
+  "structCarrierAllocations": 0,
+  "identityRule": "Clone reads original actual live String allocation1 and produces fresh allocation2; equal bytes never identify owners; every successful owner releases once."
+}

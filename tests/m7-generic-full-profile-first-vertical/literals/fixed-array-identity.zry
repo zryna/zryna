@@ -1,0 +1,8 @@
+function identity<T extends ZrynaValue>(value: T): T {
+  return value;
+}
+export function entry(): i32 {
+  const values: FixedArray<i32, 2> = FixedArray<i32, 2>([7, 11]);
+  const copied: FixedArray<i32, 2> = identity<FixedArray<i32, 2>>(values);
+  return values[0] + copied[1];
+}

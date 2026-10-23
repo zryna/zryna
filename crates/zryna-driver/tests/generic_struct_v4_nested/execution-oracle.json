@@ -1,0 +1,138 @@
+{
+  "status": "Frozen independent fixture expectations copied before target compilation; no observed target results",
+  "cases": {
+    "nested-copy": {
+      "allocations": 0,
+      "decision": "admit",
+      "result": 7,
+      "success": [],
+      "allocationFailures": {},
+      "retryAfterEveryFailure": true
+    },
+    "nested-owned-call": {
+      "allocations": 2,
+      "decision": "admit",
+      "result": 7,
+      "success": [
+        "alloc:1:E",
+        "alloc:2:L",
+        "drop:2:L",
+        "drop:1:E"
+      ],
+      "allocationFailures": {
+        "1": [
+          "fail:1"
+        ],
+        "2": [
+          "alloc:1:E",
+          "fail:2",
+          "drop:1:E"
+        ]
+      },
+      "retryAfterEveryFailure": true
+    },
+    "option-box-root": {
+      "allocations": 1,
+      "decision": "admit",
+      "result": 7,
+      "success": [
+        "alloc:1:L",
+        "drop:1:L"
+      ],
+      "allocationFailures": {
+        "1": [
+          "fail:1"
+        ]
+      },
+      "retryAfterEveryFailure": true
+    },
+    "box-option-root": {
+      "allocations": 1,
+      "decision": "admit",
+      "result": 7,
+      "success": [
+        "alloc:1:L",
+        "drop:1:L"
+      ],
+      "allocationFailures": {
+        "1": [
+          "fail:1"
+        ]
+      },
+      "retryAfterEveryFailure": true
+    },
+    "plain-and-reversed-arguments": {
+      "allocations": 0,
+      "decision": "admit",
+      "result": 7,
+      "success": [],
+      "allocationFailures": {},
+      "retryAfterEveryFailure": true
+    },
+    "phantom-remains-copy": {
+      "allocations": 0,
+      "decision": "admit",
+      "result": 7,
+      "success": [],
+      "allocationFailures": {},
+      "retryAfterEveryFailure": true
+    },
+    "fixed-member-remains-affine": {
+      "allocations": 1,
+      "decision": "admit",
+      "result": 7,
+      "success": [
+        "alloc:1:L",
+        "drop:1:L"
+      ],
+      "allocationFailures": {
+        "1": [
+          "fail:1"
+        ]
+      },
+      "retryAfterEveryFailure": true
+    },
+    "nested-prefix-faults": {
+      "allocations": 4,
+      "decision": "admit",
+      "result": 7,
+      "success": [
+        "alloc:1:E",
+        "alloc:2:L",
+        "alloc:3:R",
+        "alloc:4:E",
+        "drop:4:E",
+        "drop:3:R",
+        "drop:2:L",
+        "drop:1:E"
+      ],
+      "allocationFailures": {
+        "1": [
+          "fail:1"
+        ],
+        "2": [
+          "alloc:1:E",
+          "fail:2",
+          "drop:1:E"
+        ],
+        "3": [
+          "alloc:1:E",
+          "alloc:2:L",
+          "fail:3",
+          "drop:2:L",
+          "drop:1:E"
+        ],
+        "4": [
+          "alloc:1:E",
+          "alloc:2:L",
+          "alloc:3:R",
+          "fail:4",
+          "drop:3:R",
+          "drop:2:L",
+          "drop:1:E"
+        ]
+      },
+      "retryAfterEveryFailure": true
+    }
+  }
+}

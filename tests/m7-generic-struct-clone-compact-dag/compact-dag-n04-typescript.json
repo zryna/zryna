@@ -1,0 +1,1617 @@
+{
+  "schema_version": 5,
+  "files": [
+    {
+      "id": 0,
+      "path": "main.zry",
+      "imports": [],
+      "type_syntax": [
+        {
+          "span": {
+            "file": 0,
+            "start": 39,
+            "end": 45
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 39,
+              "end": 45
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 54,
+            "end": 60
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 54,
+              "end": 60
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 103,
+            "end": 105
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E0",
+              "span": {
+                "file": 0,
+                "start": 103,
+                "end": 105
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 114,
+            "end": 116
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E0",
+              "span": {
+                "file": 0,
+                "start": 114,
+                "end": 116
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 159,
+            "end": 161
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E1",
+              "span": {
+                "file": 0,
+                "start": 159,
+                "end": 161
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 170,
+            "end": 172
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E1",
+              "span": {
+                "file": 0,
+                "start": 170,
+                "end": 172
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 215,
+            "end": 217
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E2",
+              "span": {
+                "file": 0,
+                "start": 215,
+                "end": 217
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 226,
+            "end": 228
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E2",
+              "span": {
+                "file": 0,
+                "start": 226,
+                "end": 228
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 271,
+            "end": 273
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E3",
+              "span": {
+                "file": 0,
+                "start": 271,
+                "end": 273
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 282,
+            "end": 284
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E3",
+              "span": {
+                "file": 0,
+                "start": 282,
+                "end": 284
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 354,
+            "end": 355
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 354,
+                "end": 355
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 363,
+            "end": 366
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 363,
+                "end": 366
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 395,
+            "end": 398
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 395,
+                "end": 398
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 422,
+            "end": 424
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E4",
+              "span": {
+                "file": 0,
+                "start": 422,
+                "end": 424
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 417,
+            "end": 425
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Wrap",
+              "span": {
+                "file": 0,
+                "start": 417,
+                "end": 421
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 421,
+                "end": 425
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 421,
+                "end": 422
+              },
+              "arguments": [
+                13
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 424,
+                "end": 425
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 433,
+            "end": 435
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E4",
+              "span": {
+                "file": 0,
+                "start": 433,
+                "end": 435
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 529,
+            "end": 531
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "E4",
+              "span": {
+                "file": 0,
+                "start": 529,
+                "end": 531
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 524,
+            "end": 532
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Wrap",
+              "span": {
+                "file": 0,
+                "start": 524,
+                "end": 528
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 528,
+                "end": 532
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 528,
+                "end": 529
+              },
+              "arguments": [
+                16
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 531,
+                "end": 532
+              }
+            }
+          }
+        }
+      ],
+      "data_declarations": [
+        {
+          "span": {
+            "file": 0,
+            "start": 0,
+            "end": 63
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "enum",
+            "interface_span": {
+              "file": 0,
+              "start": 0,
+              "end": 9
+            },
+            "name": {
+              "text": "E0",
+              "span": {
+                "file": 0,
+                "start": 10,
+                "end": 12
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 13,
+              "end": 20
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 21,
+              "end": 30
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 31,
+              "end": 32
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 62,
+              "end": 63
+            },
+            "variants": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 33,
+                  "end": 46
+                },
+                "name": {
+                  "text": "left",
+                  "span": {
+                    "file": 0,
+                    "start": 33,
+                    "end": 37
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 37,
+                  "end": 38
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 45,
+                  "end": 46
+                },
+                "payload_type": 0,
+                "none_span": null
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 47,
+                  "end": 61
+                },
+                "name": {
+                  "text": "right",
+                  "span": {
+                    "file": 0,
+                    "start": 47,
+                    "end": 52
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 52,
+                  "end": 53
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 60,
+                  "end": 61
+                },
+                "payload_type": 1,
+                "none_span": null
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 64,
+            "end": 119
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "enum",
+            "interface_span": {
+              "file": 0,
+              "start": 64,
+              "end": 73
+            },
+            "name": {
+              "text": "E1",
+              "span": {
+                "file": 0,
+                "start": 74,
+                "end": 76
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 77,
+              "end": 84
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 85,
+              "end": 94
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 95,
+              "end": 96
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 118,
+              "end": 119
+            },
+            "variants": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 97,
+                  "end": 106
+                },
+                "name": {
+                  "text": "left",
+                  "span": {
+                    "file": 0,
+                    "start": 97,
+                    "end": 101
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 101,
+                  "end": 102
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 105,
+                  "end": 106
+                },
+                "payload_type": 2,
+                "none_span": null
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 107,
+                  "end": 117
+                },
+                "name": {
+                  "text": "right",
+                  "span": {
+                    "file": 0,
+                    "start": 107,
+                    "end": 112
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 112,
+                  "end": 113
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 116,
+                  "end": 117
+                },
+                "payload_type": 3,
+                "none_span": null
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 120,
+            "end": 175
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "enum",
+            "interface_span": {
+              "file": 0,
+              "start": 120,
+              "end": 129
+            },
+            "name": {
+              "text": "E2",
+              "span": {
+                "file": 0,
+                "start": 130,
+                "end": 132
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 133,
+              "end": 140
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 141,
+              "end": 150
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 151,
+              "end": 152
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 174,
+              "end": 175
+            },
+            "variants": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 153,
+                  "end": 162
+                },
+                "name": {
+                  "text": "left",
+                  "span": {
+                    "file": 0,
+                    "start": 153,
+                    "end": 157
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 157,
+                  "end": 158
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 161,
+                  "end": 162
+                },
+                "payload_type": 4,
+                "none_span": null
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 163,
+                  "end": 173
+                },
+                "name": {
+                  "text": "right",
+                  "span": {
+                    "file": 0,
+                    "start": 163,
+                    "end": 168
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 168,
+                  "end": 169
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 172,
+                  "end": 173
+                },
+                "payload_type": 5,
+                "none_span": null
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 176,
+            "end": 231
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "enum",
+            "interface_span": {
+              "file": 0,
+              "start": 176,
+              "end": 185
+            },
+            "name": {
+              "text": "E3",
+              "span": {
+                "file": 0,
+                "start": 186,
+                "end": 188
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 189,
+              "end": 196
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 197,
+              "end": 206
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 207,
+              "end": 208
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 230,
+              "end": 231
+            },
+            "variants": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 209,
+                  "end": 218
+                },
+                "name": {
+                  "text": "left",
+                  "span": {
+                    "file": 0,
+                    "start": 209,
+                    "end": 213
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 213,
+                  "end": 214
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 217,
+                  "end": 218
+                },
+                "payload_type": 6,
+                "none_span": null
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 219,
+                  "end": 229
+                },
+                "name": {
+                  "text": "right",
+                  "span": {
+                    "file": 0,
+                    "start": 219,
+                    "end": 224
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 224,
+                  "end": 225
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 228,
+                  "end": 229
+                },
+                "payload_type": 7,
+                "none_span": null
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 232,
+            "end": 287
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "enum",
+            "interface_span": {
+              "file": 0,
+              "start": 232,
+              "end": 241
+            },
+            "name": {
+              "text": "E4",
+              "span": {
+                "file": 0,
+                "start": 242,
+                "end": 244
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 245,
+              "end": 252
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 253,
+              "end": 262
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 263,
+              "end": 264
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 286,
+              "end": 287
+            },
+            "variants": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 265,
+                  "end": 274
+                },
+                "name": {
+                  "text": "left",
+                  "span": {
+                    "file": 0,
+                    "start": 265,
+                    "end": 269
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 269,
+                  "end": 270
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 273,
+                  "end": 274
+                },
+                "payload_type": 8,
+                "none_span": null
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 275,
+                  "end": 285
+                },
+                "name": {
+                  "text": "right",
+                  "span": {
+                    "file": 0,
+                    "start": 275,
+                    "end": 280
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 280,
+                  "end": 281
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 284,
+                  "end": 285
+                },
+                "payload_type": 9,
+                "none_span": null
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 288,
+            "end": 369
+          },
+          "export_span": null,
+          "type_parameters": {
+            "span": {
+              "file": 0,
+              "start": 302,
+              "end": 324
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 302,
+              "end": 303
+            },
+            "parameters": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 303,
+                  "end": 323
+                },
+                "name": {
+                  "text": "T",
+                  "span": {
+                    "file": 0,
+                    "start": 303,
+                    "end": 304
+                  }
+                },
+                "extends_span": {
+                  "file": 0,
+                  "start": 305,
+                  "end": 312
+                },
+                "bound": {
+                  "text": "ZrynaValue",
+                  "span": {
+                    "file": 0,
+                    "start": 313,
+                    "end": 323
+                  }
+                }
+              }
+            ],
+            "comma_spans": [],
+            "greater_than_span": {
+              "file": 0,
+              "start": 323,
+              "end": 324
+            }
+          },
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 288,
+              "end": 297
+            },
+            "name": {
+              "text": "Wrap",
+              "span": {
+                "file": 0,
+                "start": 298,
+                "end": 302
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 325,
+              "end": 332
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 333,
+              "end": 344
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 345,
+              "end": 346
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 368,
+              "end": 369
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 347,
+                  "end": 356
+                },
+                "name": {
+                  "text": "value",
+                  "span": {
+                    "file": 0,
+                    "start": 347,
+                    "end": 352
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 352,
+                  "end": 353
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 355,
+                  "end": 356
+                },
+                "type_syntax": 10
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 357,
+                  "end": 367
+                },
+                "name": {
+                  "text": "code",
+                  "span": {
+                    "file": 0,
+                    "start": 357,
+                    "end": 361
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 361,
+                  "end": 362
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 366,
+                  "end": 367
+                },
+                "type_syntax": 11
+              }
+            ]
+          }
+        }
+      ],
+      "functions": [
+        {
+          "span": {
+            "file": 0,
+            "start": 370,
+            "end": 573
+          },
+          "export_span": {
+            "file": 0,
+            "start": 370,
+            "end": 376
+          },
+          "function_span": {
+            "file": 0,
+            "start": 377,
+            "end": 385
+          },
+          "name": {
+            "text": "entry",
+            "span": {
+              "file": 0,
+              "start": 386,
+              "end": 391
+            }
+          },
+          "type_parameters": null,
+          "parameters": [],
+          "result_type": 12,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 399,
+              "end": 573
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 399,
+                  "end": 573
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 399,
+                  "end": 400
+                },
+                "statements": [
+                  0,
+                  1,
+                  2
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 572,
+                  "end": 573
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 403,
+                  "end": 507
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 403,
+                    "end": 408
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "source",
+                    "span": {
+                      "file": 0,
+                      "start": 409,
+                      "end": 415
+                    }
+                  },
+                  "type_syntax": 14,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 426,
+                    "end": 427
+                  },
+                  "initializer": 7,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 506,
+                    "end": 507
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 510,
+                  "end": 549
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 510,
+                    "end": 515
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "copied",
+                    "span": {
+                      "file": 0,
+                      "start": 516,
+                      "end": 522
+                    }
+                  },
+                  "type_syntax": 17,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 533,
+                    "end": 534
+                  },
+                  "initializer": 9,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 548,
+                    "end": 549
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 552,
+                  "end": 571
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 552,
+                    "end": 558
+                  },
+                  "value": 11,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 570,
+                    "end": 571
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 486,
+                  "end": 489
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"L\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 478,
+                  "end": 490
+                },
+                "kind": {
+                  "kind": "enum-construction",
+                  "type_name": {
+                    "text": "E0",
+                    "span": {
+                      "file": 0,
+                      "start": 478,
+                      "end": 480
+                    }
+                  },
+                  "dot_span": {
+                    "file": 0,
+                    "start": 480,
+                    "end": 481
+                  },
+                  "variant": {
+                    "text": "left",
+                    "span": {
+                      "file": 0,
+                      "start": 481,
+                      "end": 485
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 485,
+                    "end": 486
+                  },
+                  "payload": 0,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 489,
+                    "end": 490
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 470,
+                  "end": 491
+                },
+                "kind": {
+                  "kind": "enum-construction",
+                  "type_name": {
+                    "text": "E1",
+                    "span": {
+                      "file": 0,
+                      "start": 470,
+                      "end": 472
+                    }
+                  },
+                  "dot_span": {
+                    "file": 0,
+                    "start": 472,
+                    "end": 473
+                  },
+                  "variant": {
+                    "text": "left",
+                    "span": {
+                      "file": 0,
+                      "start": 473,
+                      "end": 477
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 477,
+                    "end": 478
+                  },
+                  "payload": 1,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 490,
+                    "end": 491
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 462,
+                  "end": 492
+                },
+                "kind": {
+                  "kind": "enum-construction",
+                  "type_name": {
+                    "text": "E2",
+                    "span": {
+                      "file": 0,
+                      "start": 462,
+                      "end": 464
+                    }
+                  },
+                  "dot_span": {
+                    "file": 0,
+                    "start": 464,
+                    "end": 465
+                  },
+                  "variant": {
+                    "text": "left",
+                    "span": {
+                      "file": 0,
+                      "start": 465,
+                      "end": 469
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 469,
+                    "end": 470
+                  },
+                  "payload": 2,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 491,
+                    "end": 492
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 454,
+                  "end": 493
+                },
+                "kind": {
+                  "kind": "enum-construction",
+                  "type_name": {
+                    "text": "E3",
+                    "span": {
+                      "file": 0,
+                      "start": 454,
+                      "end": 456
+                    }
+                  },
+                  "dot_span": {
+                    "file": 0,
+                    "start": 456,
+                    "end": 457
+                  },
+                  "variant": {
+                    "text": "left",
+                    "span": {
+                      "file": 0,
+                      "start": 457,
+                      "end": 461
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 461,
+                    "end": 462
+                  },
+                  "payload": 3,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 492,
+                    "end": 493
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 446,
+                  "end": 494
+                },
+                "kind": {
+                  "kind": "enum-construction",
+                  "type_name": {
+                    "text": "E4",
+                    "span": {
+                      "file": 0,
+                      "start": 446,
+                      "end": 448
+                    }
+                  },
+                  "dot_span": {
+                    "file": 0,
+                    "start": 448,
+                    "end": 449
+                  },
+                  "variant": {
+                    "text": "left",
+                    "span": {
+                      "file": 0,
+                      "start": 449,
+                      "end": 453
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 453,
+                    "end": 454
+                  },
+                  "payload": 4,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 493,
+                    "end": 494
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 502,
+                  "end": 503
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 428,
+                  "end": 506
+                },
+                "kind": {
+                  "kind": "struct-construction",
+                  "type_name": {
+                    "text": "Wrap",
+                    "span": {
+                      "file": 0,
+                      "start": 428,
+                      "end": 432
+                    }
+                  },
+                  "type_arguments": {
+                    "span": {
+                      "file": 0,
+                      "start": 432,
+                      "end": 436
+                    },
+                    "less_than_span": {
+                      "file": 0,
+                      "start": 432,
+                      "end": 433
+                    },
+                    "arguments": [
+                      15
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "file": 0,
+                      "start": 435,
+                      "end": 436
+                    }
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 436,
+                    "end": 437
+                  },
+                  "open_brace_span": {
+                    "file": 0,
+                    "start": 437,
+                    "end": 438
+                  },
+                  "fields": [
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 439,
+                        "end": 494
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "value",
+                          "span": {
+                            "file": 0,
+                            "start": 439,
+                            "end": 444
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 444,
+                          "end": 445
+                        },
+                        "value": 5
+                      }
+                    },
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 496,
+                        "end": 503
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "code",
+                          "span": {
+                            "file": 0,
+                            "start": 496,
+                            "end": 500
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 500,
+                          "end": 501
+                        },
+                        "value": 6
+                      }
+                    }
+                  ],
+                  "close_brace_span": {
+                    "file": 0,
+                    "start": 504,
+                    "end": 505
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 505,
+                    "end": 506
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 541,
+                  "end": 547
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "source",
+                    "span": {
+                      "file": 0,
+                      "start": 541,
+                      "end": 547
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 535,
+                  "end": 548
+                },
+                "kind": {
+                  "kind": "clone",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 535,
+                    "end": 540
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 540,
+                    "end": 541
+                  },
+                  "value": 8,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 547,
+                    "end": 548
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 559,
+                  "end": 565
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "copied",
+                    "span": {
+                      "file": 0,
+                      "start": 559,
+                      "end": 565
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 559,
+                  "end": 570
+                },
+                "kind": {
+                  "kind": "field-access",
+                  "base": 10,
+                  "dot_span": {
+                    "file": 0,
+                    "start": 565,
+                    "end": 566
+                  },
+                  "field": {
+                    "text": "code",
+                    "span": {
+                      "file": 0,
+                      "start": 566,
+                      "end": 570
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

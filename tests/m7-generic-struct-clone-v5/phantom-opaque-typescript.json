@@ -1,0 +1,1495 @@
+{
+  "schema_version": 5,
+  "files": [
+    {
+      "id": 0,
+      "path": "main.zry",
+      "imports": [],
+      "type_syntax": [
+        {
+          "span": {
+            "file": 0,
+            "start": 65,
+            "end": 66
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 65,
+                "end": 66
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 138,
+            "end": 141
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 138,
+                "end": 141
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 201,
+            "end": 202
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 201,
+                "end": 202
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 193,
+            "end": 203
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 193,
+                "end": 200
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 200,
+                "end": 203
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 200,
+                "end": 201
+              },
+              "arguments": [
+                2
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 202,
+                "end": 203
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 214,
+            "end": 215
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 214,
+                "end": 215
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 206,
+            "end": 216
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 206,
+                "end": 213
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 213,
+                "end": 216
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 213,
+                "end": 214
+              },
+              "arguments": [
+                4
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 215,
+                "end": 216
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 243,
+            "end": 244
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 243,
+                "end": 244
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 235,
+            "end": 245
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 235,
+                "end": 242
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 242,
+                "end": 245
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 242,
+                "end": 243
+              },
+              "arguments": [
+                6
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 244,
+                "end": 245
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 285,
+            "end": 286
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 285,
+                "end": 286
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 277,
+            "end": 287
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 277,
+                "end": 284
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 284,
+                "end": 287
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 284,
+                "end": 285
+              },
+              "arguments": [
+                8
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 286,
+                "end": 287
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 341,
+            "end": 344
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 341,
+                "end": 344
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 375,
+            "end": 381
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 375,
+              "end": 381
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 371,
+            "end": 382
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 371,
+                "end": 374
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 374,
+                "end": 382
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 374,
+                "end": 375
+              },
+              "arguments": [
+                11
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 381,
+                "end": 382
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 363,
+            "end": 383
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 363,
+                "end": 370
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 370,
+                "end": 383
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 370,
+                "end": 371
+              },
+              "arguments": [
+                12
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 382,
+                "end": 383
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 398,
+            "end": 404
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 398,
+              "end": 404
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 394,
+            "end": 405
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 394,
+                "end": 397
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 397,
+                "end": 405
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 397,
+                "end": 398
+              },
+              "arguments": [
+                14
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 404,
+                "end": 405
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 449,
+            "end": 455
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 449,
+              "end": 455
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 445,
+            "end": 456
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 445,
+                "end": 448
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 448,
+                "end": 456
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 448,
+                "end": 449
+              },
+              "arguments": [
+                16
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 455,
+                "end": 456
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 437,
+            "end": 457
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 437,
+                "end": 444
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 444,
+                "end": 457
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 444,
+                "end": 445
+              },
+              "arguments": [
+                17
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 456,
+                "end": 457
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 474,
+            "end": 480
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 474,
+              "end": 480
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 470,
+            "end": 481
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 470,
+                "end": 473
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 473,
+                "end": 481
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 473,
+                "end": 474
+              },
+              "arguments": [
+                19
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 480,
+                "end": 481
+              }
+            }
+          }
+        }
+      ],
+      "data_declarations": [
+        {
+          "span": {
+            "file": 0,
+            "start": 0,
+            "end": 69
+          },
+          "export_span": null,
+          "type_parameters": {
+            "span": {
+              "file": 0,
+              "start": 13,
+              "end": 35
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 13,
+              "end": 14
+            },
+            "parameters": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 14,
+                  "end": 34
+                },
+                "name": {
+                  "text": "T",
+                  "span": {
+                    "file": 0,
+                    "start": 14,
+                    "end": 15
+                  }
+                },
+                "extends_span": {
+                  "file": 0,
+                  "start": 16,
+                  "end": 23
+                },
+                "bound": {
+                  "text": "ZrynaValue",
+                  "span": {
+                    "file": 0,
+                    "start": 24,
+                    "end": 34
+                  }
+                }
+              }
+            ],
+            "comma_spans": [],
+            "greater_than_span": {
+              "file": 0,
+              "start": 34,
+              "end": 35
+            }
+          },
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 0,
+              "end": 9
+            },
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 10,
+                "end": 13
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 36,
+              "end": 43
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 44,
+              "end": 55
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 56,
+              "end": 57
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 68,
+              "end": 69
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 58,
+                  "end": 67
+                },
+                "name": {
+                  "text": "value",
+                  "span": {
+                    "file": 0,
+                    "start": 58,
+                    "end": 63
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 63,
+                  "end": 64
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 66,
+                  "end": 67
+                },
+                "type_syntax": 0
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 70,
+            "end": 144
+          },
+          "export_span": null,
+          "type_parameters": {
+            "span": {
+              "file": 0,
+              "start": 87,
+              "end": 109
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 87,
+              "end": 88
+            },
+            "parameters": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 88,
+                  "end": 108
+                },
+                "name": {
+                  "text": "T",
+                  "span": {
+                    "file": 0,
+                    "start": 88,
+                    "end": 89
+                  }
+                },
+                "extends_span": {
+                  "file": 0,
+                  "start": 90,
+                  "end": 97
+                },
+                "bound": {
+                  "text": "ZrynaValue",
+                  "span": {
+                    "file": 0,
+                    "start": 98,
+                    "end": 108
+                  }
+                }
+              }
+            ],
+            "comma_spans": [],
+            "greater_than_span": {
+              "file": 0,
+              "start": 108,
+              "end": 109
+            }
+          },
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 70,
+              "end": 79
+            },
+            "name": {
+              "text": "Phantom",
+              "span": {
+                "file": 0,
+                "start": 80,
+                "end": 87
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 110,
+              "end": 117
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 118,
+              "end": 129
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 130,
+              "end": 131
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 143,
+              "end": 144
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 132,
+                  "end": 142
+                },
+                "name": {
+                  "text": "code",
+                  "span": {
+                    "file": 0,
+                    "start": 132,
+                    "end": 136
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 136,
+                  "end": 137
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 141,
+                  "end": 142
+                },
+                "type_syntax": 1
+              }
+            ]
+          }
+        }
+      ],
+      "functions": [
+        {
+          "span": {
+            "file": 0,
+            "start": 145,
+            "end": 315
+          },
+          "export_span": null,
+          "function_span": {
+            "file": 0,
+            "start": 145,
+            "end": 153
+          },
+          "name": {
+            "text": "duplicate",
+            "span": {
+              "file": 0,
+              "start": 154,
+              "end": 163
+            }
+          },
+          "type_parameters": {
+            "span": {
+              "file": 0,
+              "start": 163,
+              "end": 185
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 163,
+              "end": 164
+            },
+            "parameters": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 164,
+                  "end": 184
+                },
+                "name": {
+                  "text": "T",
+                  "span": {
+                    "file": 0,
+                    "start": 164,
+                    "end": 165
+                  }
+                },
+                "extends_span": {
+                  "file": 0,
+                  "start": 166,
+                  "end": 173
+                },
+                "bound": {
+                  "text": "ZrynaValue",
+                  "span": {
+                    "file": 0,
+                    "start": 174,
+                    "end": 184
+                  }
+                }
+              }
+            ],
+            "comma_spans": [],
+            "greater_than_span": {
+              "file": 0,
+              "start": 184,
+              "end": 185
+            }
+          },
+          "parameters": [
+            {
+              "span": {
+                "file": 0,
+                "start": 186,
+                "end": 203
+              },
+              "name": {
+                "text": "input",
+                "span": {
+                  "file": 0,
+                  "start": 186,
+                  "end": 191
+                }
+              },
+              "type_syntax": 3
+            }
+          ],
+          "result_type": 5,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 217,
+              "end": 315
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 217,
+                  "end": 315
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 217,
+                  "end": 218
+                },
+                "statements": [
+                  0,
+                  1,
+                  2
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 314,
+                  "end": 315
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 221,
+                  "end": 261
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 221,
+                    "end": 226
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "copied",
+                    "span": {
+                      "file": 0,
+                      "start": 227,
+                      "end": 233
+                    }
+                  },
+                  "type_syntax": 7,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 246,
+                    "end": 247
+                  },
+                  "initializer": 1,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 260,
+                    "end": 261
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 264,
+                  "end": 296
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 264,
+                    "end": 269
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "again",
+                    "span": {
+                      "file": 0,
+                      "start": 270,
+                      "end": 275
+                    }
+                  },
+                  "type_syntax": 9,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 288,
+                    "end": 289
+                  },
+                  "initializer": 2,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 295,
+                    "end": 296
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 299,
+                  "end": 313
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 299,
+                    "end": 305
+                  },
+                  "value": 3,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 312,
+                    "end": 313
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 254,
+                  "end": 259
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "input",
+                    "span": {
+                      "file": 0,
+                      "start": 254,
+                      "end": 259
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 248,
+                  "end": 260
+                },
+                "kind": {
+                  "kind": "clone",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 248,
+                    "end": 253
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 253,
+                    "end": 254
+                  },
+                  "value": 0,
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 259,
+                    "end": 260
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 290,
+                  "end": 295
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "input",
+                    "span": {
+                      "file": 0,
+                      "start": 290,
+                      "end": 295
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 306,
+                  "end": 312
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "copied",
+                    "span": {
+                      "file": 0,
+                      "start": 306,
+                      "end": 312
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 316,
+            "end": 515
+          },
+          "export_span": {
+            "file": 0,
+            "start": 316,
+            "end": 322
+          },
+          "function_span": {
+            "file": 0,
+            "start": 323,
+            "end": 331
+          },
+          "name": {
+            "text": "entry",
+            "span": {
+              "file": 0,
+              "start": 332,
+              "end": 337
+            }
+          },
+          "type_parameters": null,
+          "parameters": [],
+          "result_type": 10,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 345,
+              "end": 515
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 345,
+                  "end": 515
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 345,
+                  "end": 346
+                },
+                "statements": [
+                  0,
+                  1,
+                  2
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 514,
+                  "end": 515
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 349,
+                  "end": 420
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 349,
+                    "end": 354
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "source",
+                    "span": {
+                      "file": 0,
+                      "start": 355,
+                      "end": 361
+                    }
+                  },
+                  "type_syntax": 13,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 384,
+                    "end": 385
+                  },
+                  "initializer": 1,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 419,
+                    "end": 420
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 423,
+                  "end": 491
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 423,
+                    "end": 428
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "copied",
+                    "span": {
+                      "file": 0,
+                      "start": 429,
+                      "end": 435
+                    }
+                  },
+                  "type_syntax": 18,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 458,
+                    "end": 459
+                  },
+                  "initializer": 3,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 490,
+                    "end": 491
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 494,
+                  "end": 513
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 494,
+                    "end": 500
+                  },
+                  "value": 5,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 512,
+                    "end": 513
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 415,
+                  "end": 416
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 386,
+                  "end": 419
+                },
+                "kind": {
+                  "kind": "struct-construction",
+                  "type_name": {
+                    "text": "Phantom",
+                    "span": {
+                      "file": 0,
+                      "start": 386,
+                      "end": 393
+                    }
+                  },
+                  "type_arguments": {
+                    "span": {
+                      "file": 0,
+                      "start": 393,
+                      "end": 406
+                    },
+                    "less_than_span": {
+                      "file": 0,
+                      "start": 393,
+                      "end": 394
+                    },
+                    "arguments": [
+                      15
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "file": 0,
+                      "start": 405,
+                      "end": 406
+                    }
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 406,
+                    "end": 407
+                  },
+                  "open_brace_span": {
+                    "file": 0,
+                    "start": 407,
+                    "end": 408
+                  },
+                  "fields": [
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 409,
+                        "end": 416
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "code",
+                          "span": {
+                            "file": 0,
+                            "start": 409,
+                            "end": 413
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 413,
+                          "end": 414
+                        },
+                        "value": 0
+                      }
+                    }
+                  ],
+                  "close_brace_span": {
+                    "file": 0,
+                    "start": 417,
+                    "end": 418
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 418,
+                    "end": 419
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 483,
+                  "end": 489
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "source",
+                    "span": {
+                      "file": 0,
+                      "start": 483,
+                      "end": 489
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 460,
+                  "end": 490
+                },
+                "kind": {
+                  "kind": "call",
+                  "callee": {
+                    "text": "duplicate",
+                    "span": {
+                      "file": 0,
+                      "start": 460,
+                      "end": 469
+                    }
+                  },
+                  "type_arguments": {
+                    "span": {
+                      "file": 0,
+                      "start": 469,
+                      "end": 482
+                    },
+                    "less_than_span": {
+                      "file": 0,
+                      "start": 469,
+                      "end": 470
+                    },
+                    "arguments": [
+                      20
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "file": 0,
+                      "start": 481,
+                      "end": 482
+                    }
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 482,
+                    "end": 483
+                  },
+                  "arguments": [
+                    2
+                  ],
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 489,
+                    "end": 490
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 501,
+                  "end": 507
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "source",
+                    "span": {
+                      "file": 0,
+                      "start": 501,
+                      "end": 507
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 501,
+                  "end": 512
+                },
+                "kind": {
+                  "kind": "field-access",
+                  "base": 4,
+                  "dot_span": {
+                    "file": 0,
+                    "start": 507,
+                    "end": 508
+                  },
+                  "field": {
+                    "text": "code",
+                    "span": {
+                      "file": 0,
+                      "start": 508,
+                      "end": 512
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

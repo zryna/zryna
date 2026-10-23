@@ -1,0 +1,113 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "local-observation",
+      "provider": "native",
+      "packet": "local-observation-native.json",
+      "packetSha256": "24c088803aaa02342a4ff2946950efc7886a69b1e77e205332742bc6a8d5d77b",
+      "packetBytes": 12203,
+      "exactSourceSha256": "e9c3fe48b3727e231773d58189930e390b282ac8a5b14d9a6486c63f7740ab66",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "local-observation",
+      "provider": "typescript",
+      "packet": "local-observation-typescript.json",
+      "packetSha256": "f451b7f9e5974662f02b371b5871b2996b939c1a4f5bc29477c0502f7771b7b1",
+      "packetBytes": 12203,
+      "exactSourceSha256": "e9c3fe48b3727e231773d58189930e390b282ac8a5b14d9a6486c63f7740ab66",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "same-source",
+      "provider": "native",
+      "packet": "same-source-native.json",
+      "packetSha256": "7f3d9f5582e4ae0eed6340d9c5ee33cc46a7071dfdbb2f1b472314165ca5b24c",
+      "packetBytes": 7883,
+      "exactSourceSha256": "d04df1fbfc26bf4fcb270263ccb7498c63e12f50990de93fd4db288dada8dfe1",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "same-source",
+      "provider": "typescript",
+      "packet": "same-source-typescript.json",
+      "packetSha256": "c77793b1854fb089a479f7f639edba11e8a25671553696ed1dff09d76f7cb1ef",
+      "packetBytes": 7883,
+      "exactSourceSha256": "d04df1fbfc26bf4fcb270263ccb7498c63e12f50990de93fd4db288dada8dfe1",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nested-temporaries",
+      "provider": "native",
+      "packet": "nested-temporaries-native.json",
+      "packetSha256": "685d49d2f0fd9da970284d45167bb07303678c6c9b03f07e2459cd54355f0ad8",
+      "packetBytes": 10591,
+      "exactSourceSha256": "0c1b2550e658940cb91bf128b735d40f46776ca7951b6bbb21d355f80c0584c6",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nested-temporaries",
+      "provider": "typescript",
+      "packet": "nested-temporaries-typescript.json",
+      "packetSha256": "6772b0cffd0bcc822dfc78b10059659c5290c50c34ccfc5e65434efa7f093e15",
+      "packetBytes": 10591,
+      "exactSourceSha256": "0c1b2550e658940cb91bf128b735d40f46776ca7951b6bbb21d355f80c0584c6",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "formal-observation",
+      "provider": "native",
+      "packet": "formal-observation-native.json",
+      "packetSha256": "4dcc9a8a50cfe3909b1f10f54657e68ffa65c311e4a1843516bc5a2759a62518",
+      "packetBytes": 16054,
+      "exactSourceSha256": "ad3cbf1de952e717d253e4534a140c83df24ce3cb83696525af18c155cd553cc",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "formal-observation",
+      "provider": "typescript",
+      "packet": "formal-observation-typescript.json",
+      "packetSha256": "63ad7bbadeea05e83c3d9093bd25d73572ad2cfcbee945b8da658efef894926b",
+      "packetBytes": 16054,
+      "exactSourceSha256": "ad3cbf1de952e717d253e4534a140c83df24ce3cb83696525af18c155cd553cc",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "moved-first",
+      "provider": "native",
+      "packet": "moved-first-native.json",
+      "packetSha256": "e8d97349027ed69a59f29017291261974b6b6380a8d2ac77e4cffbd6f43a4cf9",
+      "packetBytes": 12255,
+      "exactSourceSha256": "59ed3bc46a98d4c2276d6a6edb411a965bbb9a9d475e93601ce87f05a721a32f",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "moved-first",
+      "provider": "typescript",
+      "packet": "moved-first-typescript.json",
+      "packetSha256": "a057a7ef6105c1a77b47c478fe10ca964f4a83755407258a77951995aa59c50f",
+      "packetBytes": 12255,
+      "exactSourceSha256": "59ed3bc46a98d4c2276d6a6edb411a965bbb9a9d475e93601ce87f05a721a32f",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "mutated-first",
+      "provider": "native",
+      "packet": "mutated-first-native.json",
+      "packetSha256": "5631ed03c90cc153ab3949fd1cf85a11ac373ade63c7526c922a17eaf743cfb3",
+      "packetBytes": 17305,
+      "exactSourceSha256": "a8981ad406d945d2dbc8015636f5faac896305a458afde33132c70c35705da0d",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "mutated-first",
+      "provider": "typescript",
+      "packet": "mutated-first-typescript.json",
+      "packetSha256": "f916f992a620328cdd8f7f11c30eaa9c25a3e0f3b489e93a0c5ccfb2e8e9f99f",
+      "packetBytes": 17305,
+      "exactSourceSha256": "a8981ad406d945d2dbc8015636f5faac896305a458afde33132c70c35705da0d",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

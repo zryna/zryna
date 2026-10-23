@@ -1,0 +1,3 @@
+import { Payload as Declared } from "./z-leaf.zry";
+export interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }
+export interface Carrier<T extends ZrynaValue> extends ZrynaStruct { nested: Box<Declared>; marker: T; }

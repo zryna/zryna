@@ -1,0 +1,461 @@
+{
+  "status": "Actual current native worker and pinned TypeScript raw DTOs; source authentication and semantic proof require the Rust tests. No runtime or full #416 qualification claim.",
+  "records": [
+    {
+      "case": "construction",
+      "provider": "native",
+      "bytes": 4125,
+      "sha256": "59cf8879de8d9ba1d094ba6e2631ce72737d519e707b359f572cd8b4827ea603",
+      "sourceSha256": "b89c8922b2906e30cc47cabf273e5d2712beb818cb38dd598a20b84c21debf05",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "construction",
+      "provider": "typescript",
+      "bytes": 4125,
+      "sha256": "0dcc4e1bd6a304f8cc92009ef91be540f5fea97a67db7b67ef62efc3b563673c",
+      "sourceSha256": "b89c8922b2906e30cc47cabf273e5d2712beb818cb38dd598a20b84c21debf05",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "fault-declaration-order",
+      "provider": "native",
+      "bytes": 5335,
+      "sha256": "e99c6d4ed98fd0817eaeb860d4644351c975f5b7a5e8367ba9308daed0224ed7",
+      "sourceSha256": "e5cd1f565a256214bf006f7943cce355952ee3ac4e3f3c3e07186c97af3f8321",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "fault-declaration-order",
+      "provider": "typescript",
+      "bytes": 5335,
+      "sha256": "1893594f43b6e49a5d7af260b68ea5a57bb1d745b6b9e5463d447e84ea376bd3",
+      "sourceSha256": "e5cd1f565a256214bf006f7943cce355952ee3ac4e3f3c3e07186c97af3f8321",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "fault-reordered-spelling",
+      "provider": "native",
+      "bytes": 5335,
+      "sha256": "21a2b5bdf39d238bedb2a5966f2fce24b9d762b14bfd8a41005db936e60952d1",
+      "sourceSha256": "9c53c5b18fc7a8c09673d09fd5198de07eaa15408b7c3f2adaaf01f345b9cdb1",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "fault-reordered-spelling",
+      "provider": "typescript",
+      "bytes": 5335,
+      "sha256": "e2d79096fca74d424872f80220cc779a5baf04bfedc0ed9276adca568a5246c0",
+      "sourceSha256": "9c53c5b18fc7a8c09673d09fd5198de07eaa15408b7c3f2adaaf01f345b9cdb1",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "fixed-copy",
+      "provider": "native",
+      "bytes": 5076,
+      "sha256": "4f01ef800e6984cd6539c2648cb0593b791e680927ccbd5ee90ff5155a868846",
+      "sourceSha256": "a77d6094930ca89d8f5872ea6190f5f0877ff023620c9058beed7e02a9afd137",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "fixed-copy",
+      "provider": "typescript",
+      "bytes": 5076,
+      "sha256": "072821387451b316517d80b6993138f63e75016d318bca4a95e3a73a876ce3b8",
+      "sourceSha256": "a77d6094930ca89d8f5872ea6190f5f0877ff023620c9058beed7e02a9afd137",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "moved-copy",
+      "provider": "native",
+      "bytes": 6006,
+      "sha256": "017c587e4ef7058fdb06cba7e2da5aee8e8e6e120e371e9d9dc5a692913ba4c1",
+      "sourceSha256": "291e394613f1e741be5b403649153103b8e6a73393aca3695871c46cb49e6170",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "moved-copy",
+      "provider": "typescript",
+      "bytes": 6006,
+      "sha256": "1dfc97e2befbd89d046785647681b6fb2eafba2f68e078ef11409dbfbc6e9131",
+      "sourceSha256": "291e394613f1e741be5b403649153103b8e6a73393aca3695871c46cb49e6170",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "use-after-move",
+      "provider": "native",
+      "bytes": 6005,
+      "sha256": "0071b31934a2b3d4a706eb0d7d3c2f2852e11746a016820fcd1e0c8fc1e5eea9",
+      "sourceSha256": "f9571ac66aa87fea83e66e65b72d1923595db93c4550deda218238c4ed46a05b",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "use-after-move",
+      "provider": "typescript",
+      "bytes": 6005,
+      "sha256": "8cc5074042b3b1030d2931fdcda545b7578a0880ebb46b39ff9872823b32b46d",
+      "sourceSha256": "f9571ac66aa87fea83e66e65b72d1923595db93c4550deda218238c4ed46a05b",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "shared-copy",
+      "provider": "native",
+      "bytes": 6463,
+      "sha256": "dba21e8b12e4434d3b8fe0e5edf0274fd748ebc32060f1c5d3b5a32430e6f765",
+      "sourceSha256": "0253128b6eb646f8eba860b4808f628a0a2ed7b35c3e915094329f76893c6850",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "shared-copy",
+      "provider": "typescript",
+      "bytes": 6463,
+      "sha256": "a70474cf90b5409283e9be8b9bea93b043b526966eddcdda8a16d0397b0670d8",
+      "sourceSha256": "0253128b6eb646f8eba860b4808f628a0a2ed7b35c3e915094329f76893c6850",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "exclusive-copy",
+      "provider": "native",
+      "bytes": 6471,
+      "sha256": "445e8eb61a69773d39c422ac320f673830ed4b3b32d69a995835cae4ed77175d",
+      "sourceSha256": "6469865d07a0a541b6c5e8e1d3689c4085362a0a4df1e1eee6b55161fe33830c",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "exclusive-copy",
+      "provider": "typescript",
+      "bytes": 6471,
+      "sha256": "43aa65125ac2c799bb8613373c00cb77255e160518140930f5ae2df6fc116328",
+      "sourceSha256": "6469865d07a0a541b6c5e8e1d3689c4085362a0a4df1e1eee6b55161fe33830c",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "opaque-projection",
+      "provider": "native",
+      "bytes": 4552,
+      "sha256": "03d7e13cc68012bbd6f1a5d9f65c8a0b8c429d37eb3b42d1b5197c38545d4a68",
+      "sourceSha256": "f492b4626de9dddc4a22206c60a2fc5f3fbc4c0318717040dec963ddf7f04d7b",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "opaque-projection",
+      "provider": "typescript",
+      "bytes": 4552,
+      "sha256": "bfa451ce1c29af91cc97e693166d3761fd5dd3e4c339e0a86af70cacf9d4b83f",
+      "sourceSha256": "f492b4626de9dddc4a22206c60a2fc5f3fbc4c0318717040dec963ddf7f04d7b",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "opaque-identity",
+      "provider": "native",
+      "bytes": 4690,
+      "sha256": "ca40747802587b5a56621054c3687271c5d4357eceb910f6d555e7438b4c0552",
+      "sourceSha256": "4e7a4003037caf46b9f4e82c790b617f96c8b061989b1c2306e04a28421aca42",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "opaque-identity",
+      "provider": "typescript",
+      "bytes": 4690,
+      "sha256": "3abdd12800a75f2a7f1621de4ea64ae8e25c4870533fcbd3cee15172674698ad",
+      "sourceSha256": "4e7a4003037caf46b9f4e82c790b617f96c8b061989b1c2306e04a28421aca42",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "nested-unused",
+      "provider": "native",
+      "bytes": 3147,
+      "sha256": "42517aaeb7a3c7ae9e668397ed69fc75d02fd0aec47d201975149befaa5d93cb",
+      "sourceSha256": "29e64b3207fdcddab4b4f3e9b76a04f6e113702af2a5524a783213676eac024d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "nested-unused",
+      "provider": "typescript",
+      "bytes": 3147,
+      "sha256": "2556b469b2acbdf24d4e4fcd05852329d983f6d0e1793724930476e1bd3db65d",
+      "sourceSha256": "29e64b3207fdcddab4b4f3e9b76a04f6e113702af2a5524a783213676eac024d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    },
+    {
+      "case": "plain-enum",
+      "provider": "native",
+      "bytes": 2358,
+      "sha256": "dcad539afd629781b4d6756875dfe87b1f44eac5d071117e2b7b49a826cb2f62",
+      "sourceSha256": "81019d5f7c170a4123ad4c2d1861a89212f48463bcb929c8b39716400996d45d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      }
+    },
+    {
+      "case": "plain-enum",
+      "provider": "typescript",
+      "bytes": 2358,
+      "sha256": "d50c854643a5a26c33324497b38ef5c77998468886bc710cf5270b48ed7464e9",
+      "sourceSha256": "81019d5f7c170a4123ad4c2d1861a89212f48463bcb929c8b39716400996d45d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      }
+    }
+  ]
+}

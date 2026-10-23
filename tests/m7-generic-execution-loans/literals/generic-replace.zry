@@ -1,0 +1,2 @@
+function replace<T extends ZrynaValue>(loan: BorrowMut<T>, next: T): i32 { loan = next; return 7; }
+export function entry(): i32 { let root: String = "old"; { const loan: BorrowMut<String> = borrowMut(root); const replacement: String = clone(loan); const called: i32 = replace<String>(loan, replacement); loan = "new"; } const retained: String = root; return 43; }

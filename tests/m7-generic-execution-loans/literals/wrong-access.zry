@@ -1,0 +1,2 @@
+function read(loan: BorrowMut<i32>): i32 { return loan; }
+export function entry(): i32 { const root: i32 = 1; const loan: Borrow<i32> = borrow(root); return read(loan); }

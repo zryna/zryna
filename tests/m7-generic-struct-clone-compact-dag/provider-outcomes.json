@@ -1,0 +1,24 @@
+{
+  "status": "Syntax-only process observations; no semantic/backend authority",
+  "freshProcesses": 6,
+  "cases": [
+    {
+      "case": "compact-dag-n04",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "compact-dag-n12",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "compact-dag-n16",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    }
+  ]
+}

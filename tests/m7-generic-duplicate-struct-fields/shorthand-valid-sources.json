@@ -1,0 +1,6 @@
+[
+  {
+    "path": "main.zry",
+    "text": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function score(value: i32): i32 { const box: Box<i32> = Box<i32>({ value }); return box.value; }"
+  }
+]

@@ -1,0 +1,4 @@
+function forbidden<T extends ZrynaValue>(value: T): Weak<T> {
+  return downgrade(value);
+}
+export function entry(): i32 { return 7; }

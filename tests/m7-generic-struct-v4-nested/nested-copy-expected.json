@@ -1,0 +1,7 @@
+{
+  "decision": "admit",
+  "result": 7,
+  "success": [],
+  "allocationFailures": {},
+  "retryAfterEveryFailure": true
+}

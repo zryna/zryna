@@ -1,0 +1,23 @@
+export interface Box<T extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;value:T;}
+export interface Marker<T extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;code:bool;}
+export function transport<T extends ZrynaValue>(enabled:bool,repeat:bool,value:T):i32 {
+  const guard:String="guard";
+  const view:Borrow<String> =borrow(guard);
+  let left:Box<Option<Result<bool,i32>>> =Box.value<Option<Result<bool,i32>>>(Option.some<Result<bool,i32>>(Result.ok<bool,i32>(true)));
+  let right:Box<Option<Result<bool,i32>>> =Box.value<Option<Result<bool,i32>>>(Option.some<Result<bool,i32>>(Result.err<bool,i32>(7)));
+  let mark:Marker<String> =Marker.code<String>(false);
+  if(enabled) { mark=Marker.none<String>(); }
+  let go:bool=enabled;
+  let again:bool=repeat;
+  while(go) {
+    const step:String="step";
+    const saved:Box<Option<Result<bool,i32>>> =left;
+    left=right;
+    right=saved;
+    if(again) { again=false; } else { go=false; }
+  }
+  const a:i32=match(left,{"Box.none":()=>107,"Box.value":(option)=>match(option,{"Option.none":()=>101,"Option.some":(inner)=>match(inner,{"Result.ok":(tag)=>11,"Result.err":(code)=>code})})});
+  const b:i32=match(right,{"Box.none":()=>109,"Box.value":(option)=>match(option,{"Option.none":()=>103,"Option.some":(inner)=>match(inner,{"Result.ok":(tag)=>31,"Result.err":(code)=>code})})});
+  const c:i32=match(mark,{"Marker.none":()=>3,"Marker.code":(tag)=>5});
+  return a+b+c;
+}

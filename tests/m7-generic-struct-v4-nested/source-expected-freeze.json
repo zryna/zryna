@@ -1,0 +1,126 @@
+{
+  "status": "NEW literal source/independent expected fixture freeze BEFORE fresh provider execution; no lost historical packet or SHA recovered. No semantic or runtime qualification.",
+  "baseCommit": "1f23fd3c5a436dd7d6764e074354b8421cd95f45",
+  "sourceInventorySha256": "0da711d15f0d01e846778a669adfab84c53a8aa2ad51631b6f25355c3c68bae4",
+  "restoredExpectedSha256": "6f1bb2c23d9d8122f4e55e94dd8f64fbb00d20fd22f1bcb0900190b984622dd5",
+  "caseCount": 13,
+  "positiveCount": 8,
+  "negativeCount": 5,
+  "sourceRule": "Exact complete literals at main.zry, no appended newline/export derivative.",
+  "cases": [
+    {
+      "id": "nested-copy",
+      "source": "nested-copy.zry",
+      "sourceBytes": 207,
+      "sourceSha256": "33ced500af8fb26c42b74a1df1c8e7a89e3df36ff2fde82c875fca3af89bc4d7",
+      "expected": "nested-copy-expected.json",
+      "expectedSha256": "643fb3f3a6a3424d1bc3800838fe96cf6e53509c959ed1fa880d423dfc1fffdf"
+    },
+    {
+      "id": "nested-owned-call",
+      "source": "nested-owned-call.zry",
+      "sourceBytes": 365,
+      "sourceSha256": "1fdac12b67c6c6316f628f2ec6054c418ab6b22f2c72ea60c1fa2592eeb92193",
+      "expected": "nested-owned-call-expected.json",
+      "expectedSha256": "004de6f1bdbeb06927423605b9ddec873ab7e2a59566cd459a7a6dbdef6955b8"
+    },
+    {
+      "id": "option-box-root",
+      "source": "option-box-root.zry",
+      "sourceBytes": 269,
+      "sourceSha256": "129eb29af7998d1c34170ba7da7b3d19c14ac80221aecfbad27071409fed9401",
+      "expected": "option-box-root-expected.json",
+      "expectedSha256": "b471fc7a4400b3da04e086759a875b1374523169aa85cca5df5abfaaaf8ab47c"
+    },
+    {
+      "id": "box-option-root",
+      "source": "box-option-root.zry",
+      "sourceBytes": 299,
+      "sourceSha256": "a6b4743c75b6865b3a983d04bb693085fc0c9aa0408a3ccd4804ef8c46636252",
+      "expected": "box-option-root-expected.json",
+      "expectedSha256": "b471fc7a4400b3da04e086759a875b1374523169aa85cca5df5abfaaaf8ab47c"
+    },
+    {
+      "id": "plain-and-reversed-arguments",
+      "source": "plain-and-reversed-arguments.zry",
+      "sourceBytes": 495,
+      "sourceSha256": "86b253879690b541ad5354f789922841a4642c9a645e6dff5e1531070cd0f431",
+      "expected": "plain-and-reversed-arguments-expected.json",
+      "expectedSha256": "643fb3f3a6a3424d1bc3800838fe96cf6e53509c959ed1fa880d423dfc1fffdf"
+    },
+    {
+      "id": "phantom-remains-copy",
+      "source": "phantom-remains-copy.zry",
+      "sourceBytes": 363,
+      "sourceSha256": "8457d1fc8028cc61b40bffd406d8746768886c845ea1cb5194e65fb2a22ddfc8",
+      "expected": "phantom-remains-copy-expected.json",
+      "expectedSha256": "643fb3f3a6a3424d1bc3800838fe96cf6e53509c959ed1fa880d423dfc1fffdf"
+    },
+    {
+      "id": "fixed-member-remains-affine",
+      "source": "fixed-member-remains-affine.zry",
+      "sourceBytes": 296,
+      "sourceSha256": "054fe857bf33941387143ddf30c6997f1b15a0092924a38b3e902e32288bb194",
+      "expected": "fixed-member-remains-affine-expected.json",
+      "expectedSha256": "b471fc7a4400b3da04e086759a875b1374523169aa85cca5df5abfaaaf8ab47c"
+    },
+    {
+      "id": "nested-prefix-faults",
+      "source": "nested-prefix-faults.zry",
+      "sourceBytes": 395,
+      "sourceSha256": "a4fa835ff938b47ddcee884a32950cb351a527f909c52aff0330c43af4639466",
+      "expected": "nested-prefix-faults-expected.json",
+      "expectedSha256": "1e6db79a1847cd139b9e3edf882de81b17cb01f0e6e9726b8ac02f8988263056"
+    },
+    {
+      "id": "moved-whole-twice",
+      "source": "moved-whole-twice.zry",
+      "sourceBytes": 290,
+      "sourceSha256": "e8387d5d68ae0cbcd5a1bb779f21935db783802e8892820f89db201cf4c5b60c",
+      "expected": "moved-whole-twice-expected.json",
+      "expectedSha256": "5d43a6a3d39ad06073aa329ad1b66a1c1096dd1650c0ebffd6b0d43cbccd8f67"
+    },
+    {
+      "id": "loaned-whole-consumed",
+      "source": "loaned-whole-consumed.zry",
+      "sourceBytes": 304,
+      "sourceSha256": "b74b023ec38b46bea3f3bbce5ca1f37d281c7022ad1388843e1252a79088d28c",
+      "expected": "loaned-whole-consumed-expected.json",
+      "expectedSha256": "5d43a6a3d39ad06073aa329ad1b66a1c1096dd1650c0ebffd6b0d43cbccd8f67"
+    },
+    {
+      "id": "affine-field-projection",
+      "source": "affine-field-projection.zry",
+      "sourceBytes": 190,
+      "sourceSha256": "fdfc7171c676e1c7ace2f75f0c6accd65b666e517bf937147c186362e396e55f",
+      "expected": "affine-field-projection-expected.json",
+      "expectedSha256": "5d43a6a3d39ad06073aa329ad1b66a1c1096dd1650c0ebffd6b0d43cbccd8f67"
+    },
+    {
+      "id": "opaque-copy-assumption",
+      "source": "opaque-copy-assumption.zry",
+      "sourceBytes": 203,
+      "sourceSha256": "9830a816c749921b6c5d7637728dd1f003ca564e5ff56983c2331eab7b6d6ec8",
+      "expected": "opaque-copy-assumption-expected.json",
+      "expectedSha256": "5d43a6a3d39ad06073aa329ad1b66a1c1096dd1650c0ebffd6b0d43cbccd8f67"
+    },
+    {
+      "id": "exclusive-copy-observation",
+      "source": "exclusive-copy-observation.zry",
+      "sourceBytes": 273,
+      "sourceSha256": "158e5a4cf2e13eef195ada397821cf70cb9358b250b0a9b41a8c100c97a7a94e",
+      "expected": "exclusive-copy-observation-expected.json",
+      "expectedSha256": "5d43a6a3d39ad06073aa329ad1b66a1c1096dd1650c0ebffd6b0d43cbccd8f67"
+    }
+  ],
+  "independentAggregateOracles": [
+    {
+      "path": "key-oracle.json",
+      "sha256": "68b3ef72b8bd3c95102e5f0dd8f0d4a08cec0bb4d86db7fd7c9cef40f5a19472"
+    },
+    {
+      "path": "prefix-plan-oracle.json",
+      "sha256": "afeaa3fc6701e896c5c53b6aae006d7a843a698314a981eda1ce394df9080d8e"
+    }
+  ]
+}

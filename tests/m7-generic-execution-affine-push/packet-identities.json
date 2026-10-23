@@ -1,0 +1,23 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "vec-push-owned-prepare",
+      "provider": "native",
+      "packet": "vec-push-owned-prepare-native.json",
+      "packetSha256": "b6d42c766e3a8200dd81074238d10924d42560cf8d379fde3e0284c94ae4d1c1",
+      "packetBytes": 9197,
+      "exactSourceSha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-push-owned-prepare",
+      "provider": "typescript",
+      "packet": "vec-push-owned-prepare-typescript.json",
+      "packetSha256": "ce4fb966dc3569ecc1d14c4f042b70f279c784c19031c881e23a62823a3a8641",
+      "packetBytes": 9197,
+      "exactSourceSha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

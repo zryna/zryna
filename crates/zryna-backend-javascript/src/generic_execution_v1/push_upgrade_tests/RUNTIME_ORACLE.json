@@ -1,0 +1,183 @@
+{
+  "scope": "Frozen JS projection before JS Push/Upgrade emission or test execution. Original3 source oracles unchanged; observed injection is private, ordinary executes independently without ambient runtime.",
+  "source_expected_sha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+  "native_projection_sha256": "760338945f7103ed102fb4aca8d2aaf3aae9704cada1c313be433b376c60610f",
+  "cases": [
+    {
+      "case": "vec-push",
+      "observation": 18,
+      "acquisitions": [
+        "source Vec buffer",
+        "replacement Vec buffer"
+      ],
+      "releases": [
+        1,
+        2
+      ],
+      "reserve_calls": 1,
+      "count_events": [],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "releases": [],
+          "successful_acquisitions": 0,
+          "trap": "zryna.trap.allocation-v1"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "trap": "zryna.trap.allocation-v1"
+        },
+        {
+          "kind": "reserve-capacity-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "trap": "zryna.trap.capacity-v1"
+        }
+      ]
+    },
+    {
+      "case": "weak-live",
+      "observation": 31,
+      "acquisitions": [
+        "Shared control"
+      ],
+      "releases": [
+        1
+      ],
+      "reserve_calls": 0,
+      "count_events": [
+        "weakDowngrade",
+        "weakUpgrade:live",
+        "strongReleaseBegin:notLast",
+        "weakRelease",
+        "strongReleaseBegin:last",
+        "strongReleaseFinish:deallocated"
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "releases": [],
+          "successful_acquisitions": 0,
+          "count_events": [],
+          "trap": "zryna.trap.allocation-v1"
+        },
+        {
+          "kind": "weak-downgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "count_events": [
+            "weakDowngrade:failure",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:deallocated"
+          ],
+          "trap": "zryna.trap.refcount-v1"
+        },
+        {
+          "kind": "weak-upgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "count_events": [
+            "weakDowngrade",
+            "weakUpgrade:failure",
+            "weakRelease",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:deallocated"
+          ],
+          "trap": "zryna.trap.refcount-v1"
+        }
+      ]
+    },
+    {
+      "case": "weak-expired",
+      "observation": 37,
+      "acquisitions": [
+        "Shared control"
+      ],
+      "releases": [
+        1
+      ],
+      "reserve_calls": 0,
+      "count_events": [
+        "weakDowngrade",
+        "strongReleaseBegin:last",
+        "strongReleaseFinish:retained",
+        "weakUpgrade:expired",
+        "weakRelease"
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "releases": [],
+          "successful_acquisitions": 0,
+          "count_events": [],
+          "trap": "zryna.trap.allocation-v1"
+        },
+        {
+          "kind": "weak-downgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "count_events": [
+            "weakDowngrade:failure",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:deallocated"
+          ],
+          "trap": "zryna.trap.refcount-v1"
+        },
+        {
+          "kind": "weak-upgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "count_events": [
+            "weakDowngrade",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:retained",
+            "weakUpgrade:failure",
+            "weakRelease"
+          ],
+          "trap": "zryna.trap.refcount-v1"
+        }
+      ]
+    }
+  ],
+  "ordinary_quota_upper_bounds": [
+    {
+      "case": "vec-push",
+      "physical_attempts": 2,
+      "canonical_transitions_with_cleanup": 3
+    },
+    {
+      "case": "weak-live",
+      "physical_attempts": 1,
+      "canonical_transitions_with_cleanup": 7
+    },
+    {
+      "case": "weak-expired",
+      "physical_attempts": 1,
+      "canonical_transitions_with_cleanup": 7
+    }
+  ],
+  "limits": "No affine RHS/nested runtime, actual refcountMAX, loans, loops, arbitrary deep cleanup or full-profile receipt."
+}

@@ -1,0 +1,21 @@
+{
+  "normative": {
+    "source": "crates/zryna-ownership-runtime-abi/src/lib.rs",
+    "sha256": "64a2725d410041ff6dc29b7a1904c70eb0bb5e945b1066d11bf30838dd7d4e6c",
+    "line": 1581,
+    "rule": "reserve_capacity returns required when a geometric candidate exceeds the element or byte bound; invalid required returns None",
+    "existing_byte_boundary_control": "crates/zryna-ownership-runtime-abi/src/tests.rs::vec_reserve_uses_checked_byte_amplification_and_exact_old_state",
+    "ordinary_allocator_policy": "the private allocator returns Allocation(1) for a valid request above 67108864 bytes; Capacity(2) remains reserved for invalid capacity"
+  },
+  "cases": [
+    {"name":"initial-double-exceeds-element-limit","group":"element-fallback","layout":0,"stride":1,"alignment":1,"old":524289,"required":524290,"status":0,"capacity":524290},
+    {"name":"later-double-exceeds-element-limit","group":"element-fallback","layout":0,"stride":1,"alignment":1,"old":300000,"required":900000,"status":0,"capacity":900000},
+    {"name":"exact-byte-bound-reaches-allocation-policy","group":"byte-fallback","layout":1,"stride":4096,"alignment":8,"old":0,"required":524287,"status":1,"capacity":0},
+    {"name":"exact-geometric-element-limit","group":"controls","layout":0,"stride":1,"alignment":1,"old":524288,"required":524289,"status":0,"capacity":1048576},
+    {"name":"initial-geometric-growth","group":"controls","layout":0,"stride":1,"alignment":1,"old":0,"required":5,"status":0,"capacity":8},
+    {"name":"non-power-of-two-growth","group":"controls","layout":0,"stride":1,"alignment":1,"old":3,"required":4,"status":0,"capacity":6},
+    {"name":"no-growth-keeps-identity","group":"controls","layout":0,"stride":1,"alignment":1,"old":8,"required":7,"status":0,"capacity":8},
+    {"name":"first-extra-element-is-atomic-capacity","group":"controls","layout":0,"stride":1,"alignment":1,"old":8,"required":1048577,"status":2,"capacity":0},
+    {"name":"first-extra-byte-is-atomic-capacity","group":"controls","layout":1,"stride":4096,"alignment":8,"old":0,"required":524288,"status":2,"capacity":0}
+  ]
+}

@@ -7,6 +7,7 @@ import sys
 sys.dont_write_bytecode = True
 from capture_io import Directory, REPORT_LIMIT, SELECTED_LIMIT, namespace, parse_json, read, sha, write_json
 from capture_runtime import Resources, run
+from source_snapshot import read_snapshot, write_snapshot
 from capture_providers import capture, walk, copy_hash, tool_identity, TOOL_ROOTS, ROOTS, verify_inventory
 from fixed_tools import select
 from collect_ordinary_sanitizer_prefix import REPO, context, source, verify_materials
@@ -82,7 +83,7 @@ def collect(output):
             'maximumSelectedBytes': SELECTED_LIMIT, 'resourceBaseline': resources.baseline,
             'defaultCompilerPrefixPolicy': 'None', 'runtimeExecuted': False,
             'profileSourceSha256': sha(catalog_bytes)})
-        write_json(held, 'SOURCE_BEFORE.json', before)
+        write_snapshot(held, 'SOURCE_BEFORE.json', before)
         for name in ('observations', 'tools', 'providers'):
             os.mkdir(name, mode=0o700, dir_fd=held.fd)
     tool_materials = capture([s['canonicalPath'] for s in selected], output / 'tools', pins, TOOL_ROOTS)
@@ -119,7 +120,8 @@ def collect(output):
     again, again_tools = validate(report, output / 'observations', catalog)
     assert again == observations and again_tools == observed_tools
     with Directory(output) as held:
-        write_json(held, 'SOURCE_AFTER.json', after)
+        assert read_snapshot(held, 'SOURCE_BEFORE.json') == before
+        write_snapshot(held, 'SOURCE_AFTER.json', after)
         write_json(held, 'TRACE_PROVIDER_ALIASES.json', {'aliases': aliases,
             'sameCanonicalFullBytesBeforeAfter': True, 'scripts': 'UNRESOLVED_OPAQUE_DATA',
             'loaderSelectionProven': False, 'completeInputUse': False})

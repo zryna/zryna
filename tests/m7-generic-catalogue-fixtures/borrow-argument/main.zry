@@ -1,0 +1,4 @@
+function identity<T extends ZrynaValue>(value: T): T { return value; }
+function probe(loan: Borrow<i32>): i32 {
+identity<Borrow<i32>>(loan);
+return 0; }

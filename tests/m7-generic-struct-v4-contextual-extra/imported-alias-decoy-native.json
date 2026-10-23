@@ -1,0 +1,1734 @@
+{
+  "diagnostics": [],
+  "files": [
+    {
+      "data_declarations": [
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 189,
+              "file": 0,
+              "start": 188
+            },
+            "extends_span": {
+              "end": 158,
+              "file": 0,
+              "start": 151
+            },
+            "fields": [
+              {
+                "colon_span": {
+                  "end": 179,
+                  "file": 0,
+                  "start": 178
+                },
+                "name": {
+                  "span": {
+                    "end": 178,
+                    "file": 0,
+                    "start": 173
+                  },
+                  "text": "wrong"
+                },
+                "semicolon_span": {
+                  "end": 187,
+                  "file": 0,
+                  "start": 186
+                },
+                "span": {
+                  "end": 187,
+                  "file": 0,
+                  "start": 173
+                },
+                "type_syntax": 0
+              }
+            ],
+            "interface_span": {
+              "end": 141,
+              "file": 0,
+              "start": 132
+            },
+            "kind": "struct",
+            "marker_span": {
+              "end": 170,
+              "file": 0,
+              "start": 159
+            },
+            "name": {
+              "span": {
+                "end": 150,
+                "file": 0,
+                "start": 142
+              },
+              "text": "Declared"
+            },
+            "open_brace_span": {
+              "end": 172,
+              "file": 0,
+              "start": 171
+            }
+          },
+          "span": {
+            "end": 189,
+            "file": 0,
+            "start": 132
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 264,
+              "file": 0,
+              "start": 263
+            },
+            "extends_span": {
+              "end": 233,
+              "file": 0,
+              "start": 226
+            },
+            "fields": [
+              {
+                "colon_span": {
+                  "end": 254,
+                  "file": 0,
+                  "start": 253
+                },
+                "name": {
+                  "span": {
+                    "end": 253,
+                    "file": 0,
+                    "start": 248
+                  },
+                  "text": "wrong"
+                },
+                "semicolon_span": {
+                  "end": 262,
+                  "file": 0,
+                  "start": 261
+                },
+                "span": {
+                  "end": 262,
+                  "file": 0,
+                  "start": 248
+                },
+                "type_syntax": 1
+              }
+            ],
+            "interface_span": {
+              "end": 199,
+              "file": 0,
+              "start": 190
+            },
+            "kind": "struct",
+            "marker_span": {
+              "end": 245,
+              "file": 0,
+              "start": 234
+            },
+            "name": {
+              "span": {
+                "end": 203,
+                "file": 0,
+                "start": 200
+              },
+              "text": "Box"
+            },
+            "open_brace_span": {
+              "end": 247,
+              "file": 0,
+              "start": 246
+            }
+          },
+          "span": {
+            "end": 264,
+            "file": 0,
+            "start": 190
+          },
+          "type_parameters": {
+            "comma_spans": [],
+            "greater_than_span": {
+              "end": 225,
+              "file": 0,
+              "start": 224
+            },
+            "less_than_span": {
+              "end": 204,
+              "file": 0,
+              "start": 203
+            },
+            "parameters": [
+              {
+                "bound": {
+                  "span": {
+                    "end": 224,
+                    "file": 0,
+                    "start": 214
+                  },
+                  "text": "ZrynaValue"
+                },
+                "extends_span": {
+                  "end": 213,
+                  "file": 0,
+                  "start": 206
+                },
+                "name": {
+                  "span": {
+                    "end": 205,
+                    "file": 0,
+                    "start": 204
+                  },
+                  "text": "T"
+                },
+                "span": {
+                  "end": 224,
+                  "file": 0,
+                  "start": 204
+                }
+              }
+            ],
+            "span": {
+              "end": 225,
+              "file": 0,
+              "start": 203
+            }
+          }
+        }
+      ],
+      "functions": [
+        {
+          "body": {
+            "blocks": [
+              {
+                "close_brace_span": {
+                  "end": 554,
+                  "file": 0,
+                  "start": 553
+                },
+                "open_brace_span": {
+                  "end": 295,
+                  "file": 0,
+                  "start": 294
+                },
+                "span": {
+                  "end": 554,
+                  "file": 0,
+                  "start": 294
+                },
+                "statements": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ],
+            "expressions": [
+              {
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                },
+                "span": {
+                  "end": 416,
+                  "file": 0,
+                  "start": 415
+                }
+              },
+              {
+                "kind": {
+                  "close_brace_span": {
+                    "end": 418,
+                    "file": 0,
+                    "start": 417
+                  },
+                  "close_paren_span": {
+                    "end": 419,
+                    "file": 0,
+                    "start": 418
+                  },
+                  "fields": [
+                    {
+                      "kind": {
+                        "colon_span": {
+                          "end": 414,
+                          "file": 0,
+                          "start": 413
+                        },
+                        "kind": "explicit",
+                        "name": {
+                          "span": {
+                            "end": 413,
+                            "file": 0,
+                            "start": 408
+                          },
+                          "text": "value"
+                        },
+                        "value": 0
+                      },
+                      "span": {
+                        "end": 416,
+                        "file": 0,
+                        "start": 408
+                      }
+                    }
+                  ],
+                  "kind": "struct-construction",
+                  "open_brace_span": {
+                    "end": 407,
+                    "file": 0,
+                    "start": 406
+                  },
+                  "open_paren_span": {
+                    "end": 406,
+                    "file": 0,
+                    "start": 405
+                  },
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 405,
+                      "file": 0,
+                      "start": 396
+                    },
+                    "text": "LeafValue"
+                  }
+                },
+                "span": {
+                  "end": 419,
+                  "file": 0,
+                  "start": 396
+                }
+              },
+              {
+                "kind": {
+                  "close_brace_span": {
+                    "end": 421,
+                    "file": 0,
+                    "start": 420
+                  },
+                  "close_paren_span": {
+                    "end": 422,
+                    "file": 0,
+                    "start": 421
+                  },
+                  "fields": [
+                    {
+                      "kind": {
+                        "colon_span": {
+                          "end": 395,
+                          "file": 0,
+                          "start": 394
+                        },
+                        "kind": "explicit",
+                        "name": {
+                          "span": {
+                            "end": 394,
+                            "file": 0,
+                            "start": 389
+                          },
+                          "text": "value"
+                        },
+                        "value": 1
+                      },
+                      "span": {
+                        "end": 419,
+                        "file": 0,
+                        "start": 389
+                      }
+                    }
+                  ],
+                  "kind": "struct-construction",
+                  "open_brace_span": {
+                    "end": 388,
+                    "file": 0,
+                    "start": 387
+                  },
+                  "open_paren_span": {
+                    "end": 387,
+                    "file": 0,
+                    "start": 386
+                  },
+                  "type_arguments": {
+                    "arguments": [
+                      6
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "end": 386,
+                      "file": 0,
+                      "start": 385
+                    },
+                    "less_than_span": {
+                      "end": 376,
+                      "file": 0,
+                      "start": 375
+                    },
+                    "span": {
+                      "end": 386,
+                      "file": 0,
+                      "start": 375
+                    }
+                  },
+                  "type_name": {
+                    "span": {
+                      "end": 375,
+                      "file": 0,
+                      "start": 364
+                    },
+                    "text": "ImportedBox"
+                  }
+                },
+                "span": {
+                  "end": 422,
+                  "file": 0,
+                  "start": 364
+                }
+              },
+              {
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                },
+                "span": {
+                  "end": 433,
+                  "file": 0,
+                  "start": 432
+                }
+              },
+              {
+                "kind": {
+                  "close_brace_span": {
+                    "end": 435,
+                    "file": 0,
+                    "start": 434
+                  },
+                  "close_paren_span": {
+                    "end": 436,
+                    "file": 0,
+                    "start": 435
+                  },
+                  "fields": [
+                    {
+                      "kind": {
+                        "colon_span": {
+                          "end": 363,
+                          "file": 0,
+                          "start": 362
+                        },
+                        "kind": "explicit",
+                        "name": {
+                          "span": {
+                            "end": 362,
+                            "file": 0,
+                            "start": 356
+                          },
+                          "text": "nested"
+                        },
+                        "value": 2
+                      },
+                      "span": {
+                        "end": 422,
+                        "file": 0,
+                        "start": 356
+                      }
+                    },
+                    {
+                      "kind": {
+                        "colon_span": {
+                          "end": 431,
+                          "file": 0,
+                          "start": 430
+                        },
+                        "kind": "explicit",
+                        "name": {
+                          "span": {
+                            "end": 430,
+                            "file": 0,
+                            "start": 424
+                          },
+                          "text": "marker"
+                        },
+                        "value": 3
+                      },
+                      "span": {
+                        "end": 433,
+                        "file": 0,
+                        "start": 424
+                      }
+                    }
+                  ],
+                  "kind": "struct-construction",
+                  "open_brace_span": {
+                    "end": 355,
+                    "file": 0,
+                    "start": 354
+                  },
+                  "open_paren_span": {
+                    "end": 354,
+                    "file": 0,
+                    "start": 353
+                  },
+                  "type_arguments": {
+                    "arguments": [
+                      5
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "end": 353,
+                      "file": 0,
+                      "start": 352
+                    },
+                    "less_than_span": {
+                      "end": 349,
+                      "file": 0,
+                      "start": 348
+                    },
+                    "span": {
+                      "end": 353,
+                      "file": 0,
+                      "start": 348
+                    }
+                  },
+                  "type_name": {
+                    "span": {
+                      "end": 348,
+                      "file": 0,
+                      "start": 333
+                    },
+                    "text": "ImportedCarrier"
+                  }
+                },
+                "span": {
+                  "end": 436,
+                  "file": 0,
+                  "start": 333
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 483,
+                      "file": 0,
+                      "start": 479
+                    },
+                    "text": "root"
+                  }
+                },
+                "span": {
+                  "end": 483,
+                  "file": 0,
+                  "start": 479
+                }
+              },
+              {
+                "kind": {
+                  "base": 5,
+                  "dot_span": {
+                    "end": 484,
+                    "file": 0,
+                    "start": 483
+                  },
+                  "field": {
+                    "span": {
+                      "end": 490,
+                      "file": 0,
+                      "start": 484
+                    },
+                    "text": "nested"
+                  },
+                  "kind": "field-access"
+                },
+                "span": {
+                  "end": 490,
+                  "file": 0,
+                  "start": 479
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 524,
+                      "file": 0,
+                      "start": 518
+                    },
+                    "text": "viewed"
+                  }
+                },
+                "span": {
+                  "end": 524,
+                  "file": 0,
+                  "start": 518
+                }
+              },
+              {
+                "kind": {
+                  "base": 7,
+                  "dot_span": {
+                    "end": 525,
+                    "file": 0,
+                    "start": 524
+                  },
+                  "field": {
+                    "span": {
+                      "end": 530,
+                      "file": 0,
+                      "start": 525
+                    },
+                    "text": "value"
+                  },
+                  "kind": "field-access"
+                },
+                "span": {
+                  "end": 530,
+                  "file": 0,
+                  "start": 518
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 545,
+                      "file": 0,
+                      "start": 541
+                    },
+                    "text": "leaf"
+                  }
+                },
+                "span": {
+                  "end": 545,
+                  "file": 0,
+                  "start": 541
+                }
+              },
+              {
+                "kind": {
+                  "base": 9,
+                  "dot_span": {
+                    "end": 546,
+                    "file": 0,
+                    "start": 545
+                  },
+                  "field": {
+                    "span": {
+                      "end": 551,
+                      "file": 0,
+                      "start": 546
+                    },
+                    "text": "value"
+                  },
+                  "kind": "field-access"
+                },
+                "span": {
+                  "end": 551,
+                  "file": 0,
+                  "start": 541
+                }
+              }
+            ],
+            "root_block": 0,
+            "span": {
+              "end": 554,
+              "file": 0,
+              "start": 294
+            },
+            "statements": [
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 332,
+                    "file": 0,
+                    "start": 331
+                  },
+                  "initializer": 4,
+                  "keyword_span": {
+                    "end": 303,
+                    "file": 0,
+                    "start": 298
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 308,
+                      "file": 0,
+                      "start": 304
+                    },
+                    "text": "root"
+                  },
+                  "semicolon_span": {
+                    "end": 437,
+                    "file": 0,
+                    "start": 436
+                  },
+                  "type_syntax": 4
+                },
+                "span": {
+                  "end": 437,
+                  "file": 0,
+                  "start": 298
+                }
+              },
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 478,
+                    "file": 0,
+                    "start": 477
+                  },
+                  "initializer": 6,
+                  "keyword_span": {
+                    "end": 445,
+                    "file": 0,
+                    "start": 440
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 452,
+                      "file": 0,
+                      "start": 446
+                    },
+                    "text": "viewed"
+                  },
+                  "semicolon_span": {
+                    "end": 491,
+                    "file": 0,
+                    "start": 490
+                  },
+                  "type_syntax": 8
+                },
+                "span": {
+                  "end": 491,
+                  "file": 0,
+                  "start": 440
+                }
+              },
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 517,
+                    "file": 0,
+                    "start": 516
+                  },
+                  "initializer": 8,
+                  "keyword_span": {
+                    "end": 499,
+                    "file": 0,
+                    "start": 494
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 504,
+                      "file": 0,
+                      "start": 500
+                    },
+                    "text": "leaf"
+                  },
+                  "semicolon_span": {
+                    "end": 531,
+                    "file": 0,
+                    "start": 530
+                  },
+                  "type_syntax": 9
+                },
+                "span": {
+                  "end": 531,
+                  "file": 0,
+                  "start": 494
+                }
+              },
+              {
+                "kind": {
+                  "keyword_span": {
+                    "end": 540,
+                    "file": 0,
+                    "start": 534
+                  },
+                  "kind": "return",
+                  "semicolon_span": {
+                    "end": 552,
+                    "file": 0,
+                    "start": 551
+                  },
+                  "value": 10
+                },
+                "span": {
+                  "end": 552,
+                  "file": 0,
+                  "start": 534
+                }
+              }
+            ]
+          },
+          "export_span": {
+            "end": 271,
+            "file": 0,
+            "start": 265
+          },
+          "function_span": {
+            "end": 280,
+            "file": 0,
+            "start": 272
+          },
+          "name": {
+            "span": {
+              "end": 286,
+              "file": 0,
+              "start": 281
+            },
+            "text": "entry"
+          },
+          "parameters": [],
+          "result_type": 2,
+          "span": {
+            "end": 554,
+            "file": 0,
+            "start": 265
+          },
+          "type_parameters": null
+        }
+      ],
+      "id": 0,
+      "imports": [
+        {
+          "bindings": [
+            {
+              "as_span": {
+                "end": 19,
+                "file": 0,
+                "start": 17
+              },
+              "imported": {
+                "span": {
+                  "end": 16,
+                  "file": 0,
+                  "start": 9
+                },
+                "text": "Carrier"
+              },
+              "local": {
+                "span": {
+                  "end": 35,
+                  "file": 0,
+                  "start": 20
+                },
+                "text": "ImportedCarrier"
+              },
+              "span": {
+                "end": 35,
+                "file": 0,
+                "start": 9
+              }
+            },
+            {
+              "as_span": {
+                "end": 43,
+                "file": 0,
+                "start": 41
+              },
+              "imported": {
+                "span": {
+                  "end": 40,
+                  "file": 0,
+                  "start": 37
+                },
+                "text": "Box"
+              },
+              "local": {
+                "span": {
+                  "end": 55,
+                  "file": 0,
+                  "start": 44
+                },
+                "text": "ImportedBox"
+              },
+              "span": {
+                "end": 55,
+                "file": 0,
+                "start": 37
+              }
+            }
+          ],
+          "from_span": {
+            "end": 62,
+            "file": 0,
+            "start": 58
+          },
+          "import_span": {
+            "end": 6,
+            "file": 0,
+            "start": 0
+          },
+          "semicolon_span": {
+            "end": 78,
+            "file": 0,
+            "start": 77
+          },
+          "span": {
+            "end": 78,
+            "file": 0,
+            "start": 0
+          },
+          "specifier": {
+            "text": "./values.zry",
+            "token_span": {
+              "end": 77,
+              "file": 0,
+              "start": 63
+            },
+            "value_span": {
+              "end": 76,
+              "file": 0,
+              "start": 64
+            }
+          }
+        },
+        {
+          "bindings": [
+            {
+              "as_span": {
+                "end": 98,
+                "file": 0,
+                "start": 96
+              },
+              "imported": {
+                "span": {
+                  "end": 95,
+                  "file": 0,
+                  "start": 88
+                },
+                "text": "Payload"
+              },
+              "local": {
+                "span": {
+                  "end": 108,
+                  "file": 0,
+                  "start": 99
+                },
+                "text": "LeafValue"
+              },
+              "span": {
+                "end": 108,
+                "file": 0,
+                "start": 88
+              }
+            }
+          ],
+          "from_span": {
+            "end": 115,
+            "file": 0,
+            "start": 111
+          },
+          "import_span": {
+            "end": 85,
+            "file": 0,
+            "start": 79
+          },
+          "semicolon_span": {
+            "end": 131,
+            "file": 0,
+            "start": 130
+          },
+          "span": {
+            "end": 131,
+            "file": 0,
+            "start": 79
+          },
+          "specifier": {
+            "text": "./z-leaf.zry",
+            "token_span": {
+              "end": 130,
+              "file": 0,
+              "start": 116
+            },
+            "value_span": {
+              "end": 129,
+              "file": 0,
+              "start": 117
+            }
+          }
+        }
+      ],
+      "path": "main.zry",
+      "type_syntax": [
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 186,
+              "file": 0,
+              "start": 180
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 186,
+            "file": 0,
+            "start": 180
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 261,
+              "file": 0,
+              "start": 255
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 261,
+            "file": 0,
+            "start": 255
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 293,
+                "file": 0,
+                "start": 290
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 293,
+            "file": 0,
+            "start": 290
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 329,
+                "file": 0,
+                "start": 326
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 329,
+            "file": 0,
+            "start": 326
+          }
+        },
+        {
+          "kind": {
+            "kind": "application",
+            "name": {
+              "span": {
+                "end": 325,
+                "file": 0,
+                "start": 310
+              },
+              "text": "ImportedCarrier"
+            },
+            "type_arguments": {
+              "arguments": [
+                3
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "end": 330,
+                "file": 0,
+                "start": 329
+              },
+              "less_than_span": {
+                "end": 326,
+                "file": 0,
+                "start": 325
+              },
+              "span": {
+                "end": 330,
+                "file": 0,
+                "start": 325
+              }
+            }
+          },
+          "span": {
+            "end": 330,
+            "file": 0,
+            "start": 310
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 352,
+                "file": 0,
+                "start": 349
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 352,
+            "file": 0,
+            "start": 349
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 385,
+                "file": 0,
+                "start": 376
+              },
+              "text": "LeafValue"
+            }
+          },
+          "span": {
+            "end": 385,
+            "file": 0,
+            "start": 376
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 475,
+                "file": 0,
+                "start": 466
+              },
+              "text": "LeafValue"
+            }
+          },
+          "span": {
+            "end": 475,
+            "file": 0,
+            "start": 466
+          }
+        },
+        {
+          "kind": {
+            "kind": "application",
+            "name": {
+              "span": {
+                "end": 465,
+                "file": 0,
+                "start": 454
+              },
+              "text": "ImportedBox"
+            },
+            "type_arguments": {
+              "arguments": [
+                7
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "end": 476,
+                "file": 0,
+                "start": 475
+              },
+              "less_than_span": {
+                "end": 466,
+                "file": 0,
+                "start": 465
+              },
+              "span": {
+                "end": 476,
+                "file": 0,
+                "start": 465
+              }
+            }
+          },
+          "span": {
+            "end": 476,
+            "file": 0,
+            "start": 454
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 515,
+                "file": 0,
+                "start": 506
+              },
+              "text": "LeafValue"
+            }
+          },
+          "span": {
+            "end": 515,
+            "file": 0,
+            "start": 506
+          }
+        }
+      ]
+    },
+    {
+      "data_declarations": [
+        {
+          "export_span": {
+            "end": 58,
+            "file": 1,
+            "start": 52
+          },
+          "kind": {
+            "close_brace_span": {
+              "end": 128,
+              "file": 1,
+              "start": 127
+            },
+            "extends_span": {
+              "end": 102,
+              "file": 1,
+              "start": 95
+            },
+            "fields": [
+              {
+                "colon_span": {
+                  "end": 123,
+                  "file": 1,
+                  "start": 122
+                },
+                "name": {
+                  "span": {
+                    "end": 122,
+                    "file": 1,
+                    "start": 117
+                  },
+                  "text": "value"
+                },
+                "semicolon_span": {
+                  "end": 126,
+                  "file": 1,
+                  "start": 125
+                },
+                "span": {
+                  "end": 126,
+                  "file": 1,
+                  "start": 117
+                },
+                "type_syntax": 0
+              }
+            ],
+            "interface_span": {
+              "end": 68,
+              "file": 1,
+              "start": 59
+            },
+            "kind": "struct",
+            "marker_span": {
+              "end": 114,
+              "file": 1,
+              "start": 103
+            },
+            "name": {
+              "span": {
+                "end": 72,
+                "file": 1,
+                "start": 69
+              },
+              "text": "Box"
+            },
+            "open_brace_span": {
+              "end": 116,
+              "file": 1,
+              "start": 115
+            }
+          },
+          "span": {
+            "end": 128,
+            "file": 1,
+            "start": 52
+          },
+          "type_parameters": {
+            "comma_spans": [],
+            "greater_than_span": {
+              "end": 94,
+              "file": 1,
+              "start": 93
+            },
+            "less_than_span": {
+              "end": 73,
+              "file": 1,
+              "start": 72
+            },
+            "parameters": [
+              {
+                "bound": {
+                  "span": {
+                    "end": 93,
+                    "file": 1,
+                    "start": 83
+                  },
+                  "text": "ZrynaValue"
+                },
+                "extends_span": {
+                  "end": 82,
+                  "file": 1,
+                  "start": 75
+                },
+                "name": {
+                  "span": {
+                    "end": 74,
+                    "file": 1,
+                    "start": 73
+                  },
+                  "text": "T"
+                },
+                "span": {
+                  "end": 93,
+                  "file": 1,
+                  "start": 73
+                }
+              }
+            ],
+            "span": {
+              "end": 94,
+              "file": 1,
+              "start": 72
+            }
+          }
+        },
+        {
+          "export_span": {
+            "end": 135,
+            "file": 1,
+            "start": 129
+          },
+          "kind": {
+            "close_brace_span": {
+              "end": 233,
+              "file": 1,
+              "start": 232
+            },
+            "extends_span": {
+              "end": 183,
+              "file": 1,
+              "start": 176
+            },
+            "fields": [
+              {
+                "colon_span": {
+                  "end": 205,
+                  "file": 1,
+                  "start": 204
+                },
+                "name": {
+                  "span": {
+                    "end": 204,
+                    "file": 1,
+                    "start": 198
+                  },
+                  "text": "nested"
+                },
+                "semicolon_span": {
+                  "end": 220,
+                  "file": 1,
+                  "start": 219
+                },
+                "span": {
+                  "end": 220,
+                  "file": 1,
+                  "start": 198
+                },
+                "type_syntax": 2
+              },
+              {
+                "colon_span": {
+                  "end": 228,
+                  "file": 1,
+                  "start": 227
+                },
+                "name": {
+                  "span": {
+                    "end": 227,
+                    "file": 1,
+                    "start": 221
+                  },
+                  "text": "marker"
+                },
+                "semicolon_span": {
+                  "end": 231,
+                  "file": 1,
+                  "start": 230
+                },
+                "span": {
+                  "end": 231,
+                  "file": 1,
+                  "start": 221
+                },
+                "type_syntax": 3
+              }
+            ],
+            "interface_span": {
+              "end": 145,
+              "file": 1,
+              "start": 136
+            },
+            "kind": "struct",
+            "marker_span": {
+              "end": 195,
+              "file": 1,
+              "start": 184
+            },
+            "name": {
+              "span": {
+                "end": 153,
+                "file": 1,
+                "start": 146
+              },
+              "text": "Carrier"
+            },
+            "open_brace_span": {
+              "end": 197,
+              "file": 1,
+              "start": 196
+            }
+          },
+          "span": {
+            "end": 233,
+            "file": 1,
+            "start": 129
+          },
+          "type_parameters": {
+            "comma_spans": [],
+            "greater_than_span": {
+              "end": 175,
+              "file": 1,
+              "start": 174
+            },
+            "less_than_span": {
+              "end": 154,
+              "file": 1,
+              "start": 153
+            },
+            "parameters": [
+              {
+                "bound": {
+                  "span": {
+                    "end": 174,
+                    "file": 1,
+                    "start": 164
+                  },
+                  "text": "ZrynaValue"
+                },
+                "extends_span": {
+                  "end": 163,
+                  "file": 1,
+                  "start": 156
+                },
+                "name": {
+                  "span": {
+                    "end": 155,
+                    "file": 1,
+                    "start": 154
+                  },
+                  "text": "T"
+                },
+                "span": {
+                  "end": 174,
+                  "file": 1,
+                  "start": 154
+                }
+              }
+            ],
+            "span": {
+              "end": 175,
+              "file": 1,
+              "start": 153
+            }
+          }
+        }
+      ],
+      "functions": [],
+      "id": 1,
+      "imports": [
+        {
+          "bindings": [
+            {
+              "as_span": {
+                "end": 19,
+                "file": 1,
+                "start": 17
+              },
+              "imported": {
+                "span": {
+                  "end": 16,
+                  "file": 1,
+                  "start": 9
+                },
+                "text": "Payload"
+              },
+              "local": {
+                "span": {
+                  "end": 28,
+                  "file": 1,
+                  "start": 20
+                },
+                "text": "Declared"
+              },
+              "span": {
+                "end": 28,
+                "file": 1,
+                "start": 9
+              }
+            }
+          ],
+          "from_span": {
+            "end": 35,
+            "file": 1,
+            "start": 31
+          },
+          "import_span": {
+            "end": 6,
+            "file": 1,
+            "start": 0
+          },
+          "semicolon_span": {
+            "end": 51,
+            "file": 1,
+            "start": 50
+          },
+          "span": {
+            "end": 51,
+            "file": 1,
+            "start": 0
+          },
+          "specifier": {
+            "text": "./z-leaf.zry",
+            "token_span": {
+              "end": 50,
+              "file": 1,
+              "start": 36
+            },
+            "value_span": {
+              "end": 49,
+              "file": 1,
+              "start": 37
+            }
+          }
+        }
+      ],
+      "path": "values.zry",
+      "type_syntax": [
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 125,
+                "file": 1,
+                "start": 124
+              },
+              "text": "T"
+            }
+          },
+          "span": {
+            "end": 125,
+            "file": 1,
+            "start": 124
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 218,
+                "file": 1,
+                "start": 210
+              },
+              "text": "Declared"
+            }
+          },
+          "span": {
+            "end": 218,
+            "file": 1,
+            "start": 210
+          }
+        },
+        {
+          "kind": {
+            "kind": "application",
+            "name": {
+              "span": {
+                "end": 209,
+                "file": 1,
+                "start": 206
+              },
+              "text": "Box"
+            },
+            "type_arguments": {
+              "arguments": [
+                1
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "end": 219,
+                "file": 1,
+                "start": 218
+              },
+              "less_than_span": {
+                "end": 210,
+                "file": 1,
+                "start": 209
+              },
+              "span": {
+                "end": 219,
+                "file": 1,
+                "start": 209
+              }
+            }
+          },
+          "span": {
+            "end": 219,
+            "file": 1,
+            "start": 206
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 230,
+                "file": 1,
+                "start": 229
+              },
+              "text": "T"
+            }
+          },
+          "span": {
+            "end": 230,
+            "file": 1,
+            "start": 229
+          }
+        }
+      ]
+    },
+    {
+      "data_declarations": [
+        {
+          "export_span": {
+            "end": 6,
+            "file": 2,
+            "start": 0
+          },
+          "kind": {
+            "close_brace_span": {
+              "end": 60,
+              "file": 2,
+              "start": 59
+            },
+            "extends_span": {
+              "end": 32,
+              "file": 2,
+              "start": 25
+            },
+            "fields": [
+              {
+                "colon_span": {
+                  "end": 53,
+                  "file": 2,
+                  "start": 52
+                },
+                "name": {
+                  "span": {
+                    "end": 52,
+                    "file": 2,
+                    "start": 47
+                  },
+                  "text": "value"
+                },
+                "semicolon_span": {
+                  "end": 58,
+                  "file": 2,
+                  "start": 57
+                },
+                "span": {
+                  "end": 58,
+                  "file": 2,
+                  "start": 47
+                },
+                "type_syntax": 0
+              }
+            ],
+            "interface_span": {
+              "end": 16,
+              "file": 2,
+              "start": 7
+            },
+            "kind": "struct",
+            "marker_span": {
+              "end": 44,
+              "file": 2,
+              "start": 33
+            },
+            "name": {
+              "span": {
+                "end": 24,
+                "file": 2,
+                "start": 17
+              },
+              "text": "Payload"
+            },
+            "open_brace_span": {
+              "end": 46,
+              "file": 2,
+              "start": 45
+            }
+          },
+          "span": {
+            "end": 60,
+            "file": 2,
+            "start": 0
+          },
+          "type_parameters": null
+        }
+      ],
+      "functions": [],
+      "id": 2,
+      "imports": [],
+      "path": "z-leaf.zry",
+      "type_syntax": [
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 57,
+                "file": 2,
+                "start": 54
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 57,
+            "file": 2,
+            "start": 54
+          }
+        }
+      ]
+    }
+  ],
+  "schema_version": 5
+}

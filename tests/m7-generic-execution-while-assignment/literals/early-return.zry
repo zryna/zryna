@@ -1,0 +1,11 @@
+export function entry(flag: bool): i32 {
+  const outer: String = "outer";
+  let go: bool = true;
+  while (go) {
+    const local: String = "early";
+    if (flag) { return 11; }
+    go = false;
+  }
+  const tail: String = "tail";
+  return 13;
+}

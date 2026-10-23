@@ -1,0 +1,10 @@
+export function entry(): i32 {
+  let count: i32 = 0;
+  while (count < 3) {
+    const local: String = "body";
+    const loan: Borrow<String> = borrow(local);
+    const copied: String = clone(loan);
+    count = count + 1;
+  }
+  return count;
+}

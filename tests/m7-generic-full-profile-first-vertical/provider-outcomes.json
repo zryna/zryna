@@ -1,0 +1,50 @@
+{
+  "status": "Actual syntax-only observations, independently frozen sources/oracles unchanged",
+  "cases": [
+    {
+      "case": "scalar-i32-clone",
+      "exactSourceSha256": "81336e343ddb166fbeea0fb3fa3d882b4ed93766fb50b540504a3840ca999c81",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "scalar-bool-clone",
+      "exactSourceSha256": "f2d63a2563090c11f5cf21931c79202ca444bca0b04bd05e2d6ed4505230a3b5",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "nominal-enum-clone",
+      "exactSourceSha256": "62a3b9c1449505af09f255d89b2613ccebcc8d995f21b2c203011aa27d47344f",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "option-nominal-enum-clone",
+      "exactSourceSha256": "f7edf1fe9963b1b4199111b53f206df638ca143397e1bf4a221785d4e54c3826",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "fixed-array-identity",
+      "exactSourceSha256": "fa47f3706d91da29e6a8007cbb4a1551a0d399b2eba869efeb039499d30e2442",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "opaque-clone-unused",
+      "exactSourceSha256": "be745749a61e30106c0b3b1949be693e71849970d65f305dd5265aa2d0888352",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    }
+  ],
+  "freshProcesses": 12,
+  "acceptedWithoutDiagnostics": 12,
+  "completeDTOParityCases": 6
+}

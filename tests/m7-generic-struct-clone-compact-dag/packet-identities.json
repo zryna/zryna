@@ -1,0 +1,54 @@
+{
+  "status": "Honest native/typescript packet identities from six actual fresh processes",
+  "originalReceiptsSha256": "ed8d5e5c57dee38e8203afe504c1deb7439a720f00946d22fc47921520256085",
+  "records": [
+    {
+      "case": "compact-dag-n04",
+      "provider": "native",
+      "packet": "compact-dag-n04-native.json",
+      "packetBytes": 41674,
+      "packetSha256": "34a3bf3cd5579c217868b2419183c0252e0fb695145dd8540758e51bfd2113d5",
+      "exactSourceSha256": "31845bb558f03271bea318f1150f22cd70ae58621c995bcfbf8ad1786096ba9e"
+    },
+    {
+      "case": "compact-dag-n04",
+      "provider": "typescript",
+      "packet": "compact-dag-n04-typescript.json",
+      "packetBytes": 41674,
+      "packetSha256": "d9cff5da2af16c57b796b83a8346a7022f5aa2a95b6071339253ac875789caab",
+      "exactSourceSha256": "31845bb558f03271bea318f1150f22cd70ae58621c995bcfbf8ad1786096ba9e"
+    },
+    {
+      "case": "compact-dag-n12",
+      "provider": "native",
+      "packet": "compact-dag-n12-native.json",
+      "packetBytes": 78830,
+      "packetSha256": "49295b674171350c6e156c2c0fd4404262a2db330567e4eb8a56ce8b1db8fdb0",
+      "exactSourceSha256": "dac2449de8f7430f8e15d893cee0012fc74753a1c7d5eda827d88119c02b42f7"
+    },
+    {
+      "case": "compact-dag-n12",
+      "provider": "typescript",
+      "packet": "compact-dag-n12-typescript.json",
+      "packetBytes": 78830,
+      "packetSha256": "7749c3238ed147013029366031409dda843668e6eafb5b5c5da39d392da617ca",
+      "exactSourceSha256": "dac2449de8f7430f8e15d893cee0012fc74753a1c7d5eda827d88119c02b42f7"
+    },
+    {
+      "case": "compact-dag-n16",
+      "provider": "native",
+      "packet": "compact-dag-n16-native.json",
+      "packetBytes": 97605,
+      "packetSha256": "8b29cef6ce46122bd9b78f88738ae0ab4652d7ad9e77754d7a356c6fc2db44e7",
+      "exactSourceSha256": "8f86cd30cc705d3bf50ead1602b91ba90e9ad69bd0ba4b5c67582f0fe9370ce7"
+    },
+    {
+      "case": "compact-dag-n16",
+      "provider": "typescript",
+      "packet": "compact-dag-n16-typescript.json",
+      "packetBytes": 97605,
+      "packetSha256": "da4cc33d589bec88ce0db5be5fbda266d95c32be55ea77e8f2b00b3d77f63788",
+      "exactSourceSha256": "8f86cd30cc705d3bf50ead1602b91ba90e9ad69bd0ba4b5c67582f0fe9370ce7"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+[
+  {
+    "path": "main.zry",
+    "text": "interface Plain extends ZrynaStruct { value: i32; } function pass(value: Plain): Plain { return value; }"
+  }
+]

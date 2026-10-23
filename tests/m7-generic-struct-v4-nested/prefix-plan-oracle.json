@@ -1,0 +1,90 @@
+{
+  "case": "nested-prefix-faults",
+  "status": "Independent literal source-evaluation/whole-commit plan expectation; not compiler output",
+  "extensions": [
+    {
+      "result": 0,
+      "kind": "StringLiteral",
+      "bytes": "E"
+    },
+    {
+      "result": 1,
+      "kind": "StringLiteral",
+      "bytes": "L"
+    },
+    {
+      "result": 2,
+      "kind": "StringLiteral",
+      "bytes": "R"
+    },
+    {
+      "result": 3,
+      "kind": "StructConstruct",
+      "fields": [
+        1,
+        2
+      ]
+    },
+    {
+      "result": 4,
+      "kind": "CloneString",
+      "value": 0
+    },
+    {
+      "result": 5,
+      "kind": "StructConstruct",
+      "fields": [
+        3,
+        4
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "block": 0,
+      "position": 0,
+      "end_loans": [],
+      "cleanup": [],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 1,
+      "end_loans": [],
+      "cleanup": [
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 2,
+      "end_loans": [],
+      "cleanup": [
+        1,
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 4,
+      "end_loans": [],
+      "cleanup": [
+        3,
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 7,
+      "end_loans": [],
+      "cleanup": [
+        5,
+        0
+      ],
+      "failure": false
+    }
+  ]
+}

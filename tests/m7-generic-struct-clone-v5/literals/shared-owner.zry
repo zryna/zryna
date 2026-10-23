@@ -1,0 +1,7 @@
+interface Pair<T extends ZrynaValue> extends ZrynaStruct { left: T; right: T; code: i32; }
+export function entry(): i32 {
+  const source: Pair<String> = Pair<String>({ right: "R", code: 7, left: "L" });
+  const loan: Borrow<Pair<String>> = borrow(source);
+  const copied: Pair<String> = clone(source);
+  return copied.code;
+}

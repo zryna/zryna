@@ -1,0 +1,76 @@
+{
+  "status": "Root actual2freshprovider processes/fullDTOparity/strictschemaPASS; original source+expectations first freeze unchanged; no semantic/native/runtime claim",
+  "source_expected_freeze_sha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f",
+  "files": [
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/packet-identities.json",
+      "bytes": 916,
+      "sha256": "d86295406f60ae9aa05ad6382b2d5377a11f57b3244afad0b756321faed10161"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/provider-outcomes.json",
+      "bytes": 240,
+      "sha256": "17da8db989519eb494097bc91fdc2473c557b8ae1dc10b8d7873112e1e163e72"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/provider-receipts.json",
+      "bytes": 3181,
+      "sha256": "01c93de98e2a15f4bb010a41f09c940fb378f15878c64d2fc996f5d070dc679e"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/schema-validation.json",
+      "bytes": 227,
+      "sha256": "f2d78710f9627f365fb836953f310bab159cc1950b8049b246763a39a9358b73"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/schema.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/schema.stdout.txt",
+      "bytes": 48,
+      "sha256": "ee6cc8fbcfd8814234156b3523e747391f348efba2a2b11bb2604d2ea83060aa"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-native.json",
+      "bytes": 9197,
+      "sha256": "b6d42c766e3a8200dd81074238d10924d42560cf8d379fde3e0284c94ae4d1c1"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-native.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-native.stdin.jsonl",
+      "bytes": 251,
+      "sha256": "da7f1295fe7ca2e991b302a4eaf77d81a331f8d67f4d1e32caf46a542e476eaf"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-native.stdout.jsonl",
+      "bytes": 3343,
+      "sha256": "0d1551fe07872d688940944137c541aa3e1b75551d677284186c6d6b9a8d5b0c"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-typescript.json",
+      "bytes": 9197,
+      "sha256": "ce4fb966dc3569ecc1d14c4f042b70f279c784c19031c881e23a62823a3a8641"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-typescript.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-typescript.stdin.jsonl",
+      "bytes": 251,
+      "sha256": "da7f1295fe7ca2e991b302a4eaf77d81a331f8d67f4d1e32caf46a542e476eaf"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/actual/vec-push-owned-prepare-typescript.stdout.jsonl",
+      "bytes": 3343,
+      "sha256": "25bcde08b4073c986623c3a79fe0b038e93a408d3382a75e2522d92f5caa6a35"
+    }
+  ]
+}

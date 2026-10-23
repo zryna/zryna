@@ -1,0 +1,4 @@
+function probe(): i32 {
+// π precedes a source error
+Option.some<i32>(true);
+return 0; }

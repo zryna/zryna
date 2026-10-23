@@ -1,6 +1,6 @@
 {
-  "format": "zryna.native-provider-public-registry.v1",
-  "version": 1,
+  "format": "zryna.native-provider-public-registry.v2",
+  "version": 2,
   "sourceBaseline": {
     "commit": "71fd69d99a39c22bdf262d1655a032aa76221f3e",
     "tree": "351da60bd4037e0f96c286045c8943f41fa99b03"
@@ -3498,5 +3498,10 @@
     "path": "tests/native-provider-public/m1-build-oracle.json",
     "bytes": 4010,
     "sha256": "c6aaf06f22425fe08fa8ecc3b53f4278ea4b2f6928b5d559382bd14e07dcf8bc"
+  },
+  "currentM1OwnerBinding": {
+    "path": "tests/native-provider-public/m1-current-owner-binding.json",
+    "bytes": 1277,
+    "sha256": "fd00d4f89af52c1137bff97c32fc8e6112bb408a4ac2f655e2bb6da3d031969c"
   }
 }

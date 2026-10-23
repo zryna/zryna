@@ -1,0 +1,123 @@
+{
+  "status": "Pure design and independently authored literals/expectations BEFORE any provider, Cargo, source admission or runtime execution. No DTOs are claimed.",
+  "cases": [
+    {
+      "case": "nested-prefix",
+      "positive": true,
+      "source": "nested-prefix.zry",
+      "sourceBytes": 410,
+      "sourceSha256": "1e7d452d2bee1ee6d1cca8222df1535008fc4de2958e86539d0d9fa8db20e9e8",
+      "expected": "nested-prefix-expected.json",
+      "expectedSha256": "a874fc15646d69bcafa20e78aaa053f88ee9f6018474cd9d30814db62d6b84a0"
+    },
+    {
+      "case": "repeat-source",
+      "positive": true,
+      "source": "repeat-source.zry",
+      "sourceBytes": 318,
+      "sourceSha256": "3397bb5e977a41c50d2ec98fc9da003149e5e3fb2ff1b2be11c90afeac0c29c6",
+      "expected": "repeat-source-expected.json",
+      "expectedSha256": "f78147b7362c58b0667f02884b25e1cc447d0eb92237e2e95bd995b02b5f7fd0"
+    },
+    {
+      "case": "shared-owner",
+      "positive": true,
+      "source": "shared-owner.zry",
+      "sourceBytes": 326,
+      "sourceSha256": "90771ab350b5bfe1e69a5b861bc067bf802a8d765bb99f82267e8c7ca0b08704",
+      "expected": "shared-owner-expected.json",
+      "expectedSha256": "c0e60b79a266e3e9d90850ecccd4c5dccc2a0a9bc34450d11e755923bfa76cfa"
+    },
+    {
+      "case": "phantom-opaque",
+      "positive": true,
+      "source": "phantom-opaque.zry",
+      "sourceBytes": 516,
+      "sourceSha256": "dcd0de993297df0ab9a8568467d82303b1431914e0812864cf7a3fd4a4e127c9",
+      "expected": "phantom-opaque-expected.json",
+      "expectedSha256": "d04daed550fc185e48e7987eb71b211de82d9cd37031d64df8b6fcf57b3abf59"
+    },
+    {
+      "case": "fixed-member",
+      "positive": true,
+      "source": "fixed-member.zry",
+      "sourceBytes": 428,
+      "sourceSha256": "a58d2c3bcfbbc2544f60acb9eb039742d5395ef7a30bdb1ca98689076ce50686",
+      "expected": "fixed-member-expected.json",
+      "expectedSha256": "e43c33f2f6dc46ad965aad88e6bbf2493d59c6b041f6b083608a579586bcae8f"
+    },
+    {
+      "case": "family-fields",
+      "positive": true,
+      "source": "family-fields.zry",
+      "sourceBytes": 363,
+      "sourceSha256": "23e41f4694354984bdbcf7ad8b88ec61a2f07698e718b303503adc3d66add670",
+      "expected": "family-fields-expected.json",
+      "expectedSha256": "6dfc413b9d73a3e28cdba57c63063b7eefe024c82f9c57750288ea9e4d85b99c"
+    },
+    {
+      "case": "copy-struct",
+      "positive": true,
+      "source": "copy-struct.zry",
+      "sourceBytes": 261,
+      "sourceSha256": "11f92e90a8d12a2b275f262bed778cb40f4daa0200f9bdfb24be40b6fdac12c4",
+      "expected": "copy-struct-expected.json",
+      "expectedSha256": "898cb3196c6a25660d6803bac734381c8cc30bcf4e590d1de69ee660a5d25308"
+    },
+    {
+      "case": "opaque-direct",
+      "positive": false,
+      "source": "opaque-direct.zry",
+      "sourceBytes": 119,
+      "sourceSha256": "df8a92762b0b222bb86cb80d3d2356b964fa30a2ad5b6398765b21a0ed8e2301",
+      "expected": "opaque-direct-expected.json",
+      "expectedSha256": "efaa37382c7164eac76a6af84106ccbcac306543c060e997db19d86b8747fd74"
+    },
+    {
+      "case": "opaque-stored",
+      "positive": false,
+      "source": "opaque-stored.zry",
+      "sourceBytes": 199,
+      "sourceSha256": "b45401f32648033f2db0e42a2462afe613743a0d644e1d1aaae665883a9f5478",
+      "expected": "opaque-stored-expected.json",
+      "expectedSha256": "c81357462fdbc82fd00b5b69af19dea6ada7d6f77aefffa7eb7c3621a4e1e03f"
+    },
+    {
+      "case": "opaque-inactive",
+      "positive": false,
+      "source": "opaque-inactive.zry",
+      "sourceBytes": 227,
+      "sourceSha256": "ac593fcb994742c637a3d0c202c9b7e24a3fb5f9423839cf02484c5f94fa620e",
+      "expected": "opaque-inactive-expected.json",
+      "expectedSha256": "737e6acd6b39ea39c8d5dd91d478b4ced58471b3415155e91ee47c432f50bfd4"
+    },
+    {
+      "case": "moved-source",
+      "positive": false,
+      "source": "moved-source.zry",
+      "sourceBytes": 281,
+      "sourceSha256": "b8f418314fe27be5fa71c6a6f4935d63a9ea5af1e82fe63ffb61688830d912c2",
+      "expected": "moved-source-expected.json",
+      "expectedSha256": "3de5e4f5caf3200b35a2beacb2e11c5e41d2b4b020f07599bc309261be96eae7"
+    },
+    {
+      "case": "exclusive-source",
+      "positive": false,
+      "source": "exclusive-source.zry",
+      "sourceBytes": 302,
+      "sourceSha256": "b2a880d53ebe6f94570ef00a53517aba74779b814779d50f6a5d4502d4569ece",
+      "expected": "exclusive-source-expected.json",
+      "expectedSha256": "93d682c82bdd6b029213fdfedf5f39fb3a282a453e44449015a77abc40d7efad"
+    }
+  ],
+  "positiveCases": 7,
+  "negativeCases": 5,
+  "futurePerTarget": {
+    "successes": 7,
+    "injectedFaults": 21,
+    "pristineRetries": 21,
+    "observations": 49
+  },
+  "futureThreeTargetsObservations": 147,
+  "futureNativeSigillCases": 21
+}

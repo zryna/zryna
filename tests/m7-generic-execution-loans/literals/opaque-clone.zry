@@ -1,0 +1,2 @@
+function copy<T extends ZrynaValue>(loan: Borrow<T>): T { return clone(loan); }
+export function entry(): i32 { return 0; }

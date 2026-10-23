@@ -1,0 +1,258 @@
+{
+  "schema_version": 5,
+  "files": [
+    {
+      "id": 0,
+      "path": "main.zry",
+      "imports": [],
+      "type_syntax": [
+        {
+          "span": {
+            "file": 0,
+            "start": 45,
+            "end": 48
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 45,
+                "end": 48
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 73,
+            "end": 78
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "Plain",
+              "span": {
+                "file": 0,
+                "start": 73,
+                "end": 78
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 81,
+            "end": 86
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "Plain",
+              "span": {
+                "file": 0,
+                "start": 81,
+                "end": 86
+              }
+            }
+          }
+        }
+      ],
+      "data_declarations": [
+        {
+          "span": {
+            "file": 0,
+            "start": 0,
+            "end": 51
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 0,
+              "end": 9
+            },
+            "name": {
+              "text": "Plain",
+              "span": {
+                "file": 0,
+                "start": 10,
+                "end": 15
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 16,
+              "end": 23
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 24,
+              "end": 35
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 36,
+              "end": 37
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 50,
+              "end": 51
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 38,
+                  "end": 49
+                },
+                "name": {
+                  "text": "value",
+                  "span": {
+                    "file": 0,
+                    "start": 38,
+                    "end": 43
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 43,
+                  "end": 44
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 48,
+                  "end": 49
+                },
+                "type_syntax": 0
+              }
+            ]
+          }
+        }
+      ],
+      "functions": [
+        {
+          "span": {
+            "file": 0,
+            "start": 52,
+            "end": 104
+          },
+          "export_span": null,
+          "function_span": {
+            "file": 0,
+            "start": 52,
+            "end": 60
+          },
+          "name": {
+            "text": "pass",
+            "span": {
+              "file": 0,
+              "start": 61,
+              "end": 65
+            }
+          },
+          "type_parameters": null,
+          "parameters": [
+            {
+              "span": {
+                "file": 0,
+                "start": 66,
+                "end": 78
+              },
+              "name": {
+                "text": "value",
+                "span": {
+                  "file": 0,
+                  "start": 66,
+                  "end": 71
+                }
+              },
+              "type_syntax": 1
+            }
+          ],
+          "result_type": 2,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 87,
+              "end": 104
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 87,
+                  "end": 104
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 87,
+                  "end": 88
+                },
+                "statements": [
+                  0
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 103,
+                  "end": 104
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 89,
+                  "end": 102
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 89,
+                    "end": 95
+                  },
+                  "value": 0,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 101,
+                    "end": 102
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 96,
+                  "end": 101
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "value",
+                    "span": {
+                      "file": 0,
+                      "start": 96,
+                      "end": 101
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

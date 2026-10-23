@@ -1,0 +1,1 @@
+export function entry(): i32 { const root: String = "R"; const joined: String = concat(clone(root), concat("!", clone(root))); return 23; }

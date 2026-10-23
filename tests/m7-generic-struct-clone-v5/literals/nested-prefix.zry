@@ -1,0 +1,8 @@
+interface Pair<T extends ZrynaValue> extends ZrynaStruct { left: T; right: T; }
+interface Envelope extends ZrynaStruct { inner: Pair<String>; tail: String; code: i32; }
+export function entry(): i32 {
+  const earlierRoot: String = "E";
+  const source: Envelope = Envelope({ tail: "T", code: 7, inner: Pair<String>({ right: "R", left: "L" }) });
+  const copied: Envelope = clone(source);
+  return source.code;
+}

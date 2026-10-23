@@ -1,0 +1,4 @@
+import { identity } from "./a.zry";
+export function entry(): i32 {
+  return identity<i32>(7);
+}

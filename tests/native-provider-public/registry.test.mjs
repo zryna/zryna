@@ -9,7 +9,7 @@ import {bundleInventory} from './cli-parity.mjs';
 const registry=loadRegistry();
 function clone(){return structuredClone(registry);}
 function temporary(t){const path=mkdtempSync(join(tmpdir(),'zryna-public-native-registry-'));t.after(()=>rmSync(path,{recursive:true,force:true}));return path;}
-function retainedFixtureRoot(t){const root=temporary(t);for(const p of [...registry.registries,...registry.syntaxCorpusAuthority,registry.m3BuildOracle,registry.m1BuildOracle,...JSON.parse(readFileSync(join(repositoryRoot,registry.m1BuildOracle.path))).owners,registry.currentM3BuildAuthority.owner,...registry.currentM3BuildAuthority.cases.map(c=>c.snapshot),...registry.sources.map(c=>c.source)]){const target=join(root,p.path);mkdirSync(dirname(target),{recursive:true});copyFileSync(join(repositoryRoot,p.path),target);}return root;}
+function retainedFixtureRoot(t){const root=temporary(t);for(const p of [...registry.registries,...registry.syntaxCorpusAuthority,registry.m3BuildOracle,registry.m1BuildOracle,registry.currentM1OwnerBinding,...JSON.parse(readFileSync(join(repositoryRoot,registry.currentM1OwnerBinding.path))).owners,registry.currentM3BuildAuthority.owner,...registry.currentM3BuildAuthority.cases.map(c=>c.snapshot),...registry.sources.map(c=>c.source)]){const target=join(root,p.path);mkdirSync(dirname(target),{recursive:true});copyFileSync(join(repositoryRoot,p.path),target);}return root;}
 
 test('frozen current sources include97 M3 roots and genuine unchanged69-root oracle',()=>{
  assert.equal(registry.sources.length,114);assert.equal(registry.sources.filter(c=>c.protocol===4).length,97);
@@ -48,4 +48,30 @@ test('current clone-prefix BUILD decisions retain separate original owner author
 test('current M1 oracle preserves original owner multiplicity and all diagnostic fields',()=>{
  const row=registry.cliBuildCases.find(c=>c.id==='m1-build:gatedBooleanSource');assert.deepEqual(row.diagnosticCodes,['ZRYNA-I1006','ZRYNA-I1006','ZRYNA-I1006']);assert.equal(row.diagnostics[2].primary.span.start,53);assert.equal(row.diagnostics[2].primary.span.end,58);
  for(const mutate of [r=>r.cliBuildCases.find(c=>c.id===row.id).diagnosticCodes.pop(),r=>r.cliBuildCases.find(c=>c.id===row.id).diagnostics[0].message='different owner diagnostic']){const changed=clone();mutate(changed);assert.throws(()=>validateRegistry(changed));}
+});
+
+
+test('v2 current M1 binding preserves the frozen oracle and closes the current owner census',()=>{
+ assert.equal(registry.format,'zryna.native-provider-public-registry.v2');assert.equal(registry.version,2);
+ const binding=JSON.parse(readFileSync(join(repositoryRoot,registry.currentM1OwnerBinding.path)));
+ assert.equal(binding.historicalOracleSha256,registry.m1BuildOracle.sha256);
+ assert.deepEqual(binding.owners.map(owner=>owner.path),['crates/zryna-ir/src/lib.rs','crates/zryna-ir/src/scalar_type.rs','crates/zryna-semantics/src/lib.rs']);
+ for(const mutate of [r=>{r.format='zryna.native-provider-public-registry.v1';r.version=1;},r=>{r.unreviewedOwner=true;},r=>{delete r.currentM1OwnerBinding;}]){const changed=clone();mutate(changed);assert.throws(()=>validateRegistry(changed));}
+});
+
+test('current M1 owner drift rejects before any compiler execution',t=>{
+ const owners=JSON.parse(readFileSync(join(repositoryRoot,registry.currentM1OwnerBinding.path))).owners;
+ for(const owner of owners){const root=retainedFixtureRoot(t),path=join(root,owner.path);writeFileSync(path,Buffer.concat([readFileSync(path),Buffer.from('\n')]));assert.throws(()=>validateRegistry(registry,root));}
+});
+
+test('coherently rehashed unknown duplicate unsafe or changed current M1 bindings cannot replace independent review',t=>{
+ for(const mutate of [b=>{b.unreviewed=true;},b=>{b.owners.push(b.owners[0]);},b=>{b.owners[0].path='../outside.rs';},b=>{b.owners[0].sha256='0'.repeat(64);},b=>{b.historicalOracleSha256='0'.repeat(64);}]){
+  const root=retainedFixtureRoot(t),changed=clone(),pin=changed.currentM1OwnerBinding,binding=JSON.parse(readFileSync(join(root,pin.path)));mutate(binding);const bytes=Buffer.from(JSON.stringify(binding));writeFileSync(join(root,pin.path),bytes);pin.bytes=bytes.length;pin.sha256=sha256(bytes);assert.throws(()=>validateRegistry(changed,root),/independent current M1 owner binding/);
+ }
+ const root=retainedFixtureRoot(t),changed=clone(),pin=changed.currentM1OwnerBinding;
+ const bytes=Buffer.from(readFileSync(join(root,pin.path),'utf8').replace('"owners":','"owners": [], "owners":'));writeFileSync(join(root,pin.path),bytes);pin.bytes=bytes.length;pin.sha256=sha256(bytes);assert.throws(()=>validateRegistry(changed,root),/independent current M1 owner binding/);
+});
+
+test('a rehashed historical M1 oracle cannot substitute new diagnostics under the current binding',t=>{
+ const root=retainedFixtureRoot(t),changed=clone(),pin=changed.m1BuildOracle,oracle=JSON.parse(readFileSync(join(root,pin.path)));oracle.cases[2].diagnostics[0].message='substituted diagnostic';const bytes=Buffer.from(JSON.stringify(oracle));writeFileSync(join(root,pin.path),bytes);pin.bytes=bytes.length;pin.sha256=sha256(bytes);assert.throws(()=>validateRegistry(changed,root));
 });

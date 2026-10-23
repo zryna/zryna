@@ -45,6 +45,7 @@ zryna-syntax = { path = "../zryna-syntax" }
 zryna-windows-filesystem = { path = "../zryna-windows-filesystem" }
 
 [dev-dependencies]
+zryna-layout = { path = "../zryna-layout" }
 zryna-process = { path = "../zryna-process", features = ["test-observation"] }
 wasm-encoder.workspace = true
 wasmparser.workspace = true
@@ -68,3 +69,7 @@ path = "src/server_runtime/harness.rs"
 name = "native_public_ir_parity"
 path = "src/native_public_ir_parity.rs"
 required-features = ["native-provider-qualification"]
+
+[[test]]
+name = "generic_owned_nominal_enum"
+path = "src/generic_owned_nominal_enum.rs"

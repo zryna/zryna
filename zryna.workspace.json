@@ -70,15 +70,15 @@
       "id": "zryna-ir",
       "root": "crates/zryna-ir",
       "kind": "compiler",
-      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-layout", "zryna-source", "zryna-syntax"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-layout", "zryna-ownership-runtime-abi", "zryna-source", "zryna-syntax"],
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-semantics",
       "root": "crates/zryna-semantics",
       "kind": "compiler",
       "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-ir", "zryna-layout", "zryna-ownership-runtime-abi", "zryna-source", "zryna-syntax"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-layout",
@@ -142,6 +142,7 @@
         "zryna-diagnostics",
         "zryna-frontend",
         "zryna-ir",
+        "zryna-layout",
         "zryna-native-c-ir",
         "zryna-native-mir",
         "zryna-ownership-runtime-abi",
@@ -152,7 +153,7 @@
         "zryna-syntax",
         "zryna-windows-filesystem"
       ],
-      "allowedEntries": ["Cargo.toml", "README.md", "src", "examples"]
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "examples", "tests"]
     },
     {
       "id": "zryna-language-server",

@@ -1,0 +1,3 @@
+function consume(first: String, second: String): i32 { return 11; }
+function prepare(first: String, middle: String, last: String): i32 { return consume(first, clone(last)); }
+export function entry(): i32 { return prepare("first", "middle", "last"); }

@@ -22,8 +22,23 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 const EXPECTED_LITERAL: &str = "space & echo $HOME ; %PATH% | <literal>";
 
+#[path = "worker_process/native_v5.rs"]
+mod native_v5;
+
 fn main() {
     let arguments: Vec<OsString> = env::args_os().collect();
+    if arguments.get(1).is_some_and(|argument| argument == "--native-worker-v5") {
+        if let Err(error) = zryna_frontend::native_worker::run_native_worker_v5_stdio() {
+            eprintln!("{error}");
+            process::exit(2);
+        }
+        return;
+    }
+    if arguments.get(1).is_some_and(|argument| argument == "--native-v5-suite") {
+        native_v5::run_contract_tests();
+        println!("native v5 worker process contract passed");
+        return;
+    }
     if arguments.get(1).is_some_and(|argument| argument == "--fake-worker") {
         fake_worker(&arguments);
         return;
@@ -89,6 +104,7 @@ fn run_process_contract_tests() {
     assert_large_unread_request_times_out_and_cleans_up();
     assert_protocol_v3_process_contract();
     assert_protocol_v4_process_contract();
+    native_v5::run_contract_tests();
 
     println!("frontend worker process contract passed");
 }

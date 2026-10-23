@@ -1,0 +1,1 @@
+export function entry(): i32 { let count: i32 = 0; const loan: Borrow<i32> = borrow(count); count = 1; return loan; }

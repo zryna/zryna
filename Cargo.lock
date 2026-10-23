@@ -1846,6 +1846,8 @@ dependencies = [
 name = "zryna-backend-javascript"
 version = "0.2.3"
 dependencies = [
+ "serde_json",
+ "sha2",
  "zryna-diagnostics",
  "zryna-ir",
  "zryna-layout",
@@ -1934,6 +1936,7 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-frontend",
  "zryna-ir",
+ "zryna-layout",
  "zryna-native-c-ir",
  "zryna-native-mir",
  "zryna-ownership-runtime-abi",
@@ -1969,6 +1972,7 @@ dependencies = [
  "zryna-abi",
  "zryna-diagnostics",
  "zryna-layout",
+ "zryna-ownership-runtime-abi",
  "zryna-source",
  "zryna-syntax",
 ]

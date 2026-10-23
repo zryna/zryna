@@ -1,0 +1,1 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } export function entry(): i32 { const inactive: Box<Option<String>> = Box<Option<String>>({ value: Option.none<String>() }); const active: Box<Option<String>> = Box<Option<String>>({ value: Option.some<String>("L") }); return 7; }

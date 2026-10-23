@@ -1,0 +1,291 @@
+{
+  "status": "Frozen source spellings and expected observations/owning diagnostics before provider processes and production. No claimed syntax/semantics/seal/runtime success.",
+  "profile": "same accepted full execution profile; coherent While/ordinary-assignment checkpoint, remaining accepted forms stay OPEN",
+  "schema": 5,
+  "cases": [
+    {
+      "case": "copy-assignment",
+      "source": "literals/copy-assignment.zry",
+      "bytes": 172,
+      "sha256": "cfdac5ccb5c1f2faaa6fdc28d6a5764e69d74d5731b55cd5e8ce09b27b8446e4",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 17
+        }
+      ]
+    },
+    {
+      "case": "zero-multiple",
+      "source": "literals/zero-multiple.zry",
+      "bytes": 183,
+      "sha256": "fb01a614bdb8597661cb317e4371549219f94996c1206c506069643556d37bcc",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            -2
+          ],
+          "i32": 0
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "i32": 0
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "i32": 1
+        },
+        {
+          "arguments": [
+            4
+          ],
+          "i32": 10
+        }
+      ]
+    },
+    {
+      "case": "nested-lexical",
+      "source": "literals/nested-lexical.zry",
+      "bytes": 280,
+      "sha256": "e275bf8922f4f88c393e1cef9722dc652f315eb2cc545529beda78154e5e9950",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 6,
+          "logicalTrace": [
+            "acquire:mark",
+            "release:mark",
+            "acquire:mark",
+            "release:mark",
+            "acquire:mark",
+            "release:mark",
+            "acquire:mark",
+            "release:mark",
+            "acquire:mark",
+            "release:mark",
+            "acquire:mark",
+            "release:mark"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "early-return",
+      "source": "literals/early-return.zry",
+      "bytes": 242,
+      "sha256": "053b7bd400662862ea7cc1d135fc2ba490f51d9a05379588291d57c00348cc3e",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            true
+          ],
+          "i32": 11,
+          "logicalTrace": [
+            "acquire:outer",
+            "acquire:local",
+            "release:local",
+            "release:outer"
+          ]
+        },
+        {
+          "arguments": [
+            false
+          ],
+          "i32": 13,
+          "logicalTrace": [
+            "acquire:outer",
+            "acquire:local",
+            "release:local",
+            "acquire:tail",
+            "release:tail",
+            "release:outer"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "body-loan-cleanup",
+      "source": "literals/body-loan-cleanup.zry",
+      "bytes": 242,
+      "sha256": "70f8ee120976a6ba78cb142daf98ec7ef9eb9f6c1dc51b10969328ec39802332",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 3,
+          "logicalTrace": [
+            "acquire:local",
+            "begin-loan:loan",
+            "acquire:copied",
+            "end-loan:loan",
+            "release:copied",
+            "release:local",
+            "acquire:local",
+            "begin-loan:loan",
+            "acquire:copied",
+            "end-loan:loan",
+            "release:copied",
+            "release:local",
+            "acquire:local",
+            "begin-loan:loan",
+            "acquire:copied",
+            "end-loan:loan",
+            "release:copied",
+            "release:local"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "opaque-retained",
+      "source": "literals/opaque-retained.zry",
+      "bytes": 341,
+      "sha256": "e05087932c9ed29948d6b3762365be340b173725d005b983ef6e84ff54180ba2",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 7,
+          "logicalTrace": [
+            "acquire:token",
+            "acquire:local",
+            "release:local",
+            "acquire:local",
+            "release:local",
+            "release:token"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "owned-root-replacement",
+      "source": "literals/owned-root-replacement.zry",
+      "bytes": 156,
+      "sha256": "2c2729c8f5e470b86958c97c68cfa58f659bff08e1eb0d422c540e69f81be2e9",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 19,
+          "logicalTrace": [
+            "acquire:old",
+            "acquire:later",
+            "acquire:new",
+            "release:old",
+            "release:new",
+            "release:later"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "branch-copy-update",
+      "source": "literals/branch-copy-update.zry",
+      "bytes": 149,
+      "sha256": "641c1d2fc04448489f1fbb57163b05b5043c321e8f8f6f1f2e8bb7a713b89411",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            true
+          ],
+          "i32": 4
+        },
+        {
+          "arguments": [
+            false
+          ],
+          "i32": 6
+        }
+      ]
+    },
+    {
+      "case": "match-condition",
+      "source": "literals/match-condition.zry",
+      "bytes": 209,
+      "sha256": "6bcf96efeae92268147cb280b6d8358cf42d393ebedfc1dee7ffdda435809281",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 3
+        }
+      ]
+    },
+    {
+      "case": "immutable-target",
+      "source": "literals/immutable-target.zry",
+      "bytes": 80,
+      "sha256": "ef3b7276c370d8f187f6e53606a6e4d74a13533e81f6892593a51e8f906f5e46",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7006",
+      "primary": {
+        "file": 0,
+        "start": 53,
+        "end": 58,
+        "token": "fixed"
+      },
+      "basis": "accepted decisions \u00a7145\u2013150; invalid value/consuming or borrow-conflicting operation, fixed before execution"
+    },
+    {
+      "case": "wrong-rhs",
+      "source": "literals/wrong-rhs.zry",
+      "bytes": 81,
+      "sha256": "4e3aa2838d5521bb3d49f5395f8d3f4019b8ddd492b37f7e7becc842a578bc2e",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7006",
+      "primary": {
+        "file": 0,
+        "start": 59,
+        "end": 63,
+        "token": "true"
+      },
+      "basis": "accepted decisions \u00a7145\u2013150; invalid value/consuming or borrow-conflicting operation, fixed before execution"
+    },
+    {
+      "case": "unrestored-owner",
+      "source": "literals/unrestored-owner.zry",
+      "bytes": 182,
+      "sha256": "833e3fb6560b1c968f6bb44adb53ff7e8a1d217c7723e2d9321215c0c53f3ffd",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 134,
+        "end": 139,
+        "token": "owner"
+      },
+      "basis": "accepted decisions \u00a7145\u2013150; invalid value/consuming or borrow-conflicting operation, fixed before execution"
+    },
+    {
+      "case": "write-live-shared",
+      "source": "literals/write-live-shared.zry",
+      "bytes": 118,
+      "sha256": "84e97ddc0be71501229bc8e60f626b455b8b74f832fc527f13c9aefb29356b72",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 92,
+        "end": 97,
+        "token": "count"
+      },
+      "basis": "accepted decisions \u00a7145\u2013150; invalid value/consuming or borrow-conflicting operation, fixed before execution"
+    }
+  ],
+  "faultObligation": "For every fallible acquire/clone ordinal of successful cases, failure is allocation-v1 before mutation; completed source roots/prefix are released in reverse completion order. Runtime replay is a later same-seal target gate, not inferred from whole-seal tests.",
+  "dependencyObligations": [
+    "General affine branch/match result pending-anchor transport",
+    "Loop-carried owner replacement whose runtime acquisition order differs across zero/multiple iteration paths",
+    "Partial static-place source decomposition/reinitialization",
+    "JS/core-Wasm cyclic CFG runtime counters and all admitted target operations"
+  ]
+}
