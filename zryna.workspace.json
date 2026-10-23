@@ -71,7 +71,7 @@
       "root": "crates/zryna-ir",
       "kind": "compiler",
       "dependencies": ["zryna-abi", "zryna-diagnostics", "zryna-layout", "zryna-ownership-runtime-abi", "zryna-source", "zryna-syntax"],
-      "allowedEntries": ["Cargo.toml", "README.md", "src"]
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "tests"]
     },
     {
       "id": "zryna-semantics",
@@ -153,7 +153,7 @@
         "zryna-syntax",
         "zryna-windows-filesystem"
       ],
-      "allowedEntries": ["Cargo.toml", "README.md", "src", "examples"]
+      "allowedEntries": ["Cargo.toml", "README.md", "src", "examples", "tests"]
     },
     {
       "id": "zryna-language-server",

@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`9979666eded07954f2c6af8f61ea0178fcc5cfa595f57d228a2344d92f8c1b01`. The matrix defines six bounded modes on the two
+`4a3cc92b695c0e8120269b8b789c523ee6b26414bd5f2cb0c8bd8a040646c1b4`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "9979666eded07954f2c6af8f61ea0178fcc5cfa595f57d228a2344d92f8c1b01",
+  "registrySha256": "4a3cc92b695c0e8120269b8b789c523ee6b26414bd5f2cb0c8bd8a040646c1b4",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -5083,12 +5083,12 @@ zryna.m4.support.v1:begin
     {
       "path": "scripts/distribution/command-h1-rust-binding-v1.json",
       "bytes": 994,
-      "sha256": "b9b9d254f8078085619ea1abc5f5bd26075cf0a32211d09e8127f5dd08fa0e3e"
+      "sha256": "d5c56e96b611903141742d0a09170144e6cb62ce43e14f06bf9c0c8f6ae5f1be"
     },
     {
       "path": "scripts/distribution/command-h1-rust-binding.mjs",
       "bytes": 1707,
-      "sha256": "5a3cf568931af3cc7d4fdb6669c589510c00b90011b70f834afdb77f7df5ae5f"
+      "sha256": "6328063c84b7e515efd02b36ba24ee563828031074fde48145591f25f627aa3b"
     },
     {
       "path": "scripts/distribution/documents.mjs",
@@ -5882,8 +5882,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "zryna.workspace.json",
-      "bytes": 6809,
-      "sha256": "0387a67801bd5208e7153b1f01d4479988ceca287c2ec3574b3450a2e2b8fd5d"
+      "bytes": 6827,
+      "sha256": "a9918da2f00accb228606af76f51e40264c2d5e2e1391913e50e5900b93c5e0e"
     }
   ],
   "requiredExternalEvidence": [
