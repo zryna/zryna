@@ -1,0 +1,10 @@
+function keep<T extends ZrynaValue>(value: T, limit: i32): T {
+  let count: i32 = 0;
+  while (count < limit) {
+    const local: String = "body";
+    count = count + 1;
+  }
+  return value;
+}
+function discard<T extends ZrynaValue>(value: T): i32 { return 7; }
+export function entry(): i32 { return discard<String>(keep<String>("token", 2)); }

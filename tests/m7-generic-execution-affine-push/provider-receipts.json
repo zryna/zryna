@@ -1,0 +1,77 @@
+{
+  "status": "Actual fresh syntax-only processes; complete local stdin/stdout/stderr retained, every failure preserved. No compiler source/semantic/seal/runtime claim.",
+  "records": [
+    {
+      "case": "vec-push-owned-prepare",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f",
+      "exactSourceSha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91",
+      "inputPinFreezeSha256": "f2f320c8c47117b4e5f325caee58c1aaeb5c13b0dc8f7d3475081a3e61877a36",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "da7f1295fe7ca2e991b302a4eaf77d81a331f8d67f4d1e32caf46a542e476eaf",
+      "stdoutSha256": "0d1551fe07872d688940944137c541aa3e1b75551d677284186c6d6b9a8d5b0c",
+      "stderrBytes": 0,
+      "packet": "vec-push-owned-prepare-native.json",
+      "packetSha256": "b6d42c766e3a8200dd81074238d10924d42560cf8d379fde3e0284c94ae4d1c1",
+      "packetBytes": 9197,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-push-owned-prepare",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f",
+      "exactSourceSha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91",
+      "inputPinFreezeSha256": "f2f320c8c47117b4e5f325caee58c1aaeb5c13b0dc8f7d3475081a3e61877a36",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "da7f1295fe7ca2e991b302a4eaf77d81a331f8d67f4d1e32caf46a542e476eaf",
+      "stdoutSha256": "25bcde08b4073c986623c3a79fe0b038e93a408d3382a75e2522d92f5caa6a35",
+      "stderrBytes": 0,
+      "packet": "vec-push-owned-prepare-typescript.json",
+      "packetSha256": "ce4fb966dc3569ecc1d14c4f042b70f279c784c19031c881e23a62823a3a8641",
+      "packetBytes": 9197,
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

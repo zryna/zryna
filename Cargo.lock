@@ -1846,6 +1846,8 @@ dependencies = [
 name = "zryna-backend-javascript"
 version = "0.2.3"
 dependencies = [
+ "serde_json",
+ "sha2",
  "zryna-diagnostics",
  "zryna-ir",
  "zryna-layout",

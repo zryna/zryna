@@ -241,3 +241,6 @@ fn copy(bytes: &[u8]) -> Result<Vec<u8>, Failure> {
     result.extend_from_slice(bytes);
     Ok(result)
 }
+
+#[cfg(test)]
+mod array_views_tests;

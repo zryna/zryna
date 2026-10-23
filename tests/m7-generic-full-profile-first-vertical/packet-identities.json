@@ -1,0 +1,114 @@
+{
+  "status": "Named native/typescript packets from actual fresh processes",
+  "originalReceiptsSha256": "67a0c51da458141afd49f4f2d915f7b45fcc1d2adf7ccfb4e50c71a6f81fecb5",
+  "records": [
+    {
+      "case": "scalar-i32-clone",
+      "provider": "native",
+      "packet": "scalar-i32-clone-native.json",
+      "packetBytes": 8460,
+      "packetSha256": "d56207820a17ef61cec1513e595122fba26fa8e3854b262d61e8a0c953adda30",
+      "exactSourceSha256": "81336e343ddb166fbeea0fb3fa3d882b4ed93766fb50b540504a3840ca999c81",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "scalar-i32-clone",
+      "provider": "typescript",
+      "packet": "scalar-i32-clone-typescript.json",
+      "packetBytes": 8460,
+      "packetSha256": "11df1a2ef0cedcf73d4a52a008ac5a1bddaa8e1d34ad961aa4b08051f49a0c99",
+      "exactSourceSha256": "81336e343ddb166fbeea0fb3fa3d882b4ed93766fb50b540504a3840ca999c81",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "scalar-bool-clone",
+      "provider": "native",
+      "packet": "scalar-bool-clone-native.json",
+      "packetBytes": 12772,
+      "packetSha256": "9e7019bb286966406d98d319b571dcd5d6f706ac6c3dd21742ced69d77846c74",
+      "exactSourceSha256": "f2d63a2563090c11f5cf21931c79202ca444bca0b04bd05e2d6ed4505230a3b5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "scalar-bool-clone",
+      "provider": "typescript",
+      "packet": "scalar-bool-clone-typescript.json",
+      "packetBytes": 12772,
+      "packetSha256": "e0d965091f1c0aa8825670f6f5389a8e42b12eb86a1af6b31796562a1064bbc6",
+      "exactSourceSha256": "f2d63a2563090c11f5cf21931c79202ca444bca0b04bd05e2d6ed4505230a3b5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-enum-clone",
+      "provider": "native",
+      "packet": "nominal-enum-clone-native.json",
+      "packetBytes": 18849,
+      "packetSha256": "670cbe2ea0b5ba1a1611cd931562997f488c2c91fbc6742398d6003048ef8fb6",
+      "exactSourceSha256": "62a3b9c1449505af09f255d89b2613ccebcc8d995f21b2c203011aa27d47344f",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-enum-clone",
+      "provider": "typescript",
+      "packet": "nominal-enum-clone-typescript.json",
+      "packetBytes": 18849,
+      "packetSha256": "ff2e4305b6e65037a74fa833e0540c64cc09cfc6cfb6b4d627a208ddf19242a0",
+      "exactSourceSha256": "62a3b9c1449505af09f255d89b2613ccebcc8d995f21b2c203011aa27d47344f",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "option-nominal-enum-clone",
+      "provider": "native",
+      "packet": "option-nominal-enum-clone-native.json",
+      "packetBytes": 27460,
+      "packetSha256": "a1034c852d01751e36455004c5d88b897d2cebee45a0f93f12f13835c152f8cf",
+      "exactSourceSha256": "f7edf1fe9963b1b4199111b53f206df638ca143397e1bf4a221785d4e54c3826",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "option-nominal-enum-clone",
+      "provider": "typescript",
+      "packet": "option-nominal-enum-clone-typescript.json",
+      "packetBytes": 27460,
+      "packetSha256": "575396e1d372241e92d9fcc3f9cf2af26a6993b81cc208c04ba9c89cf445fb4d",
+      "exactSourceSha256": "f7edf1fe9963b1b4199111b53f206df638ca143397e1bf4a221785d4e54c3826",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "fixed-array-identity",
+      "provider": "native",
+      "packet": "fixed-array-identity-native.json",
+      "packetBytes": 21555,
+      "packetSha256": "d8db4e97f1ec5a7dbb005b9db9750c04134b5f4dfce2b79381829065f56ff533",
+      "exactSourceSha256": "fa47f3706d91da29e6a8007cbb4a1551a0d399b2eba869efeb039499d30e2442",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "fixed-array-identity",
+      "provider": "typescript",
+      "packet": "fixed-array-identity-typescript.json",
+      "packetBytes": 21555,
+      "packetSha256": "579601fcf9dba260d5a5b2931a0b77dc28475eb5666e82177f6490d2075d81d0",
+      "exactSourceSha256": "fa47f3706d91da29e6a8007cbb4a1551a0d399b2eba869efeb039499d30e2442",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-clone-unused",
+      "provider": "native",
+      "packet": "opaque-clone-unused-native.json",
+      "packetBytes": 8405,
+      "packetSha256": "3a257fbc91c28c85bef13a9278e2e75ae54c8f5b3f76d229b0650b226c4b5b2b",
+      "exactSourceSha256": "be745749a61e30106c0b3b1949be693e71849970d65f305dd5265aa2d0888352",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-clone-unused",
+      "provider": "typescript",
+      "packet": "opaque-clone-unused-typescript.json",
+      "packetBytes": 8405,
+      "packetSha256": "ae6c0c0f4fd5924c87408e2f00682a8cfdc7d0cbc41c944d8eef6af1714bf591",
+      "exactSourceSha256": "be745749a61e30106c0b3b1949be693e71849970d65f305dd5265aa2d0888352",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

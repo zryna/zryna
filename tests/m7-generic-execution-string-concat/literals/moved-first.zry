@@ -1,0 +1,2 @@
+function take(value: String): String { return value; }
+export function entry(): i32 { const root: String = "root"; const joined: String = concat(root, take(root)); return 0; }

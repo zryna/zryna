@@ -1,0 +1,14 @@
+interface Signal extends ZrynaEnum {
+  quiet: ZrynaNone;
+  yes: String;
+  no: String;
+}
+export function entry(): i32 {
+  const value: Signal = Signal.yes("L");
+  const copied: Signal = clone(value);
+  return match(copied, {
+    "Signal.quiet": () => 0,
+    "Signal.yes": (item) => 7,
+    "Signal.no": (item) => 9,
+  });
+}

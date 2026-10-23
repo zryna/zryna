@@ -1,0 +1,8 @@
+export function entry(): i32 {
+  let count: i32 = 3;
+  count = count + 4;
+  let ready: bool = false;
+  ready = true;
+  if (ready) { count = count + 10; }
+  return count;
+}

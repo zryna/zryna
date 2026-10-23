@@ -54,6 +54,22 @@ impl<'a> TypeView<'a> {
             _ => None,
         }
     }
+    /// Exact fixed-array length from this already-verified target record.
+    #[must_use]
+    pub const fn array_length(self) -> Option<u64> {
+        match self.record.physical.kind {
+            VerifiedKind::FixedArray { length, .. } => Some(length),
+            _ => None,
+        }
+    }
+    /// Exact fixed-array stride from this already-verified target record.
+    #[must_use]
+    pub const fn array_stride(self) -> Option<u64> {
+        match self.record.physical.kind {
+            VerifiedKind::FixedArray { stride, .. } => Some(stride),
+            _ => None,
+        }
+    }
     /// Complete canonical type key.
     #[must_use]
     pub fn key(self) -> &'a [u8] {

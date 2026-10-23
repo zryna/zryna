@@ -1,0 +1,14 @@
+export function entry(): i32 {
+  let outer: i32 = 0;
+  let total: i32 = 0;
+  while (outer < 2) {
+    let inner: i32 = 0;
+    while (inner < 3) {
+      const mark: String = "入";
+      inner = inner + 1;
+      total = total + 1;
+    }
+    outer = outer + 1;
+  }
+  return total;
+}

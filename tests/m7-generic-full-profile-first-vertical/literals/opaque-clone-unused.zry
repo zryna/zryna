@@ -1,0 +1,6 @@
+function forbidden<T extends ZrynaValue>(value: T): T {
+  return clone(value);
+}
+export function entry(): i32 {
+  return 7;
+}

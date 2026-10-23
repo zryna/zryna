@@ -43,6 +43,7 @@ pub use component_server::{ServerOperation, ValidatedServerComponent, emit_serve
 mod scalar_component;
 pub use scalar_component::{ScalarExport, ValidatedScalarComponent, emit_scalar_component};
 pub mod generic_copy_v1;
+pub mod generic_execution_v1;
 pub mod generic_owned_v2;
 /// Emits deterministic, import-free core WebAssembly from the current `I32V1` profile.
 /// Raw Universal IR cannot enter this boundary:

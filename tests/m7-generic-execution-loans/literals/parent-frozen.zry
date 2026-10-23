@@ -1,0 +1,1 @@
+export function entry(): i32 { let root: Vec<i32> = Vec<i32>([1]); const parent: BorrowMut<Vec<i32>> = borrowMut(root); const child: Borrow<Vec<i32>> = borrow(parent); push(parent, 2); return 0; }

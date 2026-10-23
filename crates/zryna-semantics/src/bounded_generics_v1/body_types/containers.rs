@@ -5,7 +5,8 @@ use super::super::DeclarationIdentity;
 use super::capabilities::Status;
 use super::model::{Head, Kind, Scalar, Ty};
 use super::{
-    BodyTypeFailure, Checker, constraints, constructions, resources, substitution, type_resolution,
+    BodyTypeFailure, Checker, constraints, constructions, resources, roles, substitution,
+    type_resolution,
 };
 
 pub(super) fn construction(
@@ -81,7 +82,13 @@ pub(super) fn unary(
     value: u32,
     at: UntrustedSpan,
 ) -> Result<Option<Ty>, BodyTypeFailure> {
-    let Some(ty) = checker.expression(owner, value) else { return Ok(None) };
+    let actual = checker.expression(owner, value);
+    let ty = if matches!(kind, RawExpressionKind::Shared { .. }) {
+        roles::value(checker, owner, actual, at)?
+    } else {
+        roles::observe(checker, owner, actual)?
+    };
+    let Some(ty) = ty else { return Ok(None) };
     let Some(head) = substitution::head(&checker.tables, owner, ty)? else { return Ok(None) };
     let result = match kind {
         RawExpressionKind::Clone { .. } => {
@@ -133,7 +140,8 @@ pub(super) fn push(
     value: u32,
     at: UntrustedSpan,
 ) -> Result<Option<Ty>, BodyTypeFailure> {
-    let Some(vector) = checker.expression(owner, vector) else { return Ok(None) };
+    let vector = checker.expression(owner, vector);
+    let Some(vector) = roles::observe(checker, owner, vector)? else { return Ok(None) };
     let Some(head) = substitution::head(&checker.tables, owner, vector)? else { return Ok(None) };
     if matches!(head.kind, Kind::Parameter(_)) {
         constraints::opaque(checker, at, "Vec capability");

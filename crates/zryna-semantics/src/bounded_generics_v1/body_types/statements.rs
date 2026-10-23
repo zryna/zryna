@@ -4,7 +4,9 @@ use zryna_syntax::v5::RawTypeSyntaxKind;
 use super::super::DeclarationIdentity;
 use super::model::{Head, Kind, Origin, Scalar, Ty};
 use super::value_names::{Binding, Scope};
-use super::{BodyTypeFailure, Checker, constraints, resources, substitution, type_resolution};
+use super::{
+    BodyTypeFailure, Checker, constraints, resources, roles, substitution, type_resolution,
+};
 
 pub(super) fn check<'a>(
     checker: &mut Checker<'a, '_>,
@@ -36,7 +38,10 @@ pub(super) fn check<'a>(
             scope.bind(checker, Binding { name, ty: expected });
         }
         RawStatementKind::Assignment { target, value, .. } => {
-            let expected = checker.expression(owner, *target);
+            let target = checker.expression(owner, *target);
+            // An exclusive loan is a referent place even when its lexical alias is const.
+            // The original source owner checks access and prepares RHS before replacement.
+            let expected = roles::observe(checker, owner, target)?;
             let actual = checker.expression(owner, *value);
             constraints::require(
                 checker,
@@ -62,30 +67,16 @@ pub(super) fn check<'a>(
         }
         RawStatementKind::Block { .. } | RawStatementKind::ExpressionStatement { .. } => {}
         RawStatementKind::If { condition, .. } | RawStatementKind::While { condition, .. } => {
-            let actual = checker.expression(owner, *condition);
-            if let Some(actual) = actual {
-                if substitution::head(&checker.tables, owner, actual)?
-                    .is_some_and(|head| matches!(head.kind, Kind::Parameter(_)))
-                {
-                    constraints::opaque(
-                        checker,
-                        function.body.expressions[*condition as usize].span,
-                        "bool condition capability",
-                    );
-                } else {
-                    constraints::require(
-                        checker,
-                        owner,
-                        Some(Ty::scalar(Scalar::Bool)),
-                        Some(actual),
-                        function.body.expressions[*condition as usize].span,
-                        "condition",
-                    )?;
-                }
-            }
+            check_condition(
+                checker,
+                owner,
+                *condition,
+                function.body.expressions[*condition as usize].span,
+            )?;
         }
         RawStatementKind::WeakUpgrade { keyword_span, weak, .. } => {
-            let Some(ty) = checker.expression(owner, *weak) else { return Ok(()) };
+            let weak = checker.expression(owner, *weak);
+            let Some(ty) = roles::observe(checker, owner, weak)? else { return Ok(()) };
             let Some(head) = substitution::head(&checker.tables, owner, ty)? else { return Ok(()) };
             if matches!(head.kind, Kind::Parameter(_)) {
                 constraints::opaque(checker, *keyword_span, "Weak handle capability");
@@ -110,6 +101,32 @@ pub(super) fn check<'a>(
                 origin: Origin::Statement { function: owner, statement: index },
                 environment: 0,
             });
+        }
+    }
+    Ok(())
+}
+
+fn check_condition(
+    checker: &mut Checker<'_, '_>,
+    owner: DeclarationIdentity,
+    condition: u32,
+    span: zryna_source::UntrustedSpan,
+) -> Result<(), BodyTypeFailure> {
+    let actual = checker.expression(owner, condition);
+    if let Some(actual) = actual {
+        if substitution::head(&checker.tables, owner, actual)?
+            .is_some_and(|head| matches!(head.kind, Kind::Parameter(_)))
+        {
+            constraints::opaque(checker, span, "bool condition capability");
+        } else {
+            constraints::require(
+                checker,
+                owner,
+                Some(Ty::scalar(Scalar::Bool)),
+                Some(actual),
+                span,
+                "condition",
+            )?;
         }
     }
     Ok(())

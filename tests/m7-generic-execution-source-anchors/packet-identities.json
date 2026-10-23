@@ -1,0 +1,41 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "local-transfer",
+      "provider": "native",
+      "packet": "local-transfer-native.json",
+      "packetSha256": "9194061fd63c34f8ca7c62829b96e77440807fea9dcf7be1f55e8e3d9cb2afa7",
+      "packetBytes": 11062,
+      "exactSourceSha256": "81d42d1a3828e0b1cddada81fb1c2019b55c5dc9f97ea01f590bf9986bcd79a6",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "local-transfer",
+      "provider": "typescript",
+      "packet": "local-transfer-typescript.json",
+      "packetSha256": "e7d74574f5d0b26bcaf29a3b9223389dc952f30ecded2cc9b7b33faf646d0721",
+      "packetBytes": 11062,
+      "exactSourceSha256": "81d42d1a3828e0b1cddada81fb1c2019b55c5dc9f97ea01f590bf9986bcd79a6",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "prepared-call",
+      "provider": "native",
+      "packet": "prepared-call-native.json",
+      "packetSha256": "664a3c7227aa5cf2311402f674d87fdf33e05de910b35a3e6ecc2066b7481b89",
+      "packetBytes": 15587,
+      "exactSourceSha256": "340b64789e42de6931ff3ced8a3f1731a72ba1599bdd64976ee9d5e2ebf49d41",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "prepared-call",
+      "provider": "typescript",
+      "packet": "prepared-call-typescript.json",
+      "packetSha256": "686858b88d92eed132f129139a24684ae7960a52c8904824cfdf458ccaa70ce6",
+      "packetBytes": 15587,
+      "exactSourceSha256": "340b64789e42de6931ff3ced8a3f1731a72ba1599bdd64976ee9d5e2ebf49d41",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

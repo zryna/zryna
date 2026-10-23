@@ -1,0 +1,6 @@
+{
+  "status": "Actual strict closed raw v5 schema validation; no source/semantic/seal/runtime authority",
+  "packets": 26,
+  "schemaSha256": "922bb3fed447cc730cce2054e440b80bef158f07b052c75161a56b54ffe08736",
+  "passed": true
+}

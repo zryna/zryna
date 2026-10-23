@@ -3,8 +3,8 @@ use zryna_syntax::v5::RawExpressionKind;
 use super::super::DeclarationIdentity;
 use super::model::{Head, Kind, Ty};
 use super::{
-    BodyTypeFailure, Checker, constraints, constructions, projections, resources, signatures,
-    substitution, type_resolution,
+    BodyTypeFailure, Checker, constraints, constructions, projections, resources, roles,
+    signatures, substitution, type_resolution,
 };
 
 mod results;
@@ -131,6 +131,12 @@ pub(super) fn finish(
     let mut valid = checker.tables.function(owner).expressions[expression as usize].match_valid;
     for arm in arms {
         let actual = checker.expression(owner, arm.value);
+        let actual = roles::value(
+            checker,
+            owner,
+            actual,
+            function.body.expressions[arm.value as usize].span,
+        )?;
         if actual.is_none() {
             valid = false;
         }

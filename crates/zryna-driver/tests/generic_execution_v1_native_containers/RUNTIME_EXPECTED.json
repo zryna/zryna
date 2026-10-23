@@ -1,0 +1,341 @@
+{
+  "status": "Frozen additive independent native source-execution expectations BEFORE native container implementation qualification; unexecuted",
+  "source_expected_freeze_sha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+  "independent_js_allocation_projection_sha256": "dc59b80c362ac4344e5252a9329d7544322e496b1066a3c21281ef6e3d20c6db",
+  "cases": [
+    {
+      "case": "opaque-count-unused",
+      "observation": 7,
+      "acquisitions": [],
+      "releases": [],
+      "string_clone_calls": 0,
+      "faults": [],
+      "string_acquisition_utf8_hex": {},
+      "count_faults": [],
+      "native_fault_count": 0,
+      "native_observations": 1
+    },
+    {
+      "case": "vec-copy",
+      "observation": 14,
+      "acquisitions": [
+        "source Vec",
+        "destination Vec"
+      ],
+      "releases": [
+        2,
+        1
+      ],
+      "string_clone_calls": 0,
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        }
+      ],
+      "string_acquisition_utf8_hex": {},
+      "count_faults": [],
+      "native_fault_count": 2,
+      "native_observations": 5
+    },
+    {
+      "case": "vec-owned-prepare",
+      "observation": 7,
+      "acquisitions": [
+        "String A",
+        "String B",
+        "source Vec",
+        "destination Vec",
+        "cloned String A",
+        "cloned String B"
+      ],
+      "releases": [
+        6,
+        5,
+        4,
+        2,
+        1,
+        3
+      ],
+      "string_clone_calls": 2,
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 3,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            2,
+            1
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 4,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            2,
+            1,
+            3
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 5,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            4,
+            2,
+            1,
+            3
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 6,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            5,
+            4,
+            2,
+            1,
+            3
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "string-clone",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            4,
+            2,
+            1,
+            3
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "string-clone",
+          "ordinal": 2,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            5,
+            4,
+            2,
+            1,
+            3
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        }
+      ],
+      "string_acquisition_utf8_hex": {
+        "1": "41",
+        "2": "42",
+        "5": "41",
+        "6": "42"
+      },
+      "count_faults": [],
+      "native_fault_count": 8,
+      "native_observations": 17
+    },
+    {
+      "case": "shared-weak-count",
+      "observation": 7,
+      "acquisitions": [
+        "String L",
+        "Shared control"
+      ],
+      "releases": [
+        1,
+        2
+      ],
+      "string_clone_calls": 0,
+      "count_events": [
+        "strongClone",
+        "weakDowngrade",
+        "weakClone",
+        "weakRelease",
+        "weakRelease",
+        "strongReleaseBegin:notLast",
+        "strongReleaseBegin:last",
+        "payloadDrop",
+        "strongReleaseFinish:deallocated"
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ],
+          "fault_mechanism": "declared runtime allocation-category status1 before out-record/destination publication",
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none"
+        }
+      ],
+      "refcount_boundary_scope": "Genuine fixture does not reach u32::MAX; no actual overflow claim. Declared status handling can be attacked by hostile provider records separately; canonical count boundary controls must establish unchanged state at the real maximum.",
+      "string_acquisition_utf8_hex": {
+        "1": "4c"
+      },
+      "count_faults": [
+        {
+          "kind": "strong-clone-status",
+          "ordinal": 1,
+          "helper": "zryna_rt_o1_strong_clone",
+          "injected_declared_status": 3,
+          "trap": "zryna.trap.refcount-v1",
+          "releases": [
+            1,
+            2
+          ],
+          "completed_count_acquisitions": [],
+          "failed_result_owner": "none",
+          "count_events": [
+            "strongClone:failure",
+            "strongReleaseBegin:last",
+            "payloadDrop",
+            "strongReleaseFinish:deallocated"
+          ],
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none",
+          "actual_u32_MAX_overflow_observation": false
+        },
+        {
+          "kind": "weak-downgrade-status",
+          "ordinal": 1,
+          "helper": "zryna_rt_o1_weak_downgrade",
+          "injected_declared_status": 3,
+          "trap": "zryna.trap.refcount-v1",
+          "releases": [
+            1,
+            2
+          ],
+          "completed_count_acquisitions": [
+            "strongClone"
+          ],
+          "failed_result_owner": "none",
+          "count_events": [
+            "strongClone",
+            "weakDowngrade:failure",
+            "strongReleaseBegin:notLast",
+            "strongReleaseBegin:last",
+            "payloadDrop",
+            "strongReleaseFinish:deallocated"
+          ],
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none",
+          "actual_u32_MAX_overflow_observation": false
+        },
+        {
+          "kind": "weak-clone-status",
+          "ordinal": 1,
+          "helper": "zryna_rt_o1_weak_clone",
+          "injected_declared_status": 3,
+          "trap": "zryna.trap.refcount-v1",
+          "releases": [
+            1,
+            2
+          ],
+          "completed_count_acquisitions": [
+            "strongClone",
+            "weakDowngrade"
+          ],
+          "failed_result_owner": "none",
+          "count_events": [
+            "strongClone",
+            "weakDowngrade",
+            "weakClone:failure",
+            "weakRelease",
+            "strongReleaseBegin:notLast",
+            "strongReleaseBegin:last",
+            "payloadDrop",
+            "strongReleaseFinish:deallocated"
+          ],
+          "expected_process_signal": "SIGILL",
+          "scalar_output": "none",
+          "actual_u32_MAX_overflow_observation": false
+        }
+      ],
+      "native_fault_count": 5,
+      "native_observations": 11
+    }
+  ],
+  "expected_native_observations": 34,
+  "expected_native_SIGILL_fault_processes": 15,
+  "all_faults_require_pristine_success_retry": true,
+  "all_acquired_allocations_released_exactly_once": true,
+  "identity_rules": [
+    "Acquisition ordinals count actual successful String/Vec/control runtime allocations; retain actual distinct nonzero pointer for each acquisition.",
+    "StringClone sources must be prior live actual String pointers; compare actual UTF8 bytes before/after copy and exactrelease.",
+    "Vec clone allocates destination before child clone1; no source carrier/frame/scratch allocation may appear.",
+    "Shared/Weak count acquisition preserves one actual control pointer; returned count-handle owners are distinct source owners but not new allocations.",
+    "Release records carry exact acquired pointer and allocation ID; count actions retain original control identity; no compiler source labels substitute for physical identity.",
+    "Failure output records are poisoned before helper call; status is checked before out/result publication; failed count leaves actual prior counts unchanged."
+  ],
+  "native_trap_scope": "SIGILL proves the controlled native trap route after exact observed cleanup. The machine signal alone does not distinguish allocation/refcount language trap categories; helper/status/callsite records establish the injected route.",
+  "count_boundary_scope": "Injected declared status3 at the real source callsite proves failure routing, unchanged prior runtime state, no result publication, and prior-owner cleanup. It does NOT observe actual u32MAX overflow. Canonical runtime real-maximum count boundary controls remain a separate required gate.",
+  "capacity_scope": "Vec capacity remains target-private; require enough storage and retained runtime layout declarations, no guessed growth policy or new source-visible capacity.",
+  "runtime_depth_scope": "These finite literals do not qualify arbitrary recursive Vec dynamic depth; accepted full profile still requires a bounded fallible workstack/kernel and owning depth controls.",
+  "source_and_backend_scope": "Four settled sources only; original nine literals/oracles immutable. New complete issuer and checked native adapter required; no fabricated raw map/proof/oldseal. Push/WeakUpgrade continuation and full#416 remain open."
+}

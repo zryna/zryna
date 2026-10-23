@@ -1,0 +1,9 @@
+export function entry(limit: i32): i32 {
+  let count: i32 = 0;
+  let total: i32 = 0;
+  while (count < limit) {
+    count = count + 1;
+    total = total + count;
+  }
+  return total;
+}

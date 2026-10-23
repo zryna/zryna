@@ -3,7 +3,7 @@ use zryna_syntax::v5::RawExpressionKind;
 
 use super::super::DeclarationIdentity;
 use super::model::{Kind, Scalar, Ty};
-use super::{BodyTypeFailure, Checker, constraints, substitution};
+use super::{BodyTypeFailure, Checker, constraints, roles, substitution};
 
 pub(super) fn integer(
     checker: &mut Checker<'_, '_>,
@@ -34,6 +34,8 @@ pub(super) fn operation(
 ) -> Result<Option<Ty>, BodyTypeFailure> {
     let left = checker.expression(owner, lhs);
     let right = rhs.and_then(|rhs| checker.expression(owner, rhs));
+    let left = roles::value(checker, owner, left, at)?;
+    let right = roles::value(checker, owner, right, at)?;
     // Inspect each independently known operand even when the other has invalid arguments.
     let mut opaque = false;
     for ty in [left, right].into_iter().flatten() {

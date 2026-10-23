@@ -1,0 +1,32 @@
+{
+  "status": "Frozen BEFORE fresh provider processes and any owning test; query a single root through authentic Originals, not fabricated TypeWorld rows",
+  "nominals": 131,
+  "indirectVecLinks": 130,
+  "rootToOpaqueNodeCount": 262,
+  "maxSourceTypeSubtreeDepth": 2,
+  "rootOpaque": {
+    "copy": false,
+    "clone": false,
+    "owner": {
+      "kind": 0,
+      "module": 0,
+      "index": 0
+    },
+    "slot": 0
+  },
+  "rootClosedI32": {
+    "copy": false,
+    "clone": true
+  },
+  "sharedOfOpaqueRoot": {
+    "copy": false,
+    "clone": true
+  },
+  "allSourceAndKeysWithinInheritedBounds": true,
+  "notClaimed": [
+    "semantic full-profile admission",
+    "execution seal",
+    "runtime/backends",
+    "source aggregate profile work success"
+  ]
+}

@@ -12,6 +12,18 @@ pub(super) struct PreparedOriginals<'b, 'c, 's> {
 pub(super) fn prepare_originals<'b, 'c, 's>(
     bodies: &'b BodyTypeContext<'c, 's>,
 ) -> Result<PreparedOriginals<'b, 'c, 's>, InstantiationFailure> {
+    if bodies.execution_roles() {
+        // New execution roles cannot launder changed source admission into an older issuer.
+        return Err(InstantiationFailure::InternalFailure);
+    }
+    prepare_execution_originals(bodies)
+}
+
+/// New execution discovery accepts its explicit mode and the inherited legacy mode.
+/// The actual discovery implementation, counters and instance identities remain shared.
+pub(super) fn prepare_execution_originals<'b, 'c, 's>(
+    bodies: &'b BodyTypeContext<'c, 's>,
+) -> Result<PreparedOriginals<'b, 'c, 's>, InstantiationFailure> {
     let mut builder = Builder::new(bodies)?;
     let mut original_errors = diagnostics::Errors::default();
     source_calls::collect(&builder, &mut original_errors)?;

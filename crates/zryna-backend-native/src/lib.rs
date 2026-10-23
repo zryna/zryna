@@ -33,6 +33,8 @@ pub mod data_ownership_v1;
 pub mod native_c_v0;
 
 pub mod generic_copy_v1;
+/// Native sibling consuming only the independent full execution seal.
+pub mod generic_execution_v1;
 pub mod generic_owned_v2;
 /// The only native object target implemented by the M1 scalar profile.
 pub const NATIVE_OBJECT_TARGET: &str = "x86_64-unknown-linux-gnu";

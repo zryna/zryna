@@ -1,0 +1,5 @@
+export function entry(): i32 {
+  const values: Vec<String> = Vec<String>(["A", "B"]);
+  const copied: Vec<String> = clone(values);
+  return 7;
+}

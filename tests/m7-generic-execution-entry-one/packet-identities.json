@@ -1,0 +1,42 @@
+{
+  "status": "Complete packets from named actual provider processes",
+  "originalReceiptsSha256": "1f10b2605152c9b8fd2d09b1bd6ee693ed0faad2cdad3075b2840dc9dfe33d5d",
+  "records": [
+    {
+      "case": "imported-generic-entry-one",
+      "provider": "native",
+      "packet": "imported-generic-entry-one-native.json",
+      "packetBytes": 11194,
+      "packetSha256": "345bb90b7648e418115f7967e5392af6a6247c4681c6be22f05d3d0f7f722d42",
+      "exactSources": [
+        {
+          "path": "a.zry",
+          "sha256": "b0b189e867c2bbdac4fd226e525636bdb3a37496213d4ce913593f0f69c3615b"
+        },
+        {
+          "path": "main.zry",
+          "sha256": "cef91934e0bb7437b845b0a83ea950da5111f56e49ec657d694ae432c45c9b55"
+        }
+      ],
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "imported-generic-entry-one",
+      "provider": "typescript",
+      "packet": "imported-generic-entry-one-typescript.json",
+      "packetBytes": 11194,
+      "packetSha256": "04b142061eff00e44f7dd5993a57027ef36b97c2cac64d06e9cf0c5fb95504ba",
+      "exactSources": [
+        {
+          "path": "a.zry",
+          "sha256": "b0b189e867c2bbdac4fd226e525636bdb3a37496213d4ce913593f0f69c3615b"
+        },
+        {
+          "path": "main.zry",
+          "sha256": "cef91934e0bb7437b845b0a83ea950da5111f56e49ec657d694ae432c45c9b55"
+        }
+      ],
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

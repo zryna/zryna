@@ -1,0 +1,2 @@
+function read(loan: Borrow<String>): String { return loan; }
+export function entry(): i32 { return 0; }

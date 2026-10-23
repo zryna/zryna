@@ -23,6 +23,7 @@ mod matches;
 mod model;
 mod projections;
 mod resources;
+mod roles;
 mod scalars;
 mod signatures;
 mod statements;
@@ -75,9 +76,22 @@ pub struct BodyTypeContext<'c, 's> {
     declarations: &'c DeclarationContext<'s>,
     tables: Tables,
     storage: StorageReport,
+    mode: Mode,
+}
+
+/// The existing checker remains an independent legacy owner. Execution roles are opt-in and
+/// cannot be used to construct an older admission context through ordinary discovery.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Mode {
+    Legacy,
+    ExecutionV1,
 }
 
 impl<'c, 's> BodyTypeContext<'c, 's> {
+    pub(super) const fn execution_roles(&self) -> bool {
+        matches!(self.mode, Mode::ExecutionV1)
+    }
+
     /// Retains the body's resolved intrinsic classification, including import-alias precedence.
     pub(super) fn intrinsic_call(
         &self,
@@ -166,6 +180,7 @@ pub(super) struct Checker<'c, 's> {
     arguments: constraints::Lane,
     constraints: constraints::Lane,
     equality: equality::Cache,
+    mode: Mode,
 }
 
 impl Checker<'_, '_> {
@@ -192,8 +207,33 @@ fn check_with_cache<'c, 's>(
     context: &'c DeclarationContext<'s>,
     cache_capacity: usize,
 ) -> Result<BodyTypeContext<'c, 's>, BodyTypeFailure> {
+    check_mode(context, cache_capacity, Mode::Legacy)
+}
+
+/// Checks original execution bodies with explicit referent, value and argument roles.
+///
+/// Original ownership is checked before symbolic typing, including unused opaque templates.
+/// The resulting source context retains its declaration brand and is accepted only by the
+/// execution discovery entry point. It grants no closed layout or executable authority.
+///
+/// # Errors
+/// Preserves exact original-source diagnostics and infrastructure failures without a context.
+pub fn check_execution_body_types<'c, 's>(
+    context: &'c DeclarationContext<'s>,
+) -> Result<BodyTypeContext<'c, 's>, BodyTypeFailure> {
+    zryna_ir::generic_v1::execution_v1::check_original_bodies(context.syntax(), context.sources())
+        .map_err(roles::source_failure)?;
+    check_mode(context, 256, Mode::ExecutionV1)
+}
+
+fn check_mode<'c, 's>(
+    context: &'c DeclarationContext<'s>,
+    cache_capacity: usize,
+    mode: Mode,
+) -> Result<BodyTypeContext<'c, 's>, BodyTypeFailure> {
     let mut checker = Checker {
         context,
+        mode,
         tables: resources::tables(context)?,
         capabilities: capabilities::Graph::empty(),
         names: constraints::Lane::new()?,
@@ -226,5 +266,5 @@ fn check_with_cache<'c, 's>(
     let mut storage = resources::report(&checker.tables)?;
     (storage.predicate_rows, storage.predicate_edges, storage.predicate_capacity_bytes) =
         checker.capabilities.storage();
-    Ok(BodyTypeContext { declarations: context, tables: checker.tables, storage })
+    Ok(BodyTypeContext { declarations: context, tables: checker.tables, storage, mode })
 }

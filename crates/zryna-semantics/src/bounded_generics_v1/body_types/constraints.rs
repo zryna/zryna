@@ -2,7 +2,7 @@ use zryna_diagnostics::Diagnostic;
 use zryna_source::{Span, UntrustedSpan};
 
 use super::model::{Kind, Ty};
-use super::{BodyTypeFailure, Checker, equality, resources, substitution};
+use super::{BodyTypeFailure, Checker, equality, resources, roles, substitution};
 
 /// Source-only candidates have empty instance keys and witnesses. The canonical tuple is
 /// therefore the authenticated file/start/end/code tuple; duplicate tuples consume no slot.
@@ -91,6 +91,9 @@ fn require_at(
 ) -> Result<bool, BodyTypeFailure> {
     let (Some(expected), Some(actual)) = (expected, actual) else {
         // A pending invalid argument has no successful equality judgement.
+        return Ok(false);
+    };
+    let Some(actual) = roles::argument(checker, owner, expected, Some(actual), at)? else {
         return Ok(false);
     };
     let equal = equality::equal(&checker.tables, owner, expected, actual, &mut checker.equality)?;

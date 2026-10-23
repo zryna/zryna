@@ -42,13 +42,40 @@ impl<'a> Originals<'a> {
         program: &raw::Program,
         syntax: &'a VerifiedProjectSyntaxV5,
     ) -> Result<Self, Failure> {
+        Self::check_parts(&program.modules, &program.declarations, syntax)
+    }
+
+    /// Authenticates the common declaration vocabulary without an executable graph adapter.
+    pub fn check_parts(
+        modules: &[raw::Module],
+        declarations: &[raw::Declaration],
+        syntax: &'a VerifiedProjectSyntaxV5,
+    ) -> Result<Self, Failure> {
+        Self::check_parts_mode(modules, declarations, syntax, false)
+    }
+
+    /// The execution issuer separately prepays intrinsic classification and checks operands.
+    pub(in crate::generic_v1) fn check_execution_parts(
+        modules: &[raw::Module],
+        declarations: &[raw::Declaration],
+        syntax: &'a VerifiedProjectSyntaxV5,
+    ) -> Result<Self, Failure> {
+        Self::check_parts_mode(modules, declarations, syntax, true)
+    }
+
+    fn check_parts_mode(
+        modules: &[raw::Module],
+        declarations: &[raw::Declaration],
+        syntax: &'a VerifiedProjectSyntaxV5,
+        intrinsic_concat: bool,
+    ) -> Result<Self, Failure> {
         let units = syntax.files();
-        if units.len() != program.modules.len() {
+        if units.len() != modules.len() {
             return Err(reject("authenticated module inventory differs from raw claims"));
         }
         let mut names = reserve(units.len())?;
         let mut next = 0;
-        for (unit, module) in units.iter().zip(&program.modules) {
+        for (unit, module) in units.iter().zip(modules) {
             if unit.id != module.id || unit.functions.len() != module.functions as usize {
                 return Err(reject(
                     "claimed original function/module inventory differs from syntax",
@@ -65,8 +92,7 @@ impl<'a> Originals<'a> {
                 });
             }
             for (index, function) in unit.functions.iter().enumerate() {
-                let claim = program
-                    .declarations
+                let claim = declarations
                     .get(next)
                     .ok_or_else(|| reject("missing authenticated original function"))?;
                 if claim.span != function.span
@@ -91,7 +117,7 @@ impl<'a> Originals<'a> {
         }
         let mut result = Self { units, names };
         result.imports()?;
-        result.calls(program)?;
+        result.calls(declarations, intrinsic_concat)?;
         Ok(result)
     }
 
@@ -142,7 +168,11 @@ impl<'a> Originals<'a> {
         Ok(())
     }
 
-    fn calls(&self, program: &raw::Program) -> Result<(), Failure> {
+    fn calls(
+        &self,
+        declarations: &[raw::Declaration],
+        intrinsic_concat: bool,
+    ) -> Result<(), Failure> {
         let mut edges = reserve(65536)?;
         let mut owner = 0;
         for unit in self.units {
@@ -150,6 +180,9 @@ impl<'a> Originals<'a> {
                 for expression in &function.body.expressions {
                     if let RawExpressionKind::Call { callee, type_arguments, .. } = &expression.kind
                     {
+                        if intrinsic_concat && callee.text == "concat" {
+                            continue;
+                        }
                         let Target::Function(module, index) =
                             self.resolve(unit.id, &callee.text)?
                         else {
@@ -166,8 +199,7 @@ impl<'a> Originals<'a> {
                                 "source call generic arity differs from its original",
                             ));
                         }
-                        let target = program
-                            .declarations
+                        let target = declarations
                             .binary_search_by_key(&(module, index), |row| {
                                 (row.module, row.function)
                             })
@@ -181,7 +213,7 @@ impl<'a> Originals<'a> {
                 owner += 1;
             }
         }
-        calls::check(program.declarations.len(), &edges)
+        calls::check(declarations.len(), &edges)
     }
 }
 

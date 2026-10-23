@@ -12,6 +12,7 @@ mod body;
 mod calls;
 mod cfg;
 pub mod copy_v1;
+pub mod execution_v1;
 mod inventory;
 pub mod keys;
 mod loops;

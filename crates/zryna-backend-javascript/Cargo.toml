@@ -13,6 +13,8 @@ zryna-layout = { path = "../zryna-layout" }
 zryna-ownership-runtime-abi = { path = "../zryna-ownership-runtime-abi" }
 
 [dev-dependencies]
+serde_json.workspace = true
+sha2.workspace = true
 zryna-source = { path = "../zryna-source" }
 zryna-semantics = { path = "../zryna-semantics" }
 zryna-syntax = { path = "../zryna-syntax" }

@@ -1,0 +1,35 @@
+{
+  "status": "FROZEN additive source literals and semantic cleanup expectations BEFORE provider authentication/producer changes",
+  "cases": [
+    {
+      "case": "local-transfer",
+      "literal": "/tmp/m416-execution-source-anchor-proposal/literals/local-transfer.zry",
+      "sha256": "81d42d1a3828e0b1cddada81fb1c2019b55c5dc9f97ea01f590bf9986bcd79a6",
+      "expected_scalar": 7,
+      "expected_pending_cleanup": [
+        "last",
+        "middle",
+        "moved"
+      ],
+      "scope": "function transfer final return cleanup"
+    },
+    {
+      "case": "prepared-call",
+      "literal": "/tmp/m416-execution-source-anchor-proposal/literals/prepared-call.zry",
+      "sha256": "340b64789e42de6931ff3ced8a3f1731a72ba1599bdd64976ee9d5e2ebf49d41",
+      "expected_scalar": 11,
+      "expected_pending_cleanup": [
+        "last",
+        "middle",
+        "prepared first argument"
+      ],
+      "scope": "function prepare Clone outer and prefix failure outer cleanup; prefix cleanup destination remains first"
+    }
+  ],
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "authority": "No provider packets or executable authority are fabricated",
+  "old_oracles": "All earlier frozen sources/oracles unchanged"
+}

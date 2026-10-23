@@ -5,8 +5,8 @@ use super::super::{DeclarationIdentity, DeclarationKind};
 use super::model::{Kind, Scalar, Ty};
 use super::value_names::Scope;
 use super::{
-    BodyTypeFailure, Checker, IntrinsicCall, arguments, constraints, resources, substitution,
-    type_resolution, value_names,
+    BodyTypeFailure, Checker, IntrinsicCall, arguments, constraints, resources, roles,
+    substitution, type_resolution, value_names,
 };
 
 pub(super) fn check(
@@ -43,6 +43,7 @@ pub(super) fn check(
         }
         for value in values {
             let actual = checker.expression(owner, *value);
+            let actual = roles::observe(checker, owner, actual)?;
             let at = resources::raw_function(checker.context, owner).body.expressions
                 [*value as usize]
                 .span;

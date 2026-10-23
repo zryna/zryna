@@ -1,0 +1,5 @@
+export function entry(): i32 {
+  const value: i32 = 7;
+  const copied: i32 = clone(value);
+  return value + copied;
+}

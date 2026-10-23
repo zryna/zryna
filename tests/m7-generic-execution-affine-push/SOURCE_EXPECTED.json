@@ -1,0 +1,21 @@
+{
+  "status": "NEW additive genuine source and expected behavior frozen BEFORE any provider/schema/seal/backend execution; original nine literals/oracles unchanged",
+  "case": "vec-push-owned-prepare",
+  "source": "literals/vec-push-owned-prepare.zry",
+  "source_sha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91",
+  "semantic": "accept",
+  "result": 7,
+  "ordering": [
+    "prepare original String A",
+    "construct source Vec owning A",
+    "prepare affine RHS String B while original vector stays owned",
+    "reserve/grow while both original vector and pending RHS B remain owned",
+    "append commit consumes RHS only after reserve success"
+  ],
+  "source_failure_expectations": {
+    "RHS_String_failure": "release A then source Vec; no B owner/no reserve call",
+    "reserve_failure": "release prepared B, then A, then unchanged original source Vec; no destination replacement/append result publication"
+  },
+  "capacity_strategy": "target-private; no new source-visible growth capacity or source-level replacement allocation count",
+  "runtime_scope": "requires fresh complete native+TypeScript DTO authentication and genuine whole execution_v1 issuer; unexecuted"
+}

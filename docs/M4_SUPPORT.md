@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`d88fb79e4576bf690e6d1996f7fe90f92070a6ab16f61e7a2315eaa55ea47f69`. The matrix defines six bounded modes on the two
+`b2ff51c64ba449110b4457e7e8b692322e9775ff8013425858b56395cc10da0a`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "d88fb79e4576bf690e6d1996f7fe90f92070a6ab16f61e7a2315eaa55ea47f69",
+  "registrySha256": "b2ff51c64ba449110b4457e7e8b692322e9775ff8013425858b56395cc10da0a",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3347,8 +3347,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "Cargo.lock",
-      "bytes": 52014,
-      "sha256": "f934e994922d9d13797bc87df3345b879af11fe8a7d7eb30c8a0abf53ca6be9f"
+      "bytes": 52038,
+      "sha256": "2f4b2d854542bf022903cf5bc367bae5ba03605f8018af7e34ce38ecd565bf42"
     },
     {
       "path": "Cargo.toml",
@@ -3587,8 +3587,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-backend-javascript/Cargo.toml",
-      "bytes": 585,
-      "sha256": "b6d6310639f098e1edc7135564d8f3d22606cbc5efe722b58137abd1b0006cd8"
+      "bytes": 635,
+      "sha256": "62603cc41547228c681aedf9a72d92a9d1c10b3093ba1b7e6e26b01d5f1f9e35"
     },
     {
       "path": "crates/zryna-backend-native/Cargo.toml",
@@ -3962,8 +3962,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-backend-webassembly/src/lib.rs",
-      "bytes": 62603,
-      "sha256": "dea2ff30d1bf390ace52e67566bd2784a8d442132b0be6dad3ee9f060d016a11"
+      "bytes": 62633,
+      "sha256": "f8745d74dfae03d2166d165c42ad88b3cb6e9d76da58e91eb8b6d3da5a232a1b"
     },
     {
       "path": "crates/zryna-backend-webassembly/src/scalar_audit.rs",

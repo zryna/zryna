@@ -1,0 +1,92 @@
+{
+  "status": "Additive native target expected projection frozen BEFORE affine RHS semantic/native/runtime qualification; original source-level oracle immutable",
+  "case": "vec-push-owned-prepare",
+  "observation": 7,
+  "source_sha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91",
+  "native_source_expected_freeze_sha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f",
+  "acquisitions": [
+    "String A",
+    "source Vec buffer",
+    "prepared String B",
+    "replacement Vec buffer"
+  ],
+  "kinds": [
+    "String",
+    "Vec",
+    "String",
+    "Vec"
+  ],
+  "string_acquisition_utf8_hex": {
+    "1": "41",
+    "3": "42"
+  },
+  "releases": [
+    2,
+    3,
+    1,
+    4
+  ],
+  "string_clone_calls": 0,
+  "reserve_calls": 1,
+  "faults": [
+    {
+      "kind": "allocation",
+      "ordinal": 1,
+      "successful_acquisitions": 0,
+      "releases": [],
+      "reserve_calls": 0
+    },
+    {
+      "kind": "allocation",
+      "ordinal": 2,
+      "successful_acquisitions": 1,
+      "releases": [
+        1
+      ],
+      "reserve_calls": 0
+    },
+    {
+      "kind": "allocation",
+      "ordinal": 3,
+      "successful_acquisitions": 2,
+      "releases": [
+        1,
+        2
+      ],
+      "reserve_calls": 0,
+      "requirement": "RHS B fails before reserve; source A+original buffer remain owned"
+    },
+    {
+      "kind": "allocation",
+      "ordinal": 4,
+      "successful_acquisitions": 3,
+      "releases": [
+        3,
+        1,
+        2
+      ],
+      "reserve_calls": 1,
+      "requirement": "Pending affine RHS B released before source A+unchanged buffer; no replacement acquired"
+    },
+    {
+      "kind": "reserve-capacity-status",
+      "ordinal": 1,
+      "injected_status": 2,
+      "successful_acquisitions": 3,
+      "releases": [
+        3,
+        1,
+        2
+      ],
+      "reserve_calls": 1,
+      "requirement": "Pending affine RHS B released before source A+unchanged buffer; failed poisoned output unpublished"
+    }
+  ],
+  "native_observations": 11,
+  "native_SIGILL_fault_processes": 5,
+  "all_faults_require_pristine_retry": true,
+  "canonical_native_capacity_scope": "Inherited canonical VecAllocate1/reserve2 replacement observed at actual malloc/free; no language capacity strategy promise.",
+  "prepared_rhs_scope": "At actual reserve entry source A allocation1, source Vec allocation2 and prepared B allocation3 are live; success consumes B only after reserve. Failed reserve never publishes replacement/result.",
+  "new_coverage": "Affine prepared RHS cleanup; prior i32 vec-push fixture did not prove this.",
+  "unqualified": "No execution yet; no arbitrary runtime depth/full-profile completion claim."
+}

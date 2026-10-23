@@ -37,3 +37,10 @@ fn assert_error(project: &Project, entry: &str, code: &str, token: &str) {
         token
     );
 }
+mod full_profile_first_vertical;
+
+mod execution_first_vertical;
+
+mod execution_entry_one;
+
+mod execution_containers;

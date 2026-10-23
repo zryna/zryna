@@ -1,0 +1,2 @@
+function change(loan: BorrowMut<String>): String { loan = "new"; return "rhs"; }
+export function entry(): i32 { let root: String = "old"; const loan: BorrowMut<String> = borrowMut(root); const joined: String = concat(loan, change(loan)); return 0; }

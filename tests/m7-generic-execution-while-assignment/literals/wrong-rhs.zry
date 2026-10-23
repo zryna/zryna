@@ -1,0 +1,1 @@
+export function entry(): i32 { let count: i32 = 0; count = true; return count; }

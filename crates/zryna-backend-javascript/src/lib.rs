@@ -13,6 +13,7 @@ pub use data_ownership_v1::emit_data_ownership;
 mod prelude;
 use prelude::{JAVASCRIPT_PRELUDE, MAX_CONTROL_FLOW_JAVASCRIPT_BYTES};
 pub mod generic_copy_v1;
+pub mod generic_execution_v1;
 pub mod generic_owned_v2;
 
 /// JavaScript artifacts produced by one compilation.

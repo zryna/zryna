@@ -1,0 +1,15 @@
+{
+  "status": "Immutable source+oracle FIRST; provider execution has not occurred",
+  "files": [
+    {
+      "path": "SOURCE_EXPECTED.json",
+      "bytes": 1201,
+      "sha256": "2f65bce97ba9ee5ef79377818c9335db9dfeb6d2c8a2aa0963d81c238fec455d"
+    },
+    {
+      "path": "literals/vec-push-owned-prepare.zry",
+      "bytes": 114,
+      "sha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91"
+    }
+  ]
+}
