@@ -22,6 +22,15 @@ struct Row {
     inode: u64,
 }
 
+// Keep only the original inode's proof; every row is still fully validated.
+// Unrelated sockets must not allocate row or field vectors inside the probe budget.
+#[derive(Debug, Default)]
+struct Snapshot {
+    rows: usize,
+    matches: usize,
+    first_match: Option<Row>,
+}
+
 #[derive(Debug)]
 pub(super) struct Identity {
     process: u32,
@@ -34,11 +43,12 @@ impl Identity {
         let address = listener.local_addr().expect("original listener address");
         assert!(address.is_ipv4() && address.ip().is_loopback());
         let inode = socket_inode(listener);
-        let rows = snapshot(deadline);
-        let matching: Vec<_> = rows.iter().filter(|row| row.inode == inode).collect();
-        assert_eq!(matching.len(), 1, "original listener inode must have one actual TCP row");
-        assert_eq!(matching[0].local, address, "original listener endpoint binding");
-        assert_eq!(matching[0].state, 0x0a, "original listener must actually be LISTEN");
+        let snapshot = snapshot(deadline, inode);
+        assert_eq!(snapshot.matches, 1, "original listener inode must have one actual TCP row");
+        let original = snapshot.first_match.expect("actual original listener TCP row");
+        assert_eq!(original.inode, inode, "original listener row identity binding");
+        assert_eq!(original.local, address, "original listener endpoint binding");
+        assert_eq!(original.state, 0x0a, "original listener must actually be LISTEN");
         assert_eq!(socket_inode(listener), inode, "original listener FD binding unchanged");
         assert_eq!(
             listener.local_addr().expect("original listener address after capture"),
@@ -60,12 +70,11 @@ impl Identity {
     fn assert_gone_probe(&self) {
         let deadline = Instant::now() + PROBE_TIME;
         assert_eq!(std::process::id(), self.process, "original listener owning process");
-        let rows = snapshot(deadline);
+        let snapshot = snapshot(deadline, self.inode);
         // All states, not only LISTEN: any surviving original inode is a failure.
-        let matching: Vec<_> = rows.iter().filter(|row| row.inode == self.inode).collect();
         assert!(
-            matching.is_empty(),
-            "original listener really closed: process={} address={} inode={} surviving={matching:?} holders={}",
+            snapshot.matches == 0,
+            "original listener really closed: process={} address={} inode={} surviving={snapshot:?} holders={}",
             self.process,
             self.address,
             self.inode,
@@ -89,13 +98,13 @@ fn socket_inode(listener: &TcpListener) -> u64 {
     inode
 }
 
-fn snapshot(deadline: Instant) -> Vec<Row> {
+fn snapshot(deadline: Instant, inode: u64) -> Snapshot {
     assert!(Instant::now() < deadline, "original TCP table deadline before open");
     let file = File::open("/proc/self/net/tcp").expect("actual original-process TCP table");
     let mut bytes = Vec::new();
     file.take(TABLE_BYTES + 1).read_to_end(&mut bytes).expect("bounded actual TCP table read");
     assert!(Instant::now() < deadline, "original TCP table deadline after read");
-    let rows = parse(&bytes);
+    let rows = parse(&bytes, inode);
     assert!(Instant::now() < deadline, "original TCP table deadline after parse");
     rows
 }
@@ -117,7 +126,7 @@ fn hex_pair(text: &str, left: usize, right: usize) {
     assert!(first.bytes().chain(second.bytes()).all(|byte| byte.is_ascii_hexdigit()));
 }
 
-fn parse(bytes: &[u8]) -> Vec<Row> {
+fn parse(bytes: &[u8], original_inode: u64) -> Snapshot {
     assert!(
         bytes.len() <= usize::try_from(TABLE_BYTES).expect("table bound fits usize"),
         "TCP table first-extra byte"
@@ -126,11 +135,9 @@ fn parse(bytes: &[u8]) -> Vec<Row> {
     let text = std::str::from_utf8(bytes).expect("actual TCP table text");
     assert!(text.ends_with('\n'), "complete TCP table final row");
     let mut lines = text.lines();
-    let header: Vec<_> =
-        lines.next().expect("actual TCP table header").split_whitespace().collect();
-    assert_eq!(
-        header,
-        [
+    let header = lines.next().expect("actual TCP table header");
+    assert!(
+        header.split_whitespace().eq([
             "sl",
             "local_address",
             "rem_address",
@@ -143,150 +150,52 @@ fn parse(bytes: &[u8]) -> Vec<Row> {
             "uid",
             "timeout",
             "inode"
-        ]
+        ]),
+        "actual TCP table header fields"
     );
-    let mut rows = Vec::new();
+    let mut snapshot = Snapshot::default();
     for line in lines {
-        assert!(rows.len() < TABLE_ROWS, "TCP table first-extra row");
-        let fields: Vec<_> = line.split_whitespace().collect();
-        assert!((10..=32).contains(&fields.len()), "TCP table row field count");
-        fields[0]
+        assert!(snapshot.rows < TABLE_ROWS, "TCP table first-extra row");
+        // This iterator borrows every field and preserves the original whitespace
+        // grammar without allocating a per-row collection for unrelated inodes.
+        let mut fields = line.split_whitespace();
+        let mut field = || fields.next().expect("TCP table row field count");
+        field()
             .strip_suffix(':')
             .expect("TCP row ordinal separator")
             .parse::<usize>()
             .expect("TCP row ordinal integer");
-        let local = endpoint(fields[1]);
-        let _remote = endpoint(fields[2]);
-        assert_eq!(fields[3].len(), 2, "TCP state width");
-        let state = u8::from_str_radix(fields[3], 16).expect("TCP state integer");
+        let local = endpoint(field());
+        let _remote = endpoint(field());
+        let state = field();
+        assert_eq!(state.len(), 2, "TCP state width");
+        let state = u8::from_str_radix(state, 16).expect("TCP state integer");
         assert!((1..=0x0d).contains(&state), "known Linux TCP state");
-        hex_pair(fields[4], 8, 8);
-        hex_pair(fields[5], 2, 8);
-        u64::from_str_radix(fields[6], 16).expect("TCP retransmission field");
-        fields[7].parse::<u32>().expect("TCP uid integer");
-        fields[8].parse::<u64>().expect("TCP timeout integer");
-        let inode = fields[9].parse::<u64>().expect("TCP inode integer");
+        hex_pair(field(), 8, 8);
+        hex_pair(field(), 2, 8);
+        u64::from_str_radix(field(), 16).expect("TCP retransmission field");
+        field().parse::<u32>().expect("TCP uid integer");
+        field().parse::<u64>().expect("TCP timeout integer");
+        let inode = field().parse::<u64>().expect("TCP inode integer");
         // Kernel versions append numerical diagnostics; malformed suffixes still fail closed.
-        for field in &fields[10..] {
+        for (index, field) in fields.enumerate() {
+            assert!(index < 22, "TCP table row field count");
             assert!(
                 field.parse::<i64>().is_ok() || u64::from_str_radix(field, 16).is_ok(),
                 "TCP numerical diagnostic field"
             );
         }
-        rows.push(Row { local, state, inode });
+        snapshot.rows += 1;
+        if inode == original_inode {
+            snapshot.matches += 1;
+            if snapshot.first_match.is_none() {
+                snapshot.first_match = Some(Row { local, state, inode });
+            }
+        }
     }
-    rows
+    snapshot
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
-
-    fn without_listener_inheritance(fixture: impl FnOnce() + UnwindSafe) {
-        // Acquire before creating any fixture listener: earlier children cannot
-        // inherit it, and later child creation waits until the fixture finishes.
-        #[cfg(target_arch = "x86_64")]
-        let guard = zryna_process::snapshot_writer().expect("listener fixture spawn exclusion");
-        let result = catch_unwind(fixture);
-        // Release normally even when a fixture fails, so its panic cannot poison
-        // the shared gate and obscure the original failure in unrelated tests.
-        #[cfg(target_arch = "x86_64")]
-        drop(guard);
-        if let Err(panic) = result {
-            resume_unwind(panic);
-        }
-    }
-
-    #[test]
-    fn actual_live_original_listener_cannot_receive_gone_credit() {
-        without_listener_inheritance(|| {
-            let listener = TcpListener::bind("127.0.0.1:0").expect("live original listener");
-            let original = Identity::capture(&listener);
-            assert!(catch_unwind(|| original.assert_gone_probe()).is_err());
-            drop(listener);
-            original.assert_gone_probe();
-        });
-    }
-
-    #[test]
-    fn cloned_original_listener_remains_live_after_first_handle_drops() {
-        without_listener_inheritance(|| {
-            let listener = TcpListener::bind("127.0.0.1:0").expect("cloned original listener");
-            let original = Identity::capture(&listener);
-            let alias = listener.try_clone().expect("test-only live alias negative");
-            drop(listener);
-            assert!(catch_unwind(|| original.assert_gone_probe()).is_err());
-            drop(alias);
-            original.assert_gone_probe();
-        });
-    }
-
-    #[test]
-    fn different_inode_at_same_endpoint_is_not_the_original_listener() {
-        without_listener_inheritance(|| {
-            let listener = TcpListener::bind("127.0.0.1:0").expect("old original listener");
-            let original = Identity::capture(&listener);
-            let address = listener.local_addr().expect("old endpoint");
-            drop(listener);
-            let replacement =
-                TcpListener::bind(address).expect("new listener at exact old endpoint");
-            let replacement_identity = Identity::capture(&replacement);
-            assert_ne!(
-                original.inode, replacement_identity.inode,
-                "distinct actual socket identities"
-            );
-            original.assert_gone_probe();
-            assert!(catch_unwind(|| replacement_identity.assert_gone_probe()).is_err());
-            // The old strict endpoint probe still rejects a real live peer. No waiver or retry.
-            assert!(catch_unwind(|| super::super::assert_listener_closed(address)).is_err());
-        });
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    #[test]
-    fn fixture_panic_preserves_shared_spawn_gate() {
-        assert!(
-            catch_unwind(|| without_listener_inheritance(|| panic!("fixture failure"))).is_err()
-        );
-        zryna_process::spawn(|| Ok(()))
-            .expect("shared spawn gate remains usable after fixture panic");
-    }
-
-    fn table(row: &str) -> Vec<u8> {
-        format!("sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt uid timeout inode\n{row}\n").into_bytes()
-    }
-
-    #[test]
-    fn table_schema_and_first_extra_bounds_are_strict() {
-        let row =
-            "0: 0100007F:1234 00000000:0000 0A 00000000:00000000 00:00000000 00000000 1000 0 42";
-        let rows = parse(&table(row));
-        assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].inode, 42);
-        assert_eq!(rows[0].state, 0x0a);
-        for changed in [
-            table(""),
-            table(&row.replace(" 42", " bad")),
-            table(&row.replace("0100007F", "not-hex!")),
-            table(&row.replace(" 0A ", " wrong ")),
-            table(row).into_iter().rev().collect(),
-        ] {
-            assert!(catch_unwind(|| parse(&changed)).is_err());
-        }
-        let mut truncated = table(row);
-        truncated.pop();
-        assert!(catch_unwind(|| parse(&truncated)).is_err());
-        let extra = vec![b'x'; usize::try_from(TABLE_BYTES + 1).expect("bound fits usize")];
-        assert!(catch_unwind(|| parse(&extra)).is_err());
-        let repeated = vec![row; TABLE_ROWS].join("\n");
-        assert_eq!(parse(&table(&repeated)).len(), TABLE_ROWS);
-        assert!(catch_unwind(|| parse(&table(&(repeated + "\n" + row)))).is_err());
-    }
-
-    #[test]
-    fn expired_original_deadline_cannot_read_or_credit_a_table() {
-        let expired = Instant::now().checked_sub(PROBE_TIME).expect("past instant");
-        assert!(catch_unwind(|| snapshot(expired)).is_err());
-    }
-}
+#[path = "listener_identity_tests.rs"]
+mod tests;
