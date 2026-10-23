@@ -152,7 +152,10 @@ impl Builder<'_, '_> {
         span: zryna_source::UntrustedSpan,
         op: Owned,
     ) -> Result<Value, Failure> {
+        self.budget.owned_operation(&op)?;
         match &op {
+            Owned::StructConstruct { fields, .. } => self.consume_struct_fields(fields)?,
+            Owned::CopyStructField { value, .. } => self.observe_struct(*value)?,
             Owned::Move(id) | Owned::Drop(id) => self.consume(*id)?,
             Owned::Borrow { value, exclusive } => {
                 if !self.alive[*value as usize]

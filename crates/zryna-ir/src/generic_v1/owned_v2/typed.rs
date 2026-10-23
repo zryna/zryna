@@ -1,4 +1,6 @@
-use super::{Failure, graph, raw};
+use super::{Admission, Failure, graph, raw};
+mod extension;
+mod resources;
 use crate::generic_v1::{body, cfg, inventory::Inventory, reject, reserve};
 use zryna_layout::generic_v1::VerifiedLayouts;
 use zryna_source::SourceMap;
@@ -9,16 +11,27 @@ pub(super) fn check(
     layouts: &VerifiedLayouts,
     inventory: &Inventory,
 ) -> Result<(), Failure> {
+    check_for(claim, sources, layouts, inventory, Admission::LegacyOwned)
+}
+
+pub(super) fn check_for(
+    claim: &raw::Program,
+    sources: &SourceMap,
+    layouts: &VerifiedLayouts,
+    inventory: &Inventory,
+    admission: Admission,
+) -> Result<(), Failure> {
     if claim.extensions.len() != claim.graph.functions.len() {
         return Err(reject("incomplete extension inventory"));
     }
     let views = layouts.types().collect::<Vec<_>>();
-    if views
-        .iter()
-        .any(|ty| !matches!(ty.key().first(), Some(0 | 1 | 2 | 0x11 | 0x13 | 0x14 | 0x15)))
-    {
+    if views.iter().any(|ty| {
+        !(matches!(ty.key().first(), Some(0 | 1 | 2 | 0x11 | 0x13 | 0x14 | 0x15))
+            || admission == Admission::StructV4 && matches!(ty.key().first(), Some(0x10 | 0x12)))
+    }) {
         return Err(reject("owned seal contains a type outside its admitted execution lane"));
     }
+    resources::check(claim, admission)?;
     let mut calls = reserve(0)?;
     for (fi, function) in claim.graph.functions.iter().enumerate() {
         if matches!(function.result, graph::Type::Borrow { .. }) {
@@ -42,45 +55,7 @@ pub(super) fn check(
                     if ins.operation != graph::Operation::Unit {
                         return Err(reject("owned effect lacks exact placeholder"));
                     }
-                    match op {
-                        raw::Operation::StringLiteral(bytes) => {
-                            std::str::from_utf8(bytes)
-                                .map_err(|_| reject("invalid String UTF8"))?;
-                            graph::Type::Stored(2)
-                        }
-                        raw::Operation::Move(id) => {
-                            let ty = operand(*id)?;
-                            if !matches!(ty, graph::Type::Stored(_)) {
-                                return Err(reject("move cannot carry unit or loan"));
-                            }
-                            ty
-                        }
-                        raw::Operation::Borrow { value, exclusive } => {
-                            let graph::Type::Stored(referent) = operand(*value)? else {
-                                return Err(reject("loan requires stored root"));
-                            };
-                            graph::Type::Borrow { referent, exclusive: *exclusive }
-                        }
-                        raw::Operation::EndLoan(id) => {
-                            if !matches!(operand(*id)?, graph::Type::Borrow { .. }) {
-                                return Err(reject("end of nonloan"));
-                            }
-                            graph::Type::Unit
-                        }
-                        raw::Operation::Drop(id) => {
-                            let graph::Type::Stored(i) = operand(*id)? else {
-                                return Err(reject("drop requires complete owned value"));
-                            };
-                            if views[i as usize].drop_kind() == 0 {
-                                return Err(reject("drop claim for Copy value"));
-                            }
-                            graph::Type::Unit
-                        }
-                        raw::Operation::CloneString(id) => string_clone(operand(*id)?, false)?,
-                        raw::Operation::CloneBorrowedString(id) => {
-                            string_clone(operand(*id)?, true)?
-                        }
-                    }
+                    extension::check(op, &views, &operand, admission)?
                 } else {
                     body::operation(
                         &claim.graph,
@@ -108,19 +83,4 @@ pub(super) fn check(
         }
     }
     crate::generic_v1::calls::check(claim.graph.declarations.len(), &calls)
-}
-
-fn string_clone(operand: graph::Type, borrowed: bool) -> Result<graph::Type, Failure> {
-    let (expected, message) = if borrowed {
-        (
-            graph::Type::Borrow { referent: 2, exclusive: false },
-            "selected clone requires exact shared String loan",
-        )
-    } else {
-        (graph::Type::Stored(2), "clone requires exact String")
-    };
-    if operand != expected {
-        return Err(reject(message));
-    }
-    Ok(graph::Type::Stored(2))
 }

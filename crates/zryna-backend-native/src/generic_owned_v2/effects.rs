@@ -33,6 +33,12 @@ pub(super) fn operation(
     Ok(match op {
         Operation::Move(id) | Operation::Borrow { value: id, .. } => get(values, *id)?.to_vec(),
         Operation::EndLoan(_) => Vec::new(),
+        Operation::StructConstruct { ty, fields } => {
+            super::structures::construct(context.p, values, *ty, fields)?
+        }
+        Operation::CopyStructField { value, ordinal } => {
+            super::structures::copy_field(context.p, f, values, *value, *ordinal)?
+        }
         Operation::Drop(id) => {
             drop_value(context, b, get(values, *id)?, value_type(f, *id)?)?;
             Vec::new()
@@ -77,7 +83,7 @@ pub(super) fn operation(
         }
     })
 }
-fn value_type(f: &raw::Function, id: u32) -> Result<raw::Type, Diagnostic> {
+pub(super) fn value_type(f: &raw::Function, id: u32) -> Result<raw::Type, Diagnostic> {
     f.blocks
         .iter()
         .flat_map(|b| b.parameters.iter().chain(b.instructions.iter().map(|i| &i.result)))
@@ -134,6 +140,13 @@ fn drop_value(
             let call = b.ins().call(runtime[2], &[pointer]);
             let status = b.inst_results(call)[0];
             b.ins().trapnz(status, TrapCode::unwrap_user(7));
+        }
+        0x10 | 0x12 => {
+            let fields = super::structures::fields(p, index)?;
+            for field in fields.iter().rev() {
+                let payload = lanes.get(field.begin..field.end).ok_or_else(invariant)?;
+                drop_value(context, b, payload, field.ty)?;
+            }
         }
         0x11 | 0x13 | 0x14 | 0x15 => {
             let done = b.create_block();

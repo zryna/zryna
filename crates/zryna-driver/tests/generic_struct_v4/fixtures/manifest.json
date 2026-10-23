@@ -1,0 +1,66 @@
+{
+  "status": "Untrusted TypeScript-v5 packet fixtures; no native/source/IR/runtime qualification claimed",
+  "node": "v22.22.1",
+  "records": [
+    {
+      "case": "construction",
+      "mode": "original",
+      "original_source": "construction.zry",
+      "original_bytes": 159,
+      "source_sha256": "b89c8922b2906e30cc47cabf273e5d2712beb818cb38dd598a20b84c21debf05",
+      "packet_sha256": "66c481c2d975cf1b999a5b9393b6c567422b1fb8a3efb0808206d5bee8c62959",
+      "provider": "existing TypeScript syntax-v5, untrusted packet only",
+      "native_parity": "pending actual driver test"
+    },
+    {
+      "case": "construction",
+      "mode": "exported",
+      "original_source": "construction.zry",
+      "original_bytes": 159,
+      "source_sha256": "ee2f4ac0f9d22ca6f5022e2217d7be23317f13d6b2d09fd0889be0d77bc5550d",
+      "packet_sha256": "0fd3e228b88a52486d0c353c8699d297bbae40d10a68d3e1832c1f4a792c51f9",
+      "provider": "existing TypeScript syntax-v5, untrusted packet only",
+      "native_parity": "pending actual driver test"
+    },
+    {
+      "case": "declaration-order",
+      "mode": "original",
+      "original_source": "fault-declaration-order.zry",
+      "original_bytes": 245,
+      "source_sha256": "e5cd1f565a256214bf006f7943cce355952ee3ac4e3f3c3e07186c97af3f8321",
+      "packet_sha256": "342b9b33bf02e6c502bcd77b86d626af639dfe3766da430dd25c1eefc691c07d",
+      "provider": "existing TypeScript syntax-v5, untrusted packet only",
+      "native_parity": "pending actual driver test"
+    },
+    {
+      "case": "declaration-order",
+      "mode": "exported",
+      "original_source": "fault-declaration-order.zry",
+      "original_bytes": 245,
+      "source_sha256": "8859e45a627df97235371ceafaed106c7055708ecf4f406d6b3159540d9aa3e9",
+      "packet_sha256": "161f18979bb255b05a98757098330ca2ba71ca0193059c9029102469767efb00",
+      "provider": "existing TypeScript syntax-v5, untrusted packet only",
+      "native_parity": "pending actual driver test"
+    },
+    {
+      "case": "reordered",
+      "mode": "original",
+      "original_source": "fault-reordered-spelling.zry",
+      "original_bytes": 245,
+      "source_sha256": "9c53c5b18fc7a8c09673d09fd5198de07eaa15408b7c3f2adaaf01f345b9cdb1",
+      "packet_sha256": "c769acf6798c70f250a6728987d7d46befff3b05674a3b3a7a11c5a29eb8a291",
+      "provider": "existing TypeScript syntax-v5, untrusted packet only",
+      "native_parity": "pending actual driver test"
+    },
+    {
+      "case": "reordered",
+      "mode": "exported",
+      "original_source": "fault-reordered-spelling.zry",
+      "original_bytes": 245,
+      "source_sha256": "9d7851d5cbdb80615e8b5ed2ed4cc36862f34cf7e3f2325a030bce806c26abca",
+      "packet_sha256": "83355ce05dc01d98da7e3dadfa7dc46fced58e22180f18e18e141a09d12a38ba",
+      "provider": "existing TypeScript syntax-v5, untrusted packet only",
+      "native_parity": "pending actual driver test"
+    }
+  ]
+}

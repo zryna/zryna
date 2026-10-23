@@ -11,6 +11,7 @@ use super::{DeclarationIdentity, DeclarationKind};
 
 pub mod copy_v1;
 pub mod owned_v2;
+pub mod owned_v4;
 
 mod definition_expansion;
 #[cfg(test)]

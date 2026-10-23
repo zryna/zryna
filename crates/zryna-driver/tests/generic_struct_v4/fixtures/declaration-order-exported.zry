@@ -1,0 +1,2 @@
+interface Pair<T extends ZrynaValue> extends ZrynaStruct { left: T; right: T; } function score(): i32 { const earlierRoot: String = "earlier-root"; const pair: Pair<String> = Pair<String>({ left: "left", right: clone(earlierRoot) }); return 7; }
+export function entry(): i32 { return score(); }

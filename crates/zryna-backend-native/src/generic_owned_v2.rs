@@ -5,6 +5,7 @@ mod body;
 mod control;
 mod effects;
 mod runtime;
+mod structures;
 mod wrappers;
 
 use crate::{LinuxX8664ObjectTarget, NATIVE_OBJECT_TARGET, ValidatedNativeObjectArtifact};

@@ -16,6 +16,9 @@ mod encode;
 mod layout;
 mod runtime;
 #[cfg(test)]
+mod struct_tests;
+mod struct_work;
+#[cfg(test)]
 mod tests;
 
 const MAX_BYTES: usize = 32 * 1024 * 1024;
@@ -35,6 +38,7 @@ const MAX_FUNCTION_LOCALS: u32 = 1_048_576;
 pub fn emit(
     program: &VerifiedOwnedProgram<'_>,
 ) -> Result<ValidatedWebAssemblyArtifact, Diagnostic> {
+    struct_work::check(program)?;
     let layout = layout::Layout::new(program)?;
     let bytes = encode::module(&layout)?;
     audit::seal(bytes, &layout)

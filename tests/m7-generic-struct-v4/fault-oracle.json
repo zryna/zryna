@@ -1,0 +1,115 @@
+{
+  "status": "PROPOSAL: independent frozen source/semantic oracle, no runtime observations",
+  "accepted_authority": "spec/language/generic-review-v1-fixtures.json#constructor-fault",
+  "accepted_case": {
+    "id": "constructor-fault",
+    "scenario": "Earlier live root; generic two-String struct left field succeeds, right clone reports ALLOCATION; no right result is initialized.",
+    "outcome": "zryna.trap.allocation-v1",
+    "trace": [
+      "release:left",
+      "release:earlier-root"
+    ]
+  },
+  "source_modes": [
+    {
+      "id": "declaration-order",
+      "file": "fault-declaration-order.zry",
+      "sha256": "e5cd1f565a256214bf006f7943cce355952ee3ac4e3f3c3e07186c97af3f8321"
+    },
+    {
+      "id": "reordered-spelling",
+      "file": "fault-reordered-spelling.zry",
+      "sha256": "9c53c5b18fc7a8c09673d09fd5198de07eaa15408b7c3f2adaaf01f345b9cdb1"
+    }
+  ],
+  "allocation_roles": [
+    "earlier-root",
+    "left",
+    "right-clone"
+  ],
+  "note": "Trace labels identify allocation roles, including the right clone of equal text; they are not inferred from String contents.",
+  "evaluation_order": [
+    "earlier-root",
+    "left",
+    "right-clone",
+    "publish-whole-pair"
+  ],
+  "independent_value_roles": {
+    "0": "earlier-root",
+    "1": "left",
+    "2": "right-clone",
+    "3": "whole-pair",
+    "4": "literal-return-7"
+  },
+  "failure_steps": [
+    {
+      "at": "earlier-root",
+      "block": 0,
+      "position": 0,
+      "cleanup": [],
+      "trace": [],
+      "outcome": "zryna.trap.allocation-v1"
+    },
+    {
+      "at": "left",
+      "block": 0,
+      "position": 1,
+      "cleanup": [
+        0
+      ],
+      "trace": [
+        "release:earlier-root"
+      ],
+      "outcome": "zryna.trap.allocation-v1"
+    },
+    {
+      "at": "right-clone",
+      "block": 0,
+      "position": 2,
+      "cleanup": [
+        1,
+        0
+      ],
+      "trace": [
+        "release:left",
+        "release:earlier-root"
+      ],
+      "outcome": "zryna.trap.allocation-v1"
+    }
+  ],
+  "construct": {
+    "block": 0,
+    "position": 3,
+    "result": 3,
+    "field_operands": [
+      1,
+      2
+    ],
+    "allocation": false,
+    "failure_step": false
+  },
+  "successful_return": {
+    "block": 0,
+    "position": 5,
+    "cleanup": [
+      3,
+      0
+    ],
+    "end_loans": [],
+    "outcome": "i32:7",
+    "trace": [
+      "release:right-clone",
+      "release:left",
+      "release:earlier-root"
+    ]
+  },
+  "reject_mutants": [
+    "right-first evaluation or swapped field operand IDs",
+    "duplicate affine fields [1,1]",
+    "cleanup nonexistent whole-pair3 or uninitialized right2 on clone failure",
+    "cleanup suffix after a failed first field",
+    "cleanup [0,1] instead of reverse successful prefix [1,0]",
+    "extra constructor failure step or fabricated initialized count",
+    "moved left, source with active exclusive loan, foreign equal-width nominal"
+  ]
+}

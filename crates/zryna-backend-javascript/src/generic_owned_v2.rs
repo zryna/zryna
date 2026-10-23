@@ -8,6 +8,9 @@ use zryna_ir::generic_v1::{owned_v2::VerifiedOwnedProgram, raw};
 mod cleanup;
 mod runtime;
 #[cfg(test)]
+mod struct_tests;
+mod struct_work;
+#[cfg(test)]
 mod tests;
 
 /// Emits only a complete wire/source/runtime-bound owned program.
@@ -21,6 +24,7 @@ mod tests;
 /// # Errors
 /// Rejects output exhaustion or any unexpected invariant of the retained verified program.
 pub fn emit(program: &VerifiedOwnedProgram<'_>) -> Result<JavaScriptArtifact, Diagnostic> {
+    struct_work::check(program)?;
     let mut writer = Writer { source: String::new() };
     writer.text(crate::prelude::JAVASCRIPT_PRELUDE)?;
     writer.text(runtime::PRELUDE)?;

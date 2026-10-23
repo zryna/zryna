@@ -11,6 +11,9 @@ mod nested_clones;
 #[cfg(test)]
 mod nominal_enum;
 mod state;
+#[cfg(test)]
+mod struct_v4;
+mod structures;
 mod topology;
 use state::State;
 /// Complete owner state copies and cleanup action credits per invocation of this checker.
@@ -131,6 +134,14 @@ pub(super) fn derive(
                             state.read(*id, ty(*id)?, false)?;
                             // Capture failure before the fresh result becomes an owner.
                             step(&mut plan, &state, bi, pi, true, &mut used)?;
+                        }
+                        raw::Operation::StructConstruct { fields, .. } => {
+                            structures::construct(
+                                &mut state, fields, &types, &ownership, &mut used,
+                            )?;
+                        }
+                        raw::Operation::CopyStructField { value, .. } => {
+                            structures::observe(&state, *value, &types, &ownership)?;
                         }
                     }
                 } else {

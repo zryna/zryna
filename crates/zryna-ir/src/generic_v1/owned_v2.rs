@@ -4,6 +4,13 @@ use zryna_layout::{StorageTarget, generic_v1::VerifiedLayouts};
 use zryna_ownership_runtime_abi::generic_v1::VerifiedOwnershipRuntimeAbi;
 use zryna_source::{FileId, SourceMap};
 use zryna_syntax::v5::VerifiedProjectSyntaxV5;
+/// Private admission chosen only by authenticated issuer entrypoints.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) enum Admission {
+    #[default]
+    LegacyOwned,
+    StructV4,
+}
 mod originals;
 mod plan;
 mod producer;
@@ -11,8 +18,8 @@ pub mod raw;
 mod source;
 mod typed;
 pub mod wire;
-pub use originals::check_original_bodies;
-pub use producer::produce_claim;
+pub use originals::{check_original_bodies, check_original_bodies_v4};
+pub use producer::{produce_claim, produce_claim_v4};
 /// Immutable exact source/layout/runtime/ABI-bound owned program.
 /// ```compile_fail
 /// fn forge(raw: zryna_ir::generic_v1::owned_v2::raw::Program) {
@@ -85,22 +92,63 @@ pub fn verify<'a>(
     linux: &'a VerifiedLayouts,
     runtime: &'a VerifiedOwnershipRuntimeAbi<'a>,
 ) -> Result<VerifiedOwnedProgram<'a>, Failure> {
+    verify_claim(
+        (decoded.0, Admission::LegacyOwned),
+        syntax,
+        sources,
+        entry,
+        linear,
+        linux,
+        runtime,
+    )
+}
+/// Verifies the distinct private Struct transport against independent source, layouts and plans.
+/// # Errors
+/// Rejects foreign authorities, unproved fields, moved/loaned uses and cleanup drift.
+pub fn verify_v4<'a>(
+    decoded: wire::v4::DecodedOwnedV4,
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    entry: FileId,
+    linear: &'a VerifiedLayouts,
+    linux: &'a VerifiedLayouts,
+    runtime: &'a VerifiedOwnershipRuntimeAbi<'a>,
+) -> Result<VerifiedOwnedProgram<'a>, Failure> {
+    verify_claim((decoded.0, Admission::StructV4), syntax, sources, entry, linear, linux, runtime)
+}
+fn verify_claim<'a>(
+    (claim, admission): (raw::Program, Admission),
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    entry: FileId,
+    linear: &'a VerifiedLayouts,
+    linux: &'a VerifiedLayouts,
+    runtime: &'a VerifiedOwnershipRuntimeAbi<'a>,
+) -> Result<VerifiedOwnedProgram<'a>, Failure> {
     if !syntax.is_bound_to(sources)
         || sources.verify_file_id(entry.index()).ok() != Some(entry)
         || !runtime.is_bound_to(linear, linux)
     {
         return Err(reject("foreign owned successor authority"));
     }
-    let claim = decoded.0;
     let inventory = super::inventory::check(&claim.graph, sources, linear, linux)?;
     let originals = Originals::check(&claim.graph, syntax)?;
     super::copy_v1::entry_closure(&originals, entry.index())?;
     super::substitution::check(&claim.graph, linear, &originals)?;
     super::source_calls::check(&claim.graph, &originals)?;
-    source::check(&claim, &originals, sources)?;
+    source::check_for(&claim, &originals, sources, admission)?;
     super::source_body::demand(&claim.graph)?;
-    super::copy_v1::check_type_demand(&claim.graph, linear)?;
-    typed::check(&claim, sources, linear, &inventory)?;
+    match admission {
+        Admission::LegacyOwned => super::copy_v1::check_type_demand(&claim.graph, linear)?,
+        Admission::StructV4 => {
+            let roots = super::source_demand::derive(&claim.graph, &originals)?;
+            super::copy_v1::check_type_demand_with_roots(&claim.graph, linear, &roots)?;
+        }
+    }
+    match admission {
+        Admission::LegacyOwned => typed::check(&claim, sources, linear, &inventory)?,
+        Admission::StructV4 => typed::check_for(&claim, sources, linear, &inventory, admission)?,
+    }
     if plan::derive(&claim.graph, &claim.extensions, linear)? != claim.plans {
         return Err(reject("owned cleanup/loan/failure plan is not exact"));
     }
@@ -108,3 +156,6 @@ pub fn verify<'a>(
     let (abi, exports) = super::copy_v1::scalar_abi(&claim.graph, entry.index())?;
     Ok(VerifiedOwnedProgram { claim, linear, linux, runtime, abi, exports })
 }
+
+#[cfg(doctest)]
+mod struct_v4_type_contract;

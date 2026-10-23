@@ -1,5 +1,5 @@
 //! Original symbolic ownership checking requires no closed instance or layout authority.
-use super::{Failure, graph as raw, source};
+use super::{Admission, Failure, graph as raw, source};
 use crate::generic_v1::{reject, reserve, source::Originals};
 use zryna_source::SourceMap;
 use zryna_syntax::v5::VerifiedProjectSyntaxV5;
@@ -11,6 +11,24 @@ use zryna_syntax::v5::VerifiedProjectSyntaxV5;
 pub fn check_original_bodies(
     syntax: &VerifiedProjectSyntaxV5,
     sources: &SourceMap,
+) -> Result<(), Failure> {
+    check_originals_for(syntax, sources, Admission::LegacyOwned)
+}
+
+/// Checks every original in the distinct private Struct-v4 source domain.
+/// # Errors
+/// Rejects foreign syntax, unsupported originals, invalid ownership and inherited budgets.
+pub fn check_original_bodies_v4(
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+) -> Result<(), Failure> {
+    check_originals_for(syntax, sources, Admission::StructV4)
+}
+
+fn check_originals_for(
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    admission: Admission,
 ) -> Result<(), Failure> {
     if !syntax.is_bound_to(sources) {
         return Err(reject("original ownership syntax belongs to a foreign source map"));
@@ -45,5 +63,10 @@ pub fn check_original_bodies(
         functions: Vec::new(),
     };
     let originals = Originals::check(&program, syntax)?;
-    source::check_originals(&program, &originals, sources)
+    match admission {
+        Admission::LegacyOwned => source::check_originals(&program, &originals, sources),
+        Admission::StructV4 => {
+            source::check_originals_for(&program, &originals, sources, admission)
+        }
+    }
 }

@@ -15,7 +15,7 @@ pub struct Program {
 pub struct Extension {
     /// Exact result ID of the replaced Unit placeholder.
     pub result: u32,
-    /// Separate owned opcode; selected shared String clone requires private v3 transport.
+    /// Separate owned opcode; selected clone and Struct effects require private successors.
     pub operation: Operation,
 }
 /// Separate owned operation vocabulary.
@@ -39,8 +39,25 @@ pub enum Operation {
     /// Explicit String clone, retaining its source on failure.
     CloneString(u32),
     /// Compiler-generated selected payload clone through a live shared String loan.
-    /// Encoded only in the distinct private v3 domain.
+    /// Encoded only in distinct private v3/v4 domains.
     CloneBorrowedString(u32),
+    /// Allocation-free construction from exact fields in original declaration order.
+    /// Encoded only in the distinct private v4 domain.
+    StructConstruct {
+        /// Exact sealed nominal Struct type index.
+        ty: u32,
+        /// Complete declaration-ordered field value IDs.
+        fields: Vec<u32>,
+    },
+    /// Copy observation of one field while retaining its complete stored Struct base.
+    /// Original-frame and independent field ownership proof remain mandatory.
+    /// Encoded only in the distinct private v4 domain.
+    CopyStructField {
+        /// Exact live complete Struct value ID.
+        value: u32,
+        /// Original zero-based field ordinal.
+        ordinal: u32,
+    },
 }
 /// Complete instruction and terminator cleanup records.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

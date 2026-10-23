@@ -7,6 +7,22 @@ pub(in crate::generic_v1) fn check(
     program: &raw::Program,
     layouts: &VerifiedLayouts,
 ) -> Result<(), Failure> {
+    check_roots(program, layouts, &[])
+}
+
+pub(in crate::generic_v1) fn check_with_roots(
+    program: &raw::Program,
+    layouts: &VerifiedLayouts,
+    roots: &crate::generic_v1::source_demand::StoredRoots<'_>,
+) -> Result<(), Failure> {
+    check_roots(program, layouts, roots.indices_for(program)?)
+}
+
+fn check_roots(
+    program: &raw::Program,
+    layouts: &VerifiedLayouts,
+    original_roots: &[usize],
+) -> Result<(), Failure> {
     let mut types = reserve(layouts.types().len())?;
     types.extend(layouts.types());
     let mut reached = reserve(types.len())?;
@@ -55,6 +71,9 @@ pub(in crate::generic_v1) fn check(
                 raw::Type::Unit => {}
             }
         }
+    }
+    for index in original_roots {
+        mark(*index)?;
     }
     while let Some(index) = pending.pop() {
         let view = types[index];

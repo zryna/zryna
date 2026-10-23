@@ -23,6 +23,35 @@ pub(super) fn operation(
 ) -> Result<(), Diagnostic> {
     let result = locals.values[i.result.id as usize];
     match op {
+        Operation::StructConstruct { ty, fields } => {
+            let destinations = layout.fields(raw::Type::Stored(*ty), result)?;
+            if destinations.len() != fields.len() {
+                return Err(invariant());
+            }
+            for ((_, destination), id) in destinations.into_iter().zip(fields) {
+                copy(body, locals.values[*id as usize], destination)?;
+            }
+        }
+        Operation::CopyStructField { value, ordinal } => {
+            let source = locals.values[*value as usize];
+            let fields = layout.fields(value_type(f, *value)?, source)?;
+            let (ty, field) = fields.get(*ordinal as usize).copied().ok_or_else(invariant)?;
+            let raw::Type::Stored(index) = ty else {
+                return Err(invariant());
+            };
+            if layout
+                .program
+                .layouts(StorageTarget::Linear32V1)
+                .types()
+                .nth(index as usize)
+                .ok_or_else(invariant)?
+                .drop_kind()
+                != 0
+            {
+                return Err(invariant());
+            }
+            copy(body, field, result)?;
+        }
         Operation::Move(id) | Operation::Borrow { value: id, .. } => {
             let source = locals.values[*id as usize];
             if source.width != result.width {
@@ -164,7 +193,23 @@ fn drop_value(
                 body.op(&Op::End)?;
             }
         }
+        TypeCategory::Struct => {
+            for (ty, field) in layout.fields(raw::Type::Stored(index), value)?.into_iter().rev() {
+                drop_value(body, layout, field, ty)?;
+            }
+        }
         _ => return Err(invariant()),
+    }
+    Ok(())
+}
+
+fn copy(body: &mut Bytes, source: Value, result: Value) -> Result<(), Diagnostic> {
+    if source.width != result.width {
+        return Err(invariant());
+    }
+    for lane in 0..result.width {
+        body.op(&Op::LocalGet(source.start + lane))?;
+        body.op(&Op::LocalSet(result.start + lane))?;
     }
     Ok(())
 }

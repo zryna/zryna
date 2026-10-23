@@ -190,6 +190,9 @@ fn release_calls(p: &VerifiedProgram<'_, '_>, ty: raw::Type) -> Result<usize, Di
     }
     match t.key()[0] {
         2 => Ok(1),
+        0x10 | 0x12 => t.fields().try_fold(0usize, |sum, (_, field, _)| {
+            sum.checked_add(release_calls(p, raw::Type::Stored(field.index()))?).ok_or_else(error)
+        }),
         0x11 | 0x13 | 0x14 | 0x15 => t.variants().try_fold(0usize, |sum, (_, payload)| {
             sum.checked_add(
                 payload.map_or(Ok(0), |v| release_calls(p, raw::Type::Stored(v.index())))?,
@@ -222,7 +225,11 @@ fn edges<'a>(
                         Operation::Drop(id) => {
                             add(plan.symbol(), imports[2], release_calls(p, value_type(f, *id)?)?)?;
                         }
-                        _ => {}
+                        Operation::StructConstruct { .. }
+                        | Operation::CopyStructField { .. }
+                        | Operation::Move(_)
+                        | Operation::Borrow { .. }
+                        | Operation::EndLoan(_) => {}
                     }
                 } else if let Some(target) = super::body::target(p, &i.operation)? {
                     add(plan.symbol(), p.functions()[target].symbol(), 1)?;

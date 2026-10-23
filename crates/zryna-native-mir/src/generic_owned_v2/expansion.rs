@@ -7,6 +7,7 @@ use zryna_ir::generic_v1::{
 };
 use zryna_layout::generic_v1::TypeView;
 mod drop_work;
+mod field_work;
 
 pub(super) fn preflight(
     program: &VerifiedOwnedProgram<'_>,
@@ -14,7 +15,7 @@ pub(super) fn preflight(
     units: &mut u64,
 ) -> Result<(), Diagnostic> {
     // Preserve every standard-only program's previous accounting and acceptance frontier.
-    if !types.iter().any(|ty| matches!(ty.key().first(), Some(0x11 | 0x13))) {
+    if !types.iter().any(|ty| matches!(ty.key().first(), Some(0x10..=0x13))) {
         return Ok(());
     }
     let work = drop_work::derive(types, units)?;
@@ -40,6 +41,7 @@ pub(super) fn preflight(
                 }
             }
         }
+        field_work::charge(program, index, function, types, &definitions, units)?;
         let mut charge = |id: u32| {
             let ty = definitions.get(id as usize).copied().flatten().ok_or_else(invariant)?;
             let raw::Type::Stored(index) = ty else {
@@ -48,6 +50,10 @@ pub(super) fn preflight(
             let cost = work.get(index as usize).ok_or_else(invariant)?;
             if cost.contains_nominal {
                 take(units, cost.units)?;
+                if cost.contains_struct {
+                    // New Struct cleanup also pays the actual definition lookup walk.
+                    take(units, u64::try_from(count).map_err(|_| budget())?)?;
+                }
             }
             Ok(())
         };

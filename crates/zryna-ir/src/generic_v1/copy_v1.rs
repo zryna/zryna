@@ -18,6 +18,7 @@ mod tests;
 mod type_demand;
 pub(super) use producer::signatures;
 pub(super) use type_demand::check as check_type_demand;
+pub(super) use type_demand::check_with_roots as check_type_demand_with_roots;
 
 pub use producer::produce_claim;
 

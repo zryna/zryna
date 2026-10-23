@@ -19,6 +19,30 @@ pub fn produce_claim(
     linux: &VerifiedLayouts,
     generic_keys: &[&[u8]],
 ) -> Result<super::raw::Program, Failure> {
+    produce_for(syntax, sources, linear, linux, generic_keys, super::Admission::LegacyOwned)
+}
+
+/// Produces untrusted claims in the distinct private Struct-v4 source domain.
+/// # Errors
+/// Rejects foreign source/layouts, unsupported ownership and checked specialization budgets.
+pub fn produce_claim_v4(
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    linear: &VerifiedLayouts,
+    linux: &VerifiedLayouts,
+    generic_keys: &[&[u8]],
+) -> Result<super::raw::Program, Failure> {
+    produce_for(syntax, sources, linear, linux, generic_keys, super::Admission::StructV4)
+}
+
+fn produce_for(
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    linear: &VerifiedLayouts,
+    linux: &VerifiedLayouts,
+    generic_keys: &[&[u8]],
+    admission: super::Admission,
+) -> Result<super::raw::Program, Failure> {
     if generic_keys.len() > 4096 {
         return Err(crate::generic_v1::budget("raw producer generic key inventory exceeds 4096"));
     }
@@ -78,11 +102,21 @@ pub fn produce_claim(
     // Validate key and source/universe claims before indexing source body arenas.
     crate::generic_v1::inventory::check(&program, sources, linear, linux)?;
     crate::generic_v1::substitution::check(&program, linear, &originals)?;
-    let extensions = super::source::produce(&mut program, &originals, sources)?;
+    let extensions = match admission {
+        super::Admission::LegacyOwned => super::source::produce(&mut program, &originals, sources)?,
+        super::Admission::StructV4 => {
+            super::source::produce_for(&mut program, &originals, sources, admission)?
+        }
+    };
     let mut claim = super::raw::Program { graph: program, extensions, plans: Vec::new() };
-    super::source::check(&claim, &originals, sources)?;
+    match admission {
+        super::Admission::LegacyOwned => super::source::check(&claim, &originals, sources)?,
+        super::Admission::StructV4 => {
+            super::source::check_for(&claim, &originals, sources, admission)?;
+        }
+    }
     let inventory = crate::generic_v1::inventory::check(&claim.graph, sources, linear, linux)?;
-    super::typed::check(&claim, sources, linear, &inventory)?;
+    super::typed::check_for(&claim, sources, linear, &inventory, admission)?;
     claim.plans = super::plan::derive(&claim.graph, &claim.extensions, linear)?;
     Ok(claim)
 }

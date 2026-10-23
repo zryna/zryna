@@ -9,7 +9,7 @@ pub(super) fn key<'k>(
     credit: &mut Budget,
 ) -> Result<Option<&'k [u8]>, Failure> {
     let Closed::Stored(key) = ty else { return Ok(None) };
-    if matches!(key.first(), Some(0x11 | 0x13)) {
+    if matches!(key.first(), Some(0x10..=0x13)) {
         // The original frame checks every substituted member, including inactive variants.
         // This is source Copy qualification; typed IR independently requires sealed drop_kind 0.
         return Ok((!facts.affine(originals, ty, credit)?).then_some(key.as_slice()));

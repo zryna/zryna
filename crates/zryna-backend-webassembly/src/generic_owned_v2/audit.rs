@@ -7,6 +7,8 @@ use wasmparser::{
 };
 use zryna_diagnostics::Diagnostic;
 
+mod releases;
+
 pub(super) fn seal(
     bytes: Vec<u8>,
     layout: &Layout<'_, '_>,
@@ -18,6 +20,7 @@ pub(super) fn seal(
         .validate_all(&bytes)
         .map_err(|error| error_diagnostic("ZRYNA-W4004", error))?;
     audit(&bytes, layout)?;
+    releases::check(&bytes, layout)?;
     Ok(ValidatedWebAssemblyArtifact { bytes })
 }
 

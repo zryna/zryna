@@ -21,10 +21,19 @@ impl Budget {
     }
     pub(super) fn nominal_key(&mut self, ty: &Closed, copies: usize) -> Result<(), Failure> {
         if let Closed::Stored(key) | Closed::Borrow(key, _) = ty
-            && matches!(key.first(), Some(0x11 | 0x13))
+            && matches!(key.first(), Some(0x10..=0x13))
         {
             let units = key.len().checked_mul(copies).ok_or(Failure::InternalFailure)?;
             self.nominal(units)?;
+        }
+        Ok(())
+    }
+    pub(super) fn inherit_operands(&mut self, previous: &Self) {
+        self.operands = previous.operands;
+    }
+    pub(super) fn owned_operation(&mut self, operation: &super::Owned) -> Result<(), Failure> {
+        if let super::Owned::StructConstruct { fields, .. } = operation {
+            add(&mut self.operands, fields.len(), limits::MAX_AGGREGATE_OPERANDS)?;
         }
         Ok(())
     }
@@ -133,3 +142,7 @@ mod tests {
         assert!(add(&mut overflowing, 1, usize::MAX).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "resources/struct_v4_contract.rs"]
+mod struct_v4_contract;

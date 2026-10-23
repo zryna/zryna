@@ -1,0 +1,122 @@
+{
+  "status": "PROPOSAL ONLY; no production implementation or source seal claimed",
+  "head": "46af8e00a24f303abc733c802c16a2f7c52a1fcb",
+  "authority": "spec/language/generic-review-v1-fixtures.json",
+  "sourceCase": {
+    "id": "struct-construction",
+    "source": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function score(): i32 { const box: Box<i32> = Box<i32>({ value: 7 }); return box.value; }",
+    "parserErrors": 0,
+    "decision": "admit",
+    "code": null,
+    "primaryToken": null,
+    "primaryOccurrence": null
+  },
+  "constructorFault": {
+    "id": "constructor-fault",
+    "scenario": "Earlier live root; generic two-String struct left field succeeds, right clone reports ALLOCATION; no right result is initialized.",
+    "outcome": "zryna.trap.allocation-v1",
+    "trace": [
+      "release:left",
+      "release:earlier-root"
+    ]
+  },
+  "source_sha256": "b89c8922b2906e30cc47cabf273e5d2712beb818cb38dd598a20b84c21debf05",
+  "wire_bytes": 440,
+  "wire_sha256": "5cd7b2785fc369a78eaaba841b67a04991cfbfcdbaa953eb5f01158fa5e1cad9",
+  "core_bytes": 343,
+  "core_sha256": "b30846dee2d87a269776e26051d10756230ea7f083e2713ecf3aba84fa638ead",
+  "sentinel_fingerprints": {
+    "universe": 11,
+    "linear32": 22,
+    "linux_x86_64": 33
+  },
+  "warning": "Sentinel hashes deliberately grant no layout/source/runtime authority. Literal vector is a wire oracle only.",
+  "offsets": {
+    "version": 26,
+    "core_len": 30,
+    "core": 34,
+    "extensions": 377,
+    "construct_opcode": 389,
+    "construct_ty": 390,
+    "field_count": 394,
+    "field_operand": 398,
+    "projection_opcode": 406,
+    "projection_base": 407,
+    "projection_ordinal": 411,
+    "plans": 415,
+    "first_trailing_byte": 440
+  },
+  "instructions": [
+    {
+      "id": 0,
+      "type": 1,
+      "span": [
+        134,
+        135
+      ],
+      "operation": "I32Literal(7)"
+    },
+    {
+      "id": 1,
+      "type": 3,
+      "span": [
+        116,
+        138
+      ],
+      "core": "Unit",
+      "extension": "StructConstruct { ty:3, fields:[0] }"
+    },
+    {
+      "id": 2,
+      "type": 1,
+      "span": [
+        147,
+        156
+      ],
+      "core": "Unit",
+      "extension": "CopyStructField { value:1, ordinal:0 }"
+    }
+  ],
+  "scalar_outcome": "i32:7",
+  "trace": [],
+  "plan": {
+    "steps": [
+      {
+        "block": 0,
+        "position": 3,
+        "failure": false,
+        "end_loans": [],
+        "cleanup": []
+      }
+    ]
+  },
+  "type_keys_hex": [
+    "00",
+    "01",
+    "02",
+    "120000000000000000010000000100000001"
+  ],
+  "frozen_v1": {
+    "path": "tests/m7-generic-copy-fixtures/wire-v1.zir",
+    "bytes": 277,
+    "sha256": "406d760cf4a075eede0f12b191922d474d3ef65569d1e0db4759edbdd9700d24"
+  },
+  "independent_inherited_vectors": [
+    {
+      "path": "wire-owned-v2.zir",
+      "bytes": 191,
+      "sha256": "4104d9b8023729748fdebe00ddc09781e49a016b149e39a2f01fffb4793955b5",
+      "operation": "CloneString(0)",
+      "opcode_offset": 182,
+      "opcode": 6
+    },
+    {
+      "path": "wire-owned-v3.zir",
+      "bytes": 191,
+      "sha256": "0269caf4da40e70fb92a0996cca39e8b6fe94bd0d968081ccf5dd78414c576ba",
+      "operation": "CloneBorrowedString(0)",
+      "opcode_offset": 182,
+      "opcode": 7
+    }
+  ]
+}

@@ -33,6 +33,21 @@ pub(super) fn declarations(w: &mut Writer, p: &VerifiedOwnedProgram<'_>) -> Resu
                 }
                 w.text("default: throw new Error('ZRYNA-RT-TAG');\n}\n")?;
             }
+            TypeCategory::Struct => {
+                let mut fields = Vec::new();
+                fields.try_reserve(ty.fields().len()).map_err(|_| super::emission_budget())?;
+                fields.extend(ty.fields().enumerate());
+                for (ordinal, (_, field, _)) in fields.into_iter().rev() {
+                    let child = p
+                        .layouts(StorageTarget::Linear32V1)
+                        .types()
+                        .nth(field.index() as usize)
+                        .ok_or_else(internal)?;
+                    if child.drop_kind() != 0 {
+                        w.line(format_args!("$drop{}($value[{ordinal}]);", field.index()))?;
+                    }
+                }
+            }
             _ => return Err(internal()),
         }
         w.text("}\n")?;

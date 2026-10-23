@@ -21,8 +21,12 @@ mod owners;
 mod phi;
 mod resources;
 mod statements;
+mod structs;
 mod type_facts;
-use super::raw::{Extension, Operation as Owned};
+use super::{
+    Admission,
+    raw::{Extension, Operation as Owned},
+};
 use resources::Budget;
 use std::collections::BTreeMap;
 
@@ -65,11 +69,20 @@ pub(super) fn check(
     originals: &Originals<'_>,
     sources: &zryna_source::SourceMap,
 ) -> Result<(), Failure> {
+    check_for(claim, originals, sources, Admission::LegacyOwned)
+}
+
+pub(super) fn check_for(
+    claim: &super::raw::Program,
+    originals: &Originals<'_>,
+    sources: &zryna_source::SourceMap,
+    admission: Admission,
+) -> Result<(), Failure> {
     let program = &claim.graph;
     if claim.extensions.len() != program.functions.len() {
         return Err(reject("incomplete owned extensions"));
     }
-    check_originals(program, originals, sources)?;
+    check_originals_for(program, originals, sources, admission)?;
     let mut budget = Budget::default();
     for (function_index, function) in program.functions.iter().enumerate() {
         let domain = if function.key[0] == 0x40 {
@@ -82,8 +95,13 @@ pub(super) fn check(
         let original = &originals.units[module as usize].functions[index as usize];
         let mut arguments = reserve(key.arguments().len())?;
         arguments.extend(key.arguments());
-        let (blocks, extensions) =
-            build(program, originals, sources, module, original, arguments, false, &mut budget)?;
+        let (blocks, extensions) = build(
+            program,
+            originals,
+            sources,
+            BuildFrame { module, original, arguments, symbolic: false, admission },
+            &mut budget,
+        )?;
         if function.blocks != blocks || claim.extensions[function_index] != extensions {
             return Err(reject(
                 "claimed body differs from complete source operation/order/binding replay",
@@ -98,7 +116,17 @@ pub(super) fn check_originals(
     originals: &Originals<'_>,
     sources: &zryna_source::SourceMap,
 ) -> Result<(), Failure> {
-    let mut nominal_credit = type_facts::check_declarations(originals)?;
+    check_originals_for(program, originals, sources, Admission::LegacyOwned)
+}
+
+pub(super) fn check_originals_for(
+    program: &raw::Program,
+    originals: &Originals<'_>,
+    sources: &zryna_source::SourceMap,
+    admission: Admission,
+) -> Result<(), Failure> {
+    let mut nominal_credit = type_facts::check_declarations_for(originals, admission)?;
+    let mut aggregate = Budget::default();
     // Every original is checked before checking instances, including unused templates.
     for unit in originals.units {
         for original in &unit.functions {
@@ -113,17 +141,20 @@ pub(super) fn check_originals(
             let mut arguments = reserve(arity)?;
             arguments.extend(parameters.iter().map(Vec::as_slice));
             let mut original_budget = Budget::original(nominal_credit);
+            if admission == Admission::StructV4 {
+                original_budget.inherit_operands(&aggregate);
+            }
             build(
                 program,
                 originals,
                 sources,
-                unit.id,
-                original,
-                arguments,
-                true,
+                BuildFrame { module: unit.id, original, arguments, symbolic: true, admission },
                 &mut original_budget,
             )?;
             nominal_credit = original_budget.nominal_used();
+            if admission == Admission::StructV4 {
+                aggregate.inherit_operands(&original_budget);
+            }
         }
     }
     Ok(())
@@ -134,7 +165,16 @@ pub(super) fn produce(
     originals: &Originals<'_>,
     sources: &zryna_source::SourceMap,
 ) -> Result<Vec<Vec<Extension>>, Failure> {
-    check_originals(program, originals, sources)?;
+    produce_for(program, originals, sources, Admission::LegacyOwned)
+}
+
+pub(super) fn produce_for(
+    program: &mut raw::Program,
+    originals: &Originals<'_>,
+    sources: &zryna_source::SourceMap,
+    admission: Admission,
+) -> Result<Vec<Vec<Extension>>, Failure> {
+    check_originals_for(program, originals, sources, admission)?;
     let mut all = reserve(program.functions.len())?;
     let mut budget = Budget::default();
     for function in &program.functions {
@@ -152,10 +192,7 @@ pub(super) fn produce(
             program,
             originals,
             sources,
-            module,
-            original,
-            arguments,
-            false,
+            BuildFrame { module, original, arguments, symbolic: false, admission },
             &mut budget,
         )?);
     }
@@ -167,55 +204,6 @@ pub(super) fn produce(
     Ok(extensions)
 }
 
-#[allow(clippy::too_many_arguments)] // Exact source inputs and separate aggregate allocation credit.
-fn build<'a, 'b>(
-    program: &'a raw::Program,
-    originals: &'a Originals<'b>,
-    sources: &'a zryna_source::SourceMap,
-    module: u32,
-    original: &'b RawFunctionSyntax,
-    arguments: Vec<&'a [u8]>,
-    symbolic: bool,
-    budget: &mut Budget,
-) -> Result<(Vec<raw::Block>, Vec<Extension>), Failure> {
-    let resolver =
-        Resolver { originals, module, parameters: original.type_parameters.as_ref(), arguments };
-    let result = resolver.resolve_symbolic(original.result_type)?;
-    let mut builder = Builder {
-        program,
-        sources,
-        resolver,
-        original,
-        symbolic,
-        blocks: reserve(1)?,
-        block: 0,
-        next: 0,
-        locals: reserve(original.parameters.len())?,
-        scope_start: 0,
-        result,
-        extensions: Vec::new(),
-        affine: Vec::new(),
-        alive: Vec::new(),
-        loans: BTreeMap::new(),
-        loan_parents: BTreeMap::new(),
-        budget: *budget,
-        type_facts: type_facts::SourceTypeFacts::default(),
-    };
-    builder.new_block(original.body.span)?;
-    for parameter in &original.parameters {
-        let ty = builder.resolve(parameter.type_syntax)?;
-        if matches!(ty, Closed::Unit) {
-            return Err(reject("Copy executable parameters cannot carry unit or loans"));
-        }
-        let value = builder.value(ty)?;
-        let definition = builder.definition(&value)?;
-        builder.blocks[0].parameters.push(definition);
-        builder.bind(&parameter.name.text, value)?;
-    }
-    builder.source_block(original.body.root_block, 0)?;
-    normalize::run(&mut builder.blocks, &mut builder.extensions)?;
-    *budget = builder.budget;
-    Ok((builder.blocks, builder.extensions))
-}
-
+mod build;
 mod builder;
+use build::{Frame as BuildFrame, build};

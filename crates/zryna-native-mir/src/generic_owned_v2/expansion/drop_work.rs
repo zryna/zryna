@@ -7,6 +7,7 @@ use zryna_layout::generic_v1::TypeView;
 pub(super) struct DropWork {
     pub units: u64,
     pub contains_nominal: bool,
+    pub contains_struct: bool,
 }
 
 pub(super) fn derive(types: &[TypeView<'_>], units: &mut u64) -> Result<Vec<DropWork>, Diagnostic> {
@@ -26,22 +27,40 @@ pub(super) fn derive(types: &[TypeView<'_>], units: &mut u64) -> Result<Vec<Drop
             if state[index] == 2 {
                 continue;
             }
-            let nominal = matches!(ty.key().first(), Some(0x11 | 0x13));
+            let structure = matches!(ty.key().first(), Some(0x10 | 0x12));
+            let nominal = structure || matches!(ty.key().first(), Some(0x11 | 0x13));
+            if structure && !exit {
+                // Complete field traversal/retention credit precedes width and destructor fanout.
+                take(
+                    units,
+                    u64::try_from(ty.fields().len())
+                        .map_err(|_| budget())?
+                        .checked_mul(3)
+                        .ok_or_else(budget)?,
+                )?;
+            }
             if ty.drop_kind() == 0 {
-                cache[index] = DropWork { units: 0, contains_nominal: nominal };
+                cache[index] =
+                    DropWork { units: 0, contains_nominal: nominal, contains_struct: structure };
                 state[index] = 2;
                 continue;
             }
             if ty.key().first() == Some(&2) {
-                cache[index] = DropWork { units: 6, contains_nominal: false };
+                cache[index] =
+                    DropWork { units: 6, contains_nominal: false, contains_struct: false };
                 state[index] = 2;
                 continue;
             }
-            if !matches!(ty.key().first(), Some(0x11 | 0x13 | 0x14 | 0x15)) {
+            if !matches!(ty.key().first(), Some(0x10..=0x15)) {
                 return Err(invariant());
             }
+            if structure {
+                structure_work(ty, index, exit, &mut cache, &mut state, &mut pending)?;
+                continue;
+            }
             if exit {
-                let mut work = DropWork { units: 17, contains_nominal: nominal };
+                let mut work =
+                    DropWork { units: 17, contains_nominal: nominal, contains_struct: false };
                 for (_, payload) in ty.variants() {
                     work.units = work.units.checked_add(35).ok_or_else(budget)?;
                     if let Some(payload) = payload {
@@ -52,6 +71,7 @@ pub(super) fn derive(types: &[TypeView<'_>], units: &mut u64) -> Result<Vec<Drop
                         work.units =
                             work.units.checked_add(cache[child].units).ok_or_else(budget)?;
                         work.contains_nominal |= cache[child].contains_nominal;
+                        work.contains_struct |= cache[child].contains_struct;
                     }
                 }
                 cache[index] = work;
@@ -83,3 +103,10 @@ pub(super) fn derive(types: &[TypeView<'_>], units: &mut u64) -> Result<Vec<Drop
     }
     Ok(cache)
 }
+
+mod structures;
+use structures::structure_work;
+
+#[cfg(test)]
+#[path = "../struct_tests/layouts.rs"]
+mod struct_layout_tests;

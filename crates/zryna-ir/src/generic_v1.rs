@@ -21,6 +21,7 @@ mod source;
 mod source_abi;
 mod source_body;
 mod source_calls;
+mod source_demand;
 mod source_types;
 mod substitution;
 #[cfg(test)]

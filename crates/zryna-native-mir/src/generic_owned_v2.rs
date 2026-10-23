@@ -6,6 +6,8 @@ use zryna_layout::{StorageTarget, TypeCategory, generic_v1::TypeView};
 
 mod expansion;
 mod plan;
+#[cfg(test)]
+mod struct_tests;
 
 /// Maximum private i64 lanes of one represented type, independent of source admission.
 pub const MAX_TYPE_LANES: u32 = 256;

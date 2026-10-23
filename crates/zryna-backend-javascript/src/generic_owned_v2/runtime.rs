@@ -28,6 +28,8 @@ pub(super) fn operation(function: &raw::Function, op: &Operation) -> Result<Stri
         Operation::CloneString(id) | Operation::CloneBorrowedString(id) => {
             format!("$handle($clone($v{id}))")
         }
+        Operation::StructConstruct { fields, .. } => format!("[{}]", super::operands(fields)),
+        Operation::CopyStructField { value, ordinal } => format!("$v{value}[{ordinal}]"),
         Operation::Drop(id) => {
             let ty = super::cleanup::value_type(function, *id)?;
             let raw::Type::Stored(index) = ty else {

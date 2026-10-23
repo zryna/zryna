@@ -5,6 +5,8 @@ use zryna_diagnostics::Diagnostic;
 use zryna_ir::generic_v1::{owned_v2::VerifiedOwnedProgram, raw};
 use zryna_layout::{StorageTarget, TypeCategory, generic_v1::TypeView};
 
+mod fields;
+
 pub(super) struct Layout<'p, 'a> {
     pub(super) program: &'p VerifiedOwnedProgram<'a>,
     pub(super) functions: Vec<Locals>,

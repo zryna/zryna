@@ -1,0 +1,6 @@
+[
+  {
+    "path": "main.zry",
+    "text": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function pass(value: Box<i32>): Box<i32> { return value; }"
+  }
+]

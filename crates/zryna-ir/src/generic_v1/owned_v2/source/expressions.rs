@@ -19,23 +19,7 @@ impl Builder<'_, '_> {
         }
         let source = &self.original.body.expressions[index as usize];
         match &source.kind {
-            Expr::Reference { name } => {
-                let value = self.peek(&name.text)?;
-                if self.affine[value.id as usize] {
-                    self.budget.nominal_key(&value.ty, 1)?;
-                    self.ext(value.ty.clone(), source.span, super::Owned::Move(value.id))
-                } else if self
-                    .locals
-                    .iter()
-                    .rev()
-                    .find(|local| local.name == name.text)
-                    .is_some_and(|local| local.mutable)
-                {
-                    self.emit(value.ty, source.span, raw::Operation::Copy { value: value.id })
-                } else {
-                    Ok(value)
-                }
-            }
+            Expr::Reference { name } => self.reference_expression(name, source.span),
             Expr::StringLiteral { spelling } => {
                 let text = spelling
                     .get(1..spelling.len() - 1)
@@ -107,12 +91,38 @@ impl Builder<'_, '_> {
                     source.span,
                     depth,
                 ),
+            Expr::StructConstruction { type_name, type_arguments, fields, .. } => self
+                .construct_struct(type_name, type_arguments.as_ref(), fields, source.span, depth),
+            Expr::FieldAccess { base, field, .. } => {
+                self.copy_struct_field(*base, field, source.span, depth)
+            }
             Expr::Match { scrutinee, arms, .. } => {
                 self.match_expression(*scrutinee, arms, source.span, depth + 1)
             }
             _ => Err(reject(
                 "source expression requires a successor lane beyond immutable Copy replay",
             )),
+        }
+    }
+    fn reference_expression(
+        &mut self,
+        name: &zryna_syntax::v4::RawIdentifierSyntax,
+        span: zryna_source::UntrustedSpan,
+    ) -> Result<Value, Failure> {
+        let value = self.peek(&name.text)?;
+        if self.affine[value.id as usize] {
+            self.budget.nominal_key(&value.ty, 1)?;
+            self.ext(value.ty.clone(), span, super::Owned::Move(value.id))
+        } else if self
+            .locals
+            .iter()
+            .rev()
+            .find(|local| local.name == name.text)
+            .is_some_and(|local| local.mutable)
+        {
+            self.emit(value.ty, span, raw::Operation::Copy { value: value.id })
+        } else {
+            Ok(value)
         }
     }
     fn call(
