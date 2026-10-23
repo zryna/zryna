@@ -12,6 +12,7 @@ sys.dont_write_bytecode = True  # Keep standalone capture imports outside tracke
 from capture_io import Directory, REPORT_LIMIT, SELECTED_LIMIT, namespace, parse_json, read, sha, write_json
 from capture_providers import capture, walk, copy_hash, TOOL_ROOTS, verify_inventory
 from capture_runtime import Resources, run
+from source_snapshot import read_snapshot, write_snapshot
 from fixed_tools import select as select_fixed_tools
 from prefix_packet import validate
 
@@ -118,7 +119,7 @@ def collect(output):
         os.mkdir('observations', mode=0o700, dir_fd=held.fd)
         before = source(workflow['M5_PREFIX_CANDIDATE'])
         assert before['checkoutCommit'] == workflow['GITHUB_SHA']
-        write_json(held, 'SOURCE_BEFORE.json', before, compact=True)
+        write_snapshot(held, 'SOURCE_BEFORE.json', before)
     env = os.environ.copy()
     env['ZRYNA_RUST_ORDINARY_EVIDENCE_PARENT'] = str(output / 'observations')
     env['ZRYNA_RUST_ORDINARY_PREFIX_CAPTURE'] = '1'
@@ -163,7 +164,8 @@ def collect(output):
     after = source(workflow['M5_PREFIX_CANDIDATE'])
     assert after == before
     with Directory(output) as held:
-        write_json(held, 'SOURCE_AFTER.json', after, compact=True)
+        assert read_snapshot(held, 'SOURCE_BEFORE.json') == before
+        write_snapshot(held, 'SOURCE_AFTER.json', after)
         write_json(held, 'OBSERVED_MACHINE.json', {'cases': observations,
             'fullArraysRetained': True, 'reviewedBindings': False, 'targets': 'UNRUN'})
         resource = resources.check()

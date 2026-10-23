@@ -11,7 +11,8 @@ SOURCE_ROOTS = ('crates/zryna-driver/src', 'runtime', 'spec', 'adapters', 'examp
 # only its appended main runs; other unit-test fixture directories are not runtime inputs.
 # These exact paths retain the external include_*! and #[path] dependencies (including
 # inactive #[test] bodies), without copying every unrelated growing test corpus.
-# The complete authenticated checkout census remains in SOURCE_BEFORE/AFTER.json.
+# SOURCE_BEFORE/AFTER.json retain the complete authenticated checkout census,
+# directly or via their bounded, full-hash-authenticated source_snapshot shards.
 # Adding a required include without listing it fails the owned rustc invocation.
 SOURCE_FILES = (
     'crates/zryna-native-mir/tests/native_c_v0/capture.rs',
