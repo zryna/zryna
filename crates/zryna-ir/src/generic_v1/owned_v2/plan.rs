@@ -4,6 +4,7 @@ use crate::generic_v1::{body, budget, cfg, reject, reserve};
 use zryna_layout::generic_v1::VerifiedLayouts;
 #[cfg(test)]
 mod concrete_copy_transport;
+mod counted;
 #[cfg(test)]
 mod mixed_clones;
 #[cfg(test)]
@@ -11,6 +12,7 @@ mod nested_clones;
 #[cfg(test)]
 mod nominal_enum;
 mod state;
+pub(super) use counted::{derive, derive_counted};
 #[cfg(test)]
 mod struct_v4;
 mod structures;
@@ -18,7 +20,7 @@ mod topology;
 use state::State;
 /// Complete owner state copies and cleanup action credits per invocation of this checker.
 pub const MAX_OWNER_UNITS: usize = 1_048_576;
-fn charge(used: &mut usize, n: usize) -> Result<(), Failure> {
+pub(super) fn charge(used: &mut usize, n: usize) -> Result<(), Failure> {
     *used = used
         .checked_add(n)
         .filter(|v| *v <= MAX_OWNER_UNITS)
@@ -53,11 +55,11 @@ fn step(
     clippy::too_many_lines,
     reason = "One explicit path replay keeps failure cleanup and owner/loan merges together."
 )]
-pub(super) fn derive(
+fn replay_counted(
     program: &graph::Program,
     extensions: &[Vec<raw::Extension>],
     layouts: &VerifiedLayouts,
-) -> Result<Vec<raw::Plan>, Failure> {
+) -> Result<(Vec<raw::Plan>, usize), Failure> {
     if extensions.len() != program.functions.len() {
         return Err(reject("missing owned effects"));
     }
@@ -262,7 +264,7 @@ pub(super) fn derive(
         plan.steps.sort_by_key(|s| (s.block, s.position, s.failure));
         plans.push(plan);
     }
-    Ok(plans)
+    Ok((plans, used))
 }
 #[cfg(test)]
 #[path = "plan/clones.rs"]

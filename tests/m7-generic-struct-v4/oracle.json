@@ -21,8 +21,11 @@
     ]
   },
   "source_sha256": "b89c8922b2906e30cc47cabf273e5d2712beb818cb38dd598a20b84c21debf05",
+  "hex_encoding": "lowercase hex; ASCII whitespace ignored; byte lengths and SHA-256 cover decoded bytes",
+  "wire_path": "wire-v4.hex",
   "wire_bytes": 440,
   "wire_sha256": "5cd7b2785fc369a78eaaba841b67a04991cfbfcdbaa953eb5f01158fa5e1cad9",
+  "core_path": "embedded-core-v1.hex",
   "core_bytes": 343,
   "core_sha256": "b30846dee2d87a269776e26051d10756230ea7f083e2713ecf3aba84fa638ead",
   "sentinel_fingerprints": {
@@ -103,7 +106,7 @@
   },
   "independent_inherited_vectors": [
     {
-      "path": "wire-owned-v2.zir",
+      "path": "wire-owned-v2.hex",
       "bytes": 191,
       "sha256": "4104d9b8023729748fdebe00ddc09781e49a016b149e39a2f01fffb4793955b5",
       "operation": "CloneString(0)",
@@ -111,7 +114,7 @@
       "opcode": 6
     },
     {
-      "path": "wire-owned-v3.zir",
+      "path": "wire-owned-v3.hex",
       "bytes": 191,
       "sha256": "0269caf4da40e70fb92a0996cca39e8b6fe94bd0d968081ccf5dd78414c576ba",
       "operation": "CloneBorrowedString(0)",

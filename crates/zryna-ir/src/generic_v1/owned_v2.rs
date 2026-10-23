@@ -11,6 +11,7 @@ pub(super) enum Admission {
     LegacyOwned,
     StructV4,
 }
+mod extension_index;
 mod originals;
 mod plan;
 mod producer;
@@ -34,6 +35,7 @@ pub struct VerifiedOwnedProgram<'a> {
     runtime: &'a VerifiedOwnershipRuntimeAbi<'a>,
     abi: zryna_abi::VerifiedScalarAbiModule,
     exports: Vec<usize>,
+    extension_index: Option<extension_index::ExtensionIndex>,
 }
 impl<'a> VerifiedOwnedProgram<'a> {
     /// Complete authenticated functions in unsigned key order.
@@ -67,11 +69,22 @@ impl<'a> VerifiedOwnedProgram<'a> {
     /// Verified separate operation for one result ID.
     #[must_use]
     pub fn extension(&self, function: usize, result: u32) -> Option<&raw::Operation> {
+        if let Some(index) = &self.extension_index {
+            let ordinal = usize::try_from(index.ordinal(function, result)?).ok()?;
+            let extension = self.claim.extensions.get(function)?.get(ordinal)?;
+            #[cfg(test)]
+            extension_lookup_tests::inspect_candidate();
+            return Some(&extension.operation);
+        }
         self.claim
             .extensions
             .get(function)?
             .iter()
-            .find(|e| e.result == result)
+            .find(|e| {
+                #[cfg(test)]
+                extension_lookup_tests::inspect_candidate();
+                e.result == result
+            })
             .map(|e| &e.operation)
     }
     /// Complete immutable cleanup plan.
@@ -149,12 +162,24 @@ fn verify_claim<'a>(
         Admission::LegacyOwned => typed::check(&claim, sources, linear, &inventory)?,
         Admission::StructV4 => typed::check_for(&claim, sources, linear, &inventory, admission)?,
     }
-    if plan::derive(&claim.graph, &claim.extensions, linear)? != claim.plans {
+    let (plans, spent) = match admission {
+        Admission::LegacyOwned => (plan::derive(&claim.graph, &claim.extensions, linear)?, None),
+        Admission::StructV4 => {
+            let (plans, used) = plan::derive_counted(&claim.graph, &claim.extensions, linear)?;
+            (plans, Some(used))
+        }
+    };
+    if plans != claim.plans {
         return Err(reject("owned cleanup/loan/failure plan is not exact"));
     }
     super::source_abi::check(&claim.graph, &originals, sources, entry.index())?;
     let (abi, exports) = super::copy_v1::scalar_abi(&claim.graph, entry.index())?;
-    Ok(VerifiedOwnedProgram { claim, linear, linux, runtime, abi, exports })
+    let extension_index = if let Some(mut used) = spent {
+        Some(extension_index::ExtensionIndex::build(&claim.graph, &claim.extensions, &mut used)?)
+    } else {
+        None
+    };
+    Ok(VerifiedOwnedProgram { claim, linear, linux, runtime, abi, exports, extension_index })
 }
 
 #[cfg(doctest)]
@@ -162,3 +187,6 @@ mod struct_v4_type_contract;
 
 #[cfg(test)]
 mod original_cycle_tests;
+
+#[cfg(test)]
+mod extension_lookup_tests;

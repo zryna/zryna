@@ -4,7 +4,7 @@ use zryna_diagnostics::Diagnostic;
 use zryna_source::SourceMap;
 
 #[cfg(test)]
-mod tests;
+pub(in crate::generic_v1) mod tests;
 
 pub(super) fn check(
     program: &raw::Program,

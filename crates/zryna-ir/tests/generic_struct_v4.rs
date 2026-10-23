@@ -1,4 +1,4 @@
-//! Private v4 proposal tests. Actual v4 APIs remain unimplemented.
+//! Private v4 wire, source-seal and compatibility tests.
 //! Fixed vectors are physical oracles; source seals require fresh branded authorities.
 #[path = "generic_struct_v4/authority.rs"]
 mod authority;

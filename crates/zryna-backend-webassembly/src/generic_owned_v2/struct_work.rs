@@ -5,7 +5,13 @@ use zryna_ir::generic_v1::{
     owned_v2::{VerifiedOwnedProgram, raw::Operation},
     raw,
 };
-use zryna_layout::{StorageTarget, TypeCategory, generic_v1::TypeView};
+use zryna_layout::{
+    StorageTarget, TypeCategory,
+    generic_v1::{TypeView, VerifiedLayouts},
+};
+
+#[cfg(test)]
+mod budget_tests;
 
 pub(super) fn check(program: &VerifiedOwnedProgram<'_>) -> Result<(), Diagnostic> {
     let layouts = program.layouts(StorageTarget::Linear32V1);
@@ -14,11 +20,7 @@ pub(super) fn check(program: &VerifiedOwnedProgram<'_>) -> Result<(), Diagnostic
     }
     let mut work = 0usize;
     charge(&mut work, layouts.types().len().checked_mul(3).ok_or_else(budget)?)?;
-    for ty in layouts.types() {
-        if ty.category() == TypeCategory::Struct {
-            charge(&mut work, ty.fields().len())?;
-        }
-    }
+    precharge_width_members(layouts, &mut work)?;
     let mut types = Vec::new();
     types.try_reserve(layouts.types().len()).map_err(|_| budget())?;
     types.extend(layouts.types());
@@ -76,6 +78,21 @@ pub(super) fn check(program: &VerifiedOwnedProgram<'_>) -> Result<(), Diagnostic
     }
     Ok(())
 }
+
+fn precharge_width_members(layouts: &VerifiedLayouts, spent: &mut usize) -> Result<(), Diagnostic> {
+    let mut work = *spent;
+    // The existing 3*T credit pays this record walk; lengths need no child walk.
+    for ty in layouts.types() {
+        match ty.category() {
+            TypeCategory::Struct => charge(&mut work, ty.fields().len())?,
+            TypeCategory::Enum => charge(&mut work, ty.variants().len())?,
+            _ => {}
+        }
+    }
+    *spent = work;
+    Ok(())
+}
+
 fn charge(work: &mut usize, count: usize) -> Result<(), Diagnostic> {
     *work = work.checked_add(count).filter(|n| *n <= MAX_BYTES).ok_or_else(budget)?;
     Ok(())

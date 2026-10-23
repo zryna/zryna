@@ -117,6 +117,16 @@ fn produce_for(
     }
     let inventory = crate::generic_v1::inventory::check(&claim.graph, sources, linear, linux)?;
     super::typed::check_for(&claim, sources, linear, &inventory, admission)?;
-    claim.plans = super::plan::derive(&claim.graph, &claim.extensions, linear)?;
+    claim.plans = match admission {
+        super::Admission::LegacyOwned => {
+            super::plan::derive(&claim.graph, &claim.extensions, linear)?
+        }
+        super::Admission::StructV4 => {
+            let (plans, mut used) =
+                super::plan::derive_counted(&claim.graph, &claim.extensions, linear)?;
+            super::extension_index::preflight(&claim.graph, &claim.extensions, &mut used)?;
+            plans
+        }
+    };
     Ok(claim)
 }

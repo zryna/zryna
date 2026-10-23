@@ -1,5 +1,5 @@
 //! ABI diagnostic classification is reached through complete original-source and owner proofs.
-mod fixture;
+pub(in crate::generic_v1) mod fixture;
 mod selection;
 use crate::generic_v1::Failure;
 use fixture::Fixture;

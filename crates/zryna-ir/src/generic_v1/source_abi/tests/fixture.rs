@@ -4,7 +4,7 @@ use zryna_layout::{StorageTarget, generic_v1 as layout};
 use zryna_source::{SourceFileInput, SourceMap, UntrustedSpan};
 use zryna_syntax::{v4, v5};
 
-pub(super) struct Fixture {
+pub(in crate::generic_v1) struct Fixture {
     pub sources: SourceMap,
     pub syntax: v5::VerifiedProjectSyntaxV5,
     pub linear: layout::VerifiedLayouts,

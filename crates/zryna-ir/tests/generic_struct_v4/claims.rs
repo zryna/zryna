@@ -3,15 +3,41 @@ use zryna_ir::generic_v1::{owned_v2 as owned, raw as core};
 use zryna_source::UntrustedSpan;
 
 pub(super) const VECTOR: &[u8] =
-    include_bytes!("../../../../tests/m7-generic-struct-v4/wire-v4.zir");
+    &decode_hex::<440>(include_str!("../../../../tests/m7-generic-struct-v4/wire-v4.hex"));
 pub(super) const CORE: &[u8] =
-    include_bytes!("../../../../tests/m7-generic-struct-v4/embedded-core-v1.zir");
+    &decode_hex::<343>(include_str!("../../../../tests/m7-generic-struct-v4/embedded-core-v1.hex"));
 pub(super) const FROZEN_COPY: &[u8] =
     include_bytes!("../../../../tests/m7-generic-copy-fixtures/wire-v1.zir");
 pub(super) const OLD_V2: &[u8] =
-    include_bytes!("../../../../tests/m7-generic-struct-v4/wire-owned-v2.zir");
+    &decode_hex::<191>(include_str!("../../../../tests/m7-generic-struct-v4/wire-owned-v2.hex"));
 pub(super) const OLD_V3: &[u8] =
-    include_bytes!("../../../../tests/m7-generic-struct-v4/wire-owned-v3.zir");
+    &decode_hex::<191>(include_str!("../../../../tests/m7-generic-struct-v4/wire-owned-v3.hex"));
+
+// Decode immutable literals at compile time, independently of production wire encoders.
+// The fixed output size rejects short, odd-length, and oversized vectors.
+const fn decode_hex<const N: usize>(text: &str) -> [u8; N] {
+    let text = text.as_bytes();
+    let mut bytes = [0; N];
+    let mut index = 0;
+    let mut digits = 0;
+    while index < text.len() {
+        let digit = match text[index] {
+            b'0'..=b'9' => text[index] - b'0',
+            b'a'..=b'f' => text[index] - b'a' + 10,
+            b' ' | b'\t' | b'\r' | b'\n' => {
+                index += 1;
+                continue;
+            }
+            _ => panic!("invalid literal hex digit"),
+        };
+        assert!(digits < N * 2, "literal hex exceeds fixed byte length");
+        bytes[digits / 2] = (bytes[digits / 2] << 4) | digit;
+        digits += 1;
+        index += 1;
+    }
+    assert!(digits == N * 2, "literal hex has wrong byte length");
+    bytes
+}
 
 fn at(start: u32, end: u32) -> UntrustedSpan {
     UntrustedSpan { file: 0, start, end }
