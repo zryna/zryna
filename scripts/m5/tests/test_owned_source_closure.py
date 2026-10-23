@@ -11,6 +11,25 @@ from owned_source_closure import audit, references
 from owned_inputs import mirror, check_mirror
 
 
+def source_inventory(repo, inventory=None):
+    """Local test inventory only; generated files are not authenticated source."""
+    if inventory is not None:
+        return inventory()  # Explicit inert inventories used by isolated tests only.
+    if (repo / '.git').exists():
+        from collect_ordinary_sanitizer_prefix import REPO, git, source
+        assert repo == REPO
+        return source(git('rev-parse', 'HEAD').decode().strip())['files']
+    # A plain source export has no Git authority. Enumerate it completely for
+    # local coverage; hosted checkouts always use the production census above.
+    rows = []
+    for path in sorted(repo.rglob('*')):
+        if path.is_file() and '.git' not in path.relative_to(repo).parts:
+            data = path.read_bytes()
+            rows.append({'path': str(path.relative_to(repo)), 'bytes': len(data),
+                         'sha256': hashlib.sha256(data).hexdigest()})
+    return rows
+
+
 class SourceClosure(unittest.TestCase):
     def test_literals_comments_raw_strings_and_all_platform_branches(self):
         source = '''
@@ -70,12 +89,7 @@ class SourceClosure(unittest.TestCase):
         # The checkout may be an honest plain-source tar export. This inventory is
         # only a local test input, never a substitute for hosted source() Git checks.
         repo = Path(__file__).resolve().parents[3]
-        rows = []
-        for path in sorted(repo.rglob('*')):
-            if path.is_file() and '.git' not in path.relative_to(repo).parts:
-                data = path.read_bytes()
-                rows.append({'path': str(path.relative_to(repo)), 'bytes': len(data),
-                             'sha256': hashlib.sha256(data).hexdigest()})
+        rows = source_inventory(repo)
         original_rows = [dict(row) for row in rows]
         with tempfile.TemporaryDirectory() as directory:
             root, manifest = mirror(repo, Path(directory), {'files': rows})
@@ -93,3 +107,32 @@ class SourceClosure(unittest.TestCase):
             for edge in report['closureAudit']['includePathEdges']:
                 self.assertIn(edge['to'], selected)
             self.assertEqual(rows, original_rows, 'source census cannot be filtered or mutated')
+
+    def test_dirty_workspace_uses_complete_supplied_source_census_without_cache_paths(self):
+        # These are inert test rows, not fake Git records. One supplied source path
+        # intentionally lives under node_modules to reject directory blacklists.
+        from owned_inputs import SOURCE_FILES
+        with tempfile.TemporaryDirectory() as directory:
+            repo, output = Path(directory) / 'source', Path(directory) / 'output'
+            repo.mkdir()
+            output.mkdir()
+            for relative in (*SOURCE_FILES, 'node_modules/tracked-fixture.json'):
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'// inert source fixture')
+            tracked = source_inventory(repo)
+            cache = repo / 'node_modules/.pnpm' / ('p' * 180) / ('q' * 180) / ('r' * 180)
+            cache.mkdir(parents=True)
+            for index in range(2000):
+                (cache / f'{index:05}.cache').write_bytes(b'')
+            self.assertGreater(len(json.dumps([str(path.relative_to(repo))
+                                              for path in repo.rglob('*.cache')]).encode()),
+                               1024 * 1024)
+            rows = source_inventory(repo, inventory=lambda: tracked)
+            root, manifest = mirror(repo, output, {'files': rows})
+            check_mirror(repo, root, manifest)
+            report = json.loads((output / 'SOURCE_MIRROR.json').read_bytes())
+            self.assertEqual(rows, tracked)
+            self.assertEqual(report['omittedSourcePaths'], ['node_modules/tracked-fixture.json'])
+            self.assertEqual({row['path'] for row in manifest},
+                             {row['path'] for row in tracked} - {'node_modules/tracked-fixture.json'})
