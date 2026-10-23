@@ -159,3 +159,6 @@ fn verify_claim<'a>(
 
 #[cfg(doctest)]
 mod struct_v4_type_contract;
+
+#[cfg(test)]
+mod original_cycle_tests;

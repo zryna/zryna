@@ -13,13 +13,19 @@ pub mod copy_v1;
 pub mod owned_v2;
 pub mod owned_v4;
 
+#[cfg(test)]
+mod original_cycle_tests;
+
 mod definition_expansion;
 #[cfg(test)]
 mod definition_expansion_tests;
 #[cfg(test)]
 mod diagnostic_tests;
 mod diagnostics;
+mod direct_original_cycles;
 mod discovery;
+mod preparation;
+use preparation::prepare_originals;
 mod expansion;
 mod keys;
 #[cfg(test)]
@@ -34,7 +40,7 @@ mod tests;
 mod types;
 mod value_bounds;
 
-use model::{Builder, Function, Node};
+use model::{Function, Node};
 
 /// Maximum distinct closed generic function instances.
 pub const MAX_FUNCTION_INSTANCES: usize = 4_096;
@@ -109,23 +115,7 @@ impl<'b, 'c, 's> InstanceContext<'b, 'c, 's> {
 pub fn discover<'b, 'c, 's>(
     bodies: &'b BodyTypeContext<'c, 's>,
 ) -> Result<InstanceContext<'b, 'c, 's>, InstantiationFailure> {
-    let mut builder = Builder::new(bodies)?;
-    let mut original_errors = diagnostics::Errors::default();
-    source_calls::collect(&builder, &mut original_errors)?;
-    if original_errors.is_empty() {
-        // Preserve supplied-argument validation before any generated-definition expansion.
-        // Existing source-call errors retain their earlier precedence over closed discovery.
-        discovery::roots(&mut builder)?;
-        builder.check_errors()?;
-    }
-    definition_expansion::collect(&builder, &mut original_errors)?;
-    if !original_errors.is_empty() {
-        return Err(InstantiationFailure::Diagnostics(original_errors.finish()?));
-    }
-    discovery::pending(&mut builder)?;
-    discovery::value_arguments(&mut builder)?;
-    builder.check_errors()?;
-    builder.finish()
+    prepare_originals(bodies)?.finish()
 }
 
 fn reserve<T>(count: usize) -> Result<Vec<T>, InstantiationFailure> {

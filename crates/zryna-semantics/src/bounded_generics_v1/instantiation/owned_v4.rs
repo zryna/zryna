@@ -1,6 +1,7 @@
-//! Distinct private Struct-v4 discovery after every opaque original has ownership proof.
+//! Actual original roots validate privately; ownership precedes generated discovery and issuance.
 use super::{BodyTypeContext, InstanceContext};
-/// Complete discovery issued only after original ownership checking, before closed layout work.
+/// Complete discovery issued after original typing, supplied-root validation and ownership.
+/// Preparation retains only private temporary state; generated completion and layouts follow ownership.
 /// ```compile_fail
 /// fn bypass(old: zryna_semantics::bounded_generics_v1::instantiation::InstanceContext<'_, '_, '_>) {
 ///     let _: zryna_semantics::bounded_generics_v1::instantiation::owned_v4::OwnedV4InstanceContext<'_, '_, '_> = old;
@@ -17,31 +18,24 @@ impl OwnedV4InstanceContext<'_, '_, '_> {
         &self.instances
     }
 }
-/// Checks every original's ownership, including unused templates, then discovers instances.
+/// Validates actual supplied roots and original definition errors in private temporary state,
+/// checks every original's ownership, then completes generated discovery and issues its context.
 /// # Errors
 /// Rejects source typing, unsupported ownership forms, loans, moves and discovery budgets.
 pub fn discover<'b, 'c, 's>(
     bodies: &'b BodyTypeContext<'c, 's>,
 ) -> Result<OwnedV4InstanceContext<'b, 'c, 's>, zryna_ir::generic_v1::Failure> {
+    let prepared = super::prepare_originals(bodies).map_err(instantiation_failure)?;
     let declarations = bodies.declarations();
     zryna_ir::generic_v1::owned_v2::check_original_bodies_v4(
         declarations.syntax(),
         declarations.sources(),
     )
     .map_err(semantic_failure)?;
-    super::discover(bodies).map(|instances| OwnedV4InstanceContext { instances }).map_err(
-        |failure| match failure {
-            super::InstantiationFailure::Diagnostics(errors) => {
-                zryna_ir::generic_v1::Failure::Diagnostics(errors)
-            }
-            super::InstantiationFailure::AllocationFailure => {
-                zryna_ir::generic_v1::Failure::AllocationFailure
-            }
-            super::InstantiationFailure::InternalFailure => {
-                zryna_ir::generic_v1::Failure::InternalFailure
-            }
-        },
-    )
+    prepared
+        .finish()
+        .map(|instances| OwnedV4InstanceContext { instances })
+        .map_err(instantiation_failure)
 }
 /// Produces untrusted source-owned claims; separate owned decoding and IR sealing remain mandatory.
 /// # Errors
@@ -68,6 +62,20 @@ pub fn produce_claim(
     )
     .map_err(semantic_failure)
 }
+fn instantiation_failure(failure: super::InstantiationFailure) -> zryna_ir::generic_v1::Failure {
+    match failure {
+        super::InstantiationFailure::Diagnostics(errors) => {
+            zryna_ir::generic_v1::Failure::Diagnostics(errors)
+        }
+        super::InstantiationFailure::AllocationFailure => {
+            zryna_ir::generic_v1::Failure::AllocationFailure
+        }
+        super::InstantiationFailure::InternalFailure => {
+            zryna_ir::generic_v1::Failure::InternalFailure
+        }
+    }
+}
+
 fn semantic_failure(failure: zryna_ir::generic_v1::Failure) -> zryna_ir::generic_v1::Failure {
     match failure {
         zryna_ir::generic_v1::Failure::Diagnostics(mut errors) => {

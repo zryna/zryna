@@ -11,6 +11,7 @@ use crate::{CanonicalMap, LayoutRecord, StorageTarget, TypeUniverseIdentity};
 
 mod encoding;
 mod keys;
+pub mod original_cycles;
 pub mod raw;
 #[cfg(test)]
 mod resource_tests;

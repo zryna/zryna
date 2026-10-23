@@ -52,9 +52,12 @@ Copying v4 raw claims through old encoders and decoders cannot acquire admission
 
 ## Source, type and ownership proof
 
-Before closed discovery, check all originals in their opaque declaration frames,
-including unused templates and every Struct field. Reuse original nominal identity,
-finite substitution and dual-layout authority. Equal width or shape cannot identify
+Before generated instance expansion, check all originals in their opaque declaration
+frames, including unused templates and every Struct field. First validate actual
+supplied source arguments in a private preparation state; retain that same builder
+and its counters. Original ownership must pass before pending expansion can finish
+or issue a context. Reuse original nominal identity, finite substitution and
+dual-layout authority. Equal width or shape cannot identify
 foreign nominal declarations. Exact field types come from all substituted stored
 fields; a phantom type argument alone cannot determine ownership.
 
@@ -81,6 +84,23 @@ create original Copy authority. The operation cannot move an affine field, creat
 subloan, erase an exclusive loan or read a moved/uninitialized base. General partial
 places, opaque field moves, field loans and structural Struct Clone remain separate
 acceptance gaps.
+
+## Original definition rejections
+
+A direct generic stored member whose nominal head and complete ordered parameter
+tuple equal its original owner proves a by-value self cycle under every legal
+substitution. The rejection-only layout predicate returns no authority. Independent
+semantic and IR adapters authenticate actual field or payload roots and report
+`ZRYNA-L3002` at the complete original member type. The literal unused `Node<T>`
+needs no fabricated closed instance or function.
+
+This sufficient proof handles one or two original parameters. It does not descend
+wrapper or phantom arguments, infer equality from possible substitutions, or claim
+general symbolic cycle coverage. Nongeneric and old owned issuers retain their
+existing behavior. Original expanding definitions retain `ZRYNA-M7003`. Both
+rejections join the existing canonical collector after original source-call and
+actual supplied-argument validation, before private-v4 ownership and generated
+instance completion.
 
 ## Original stored demand
 

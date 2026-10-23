@@ -17,6 +17,7 @@ mod enums;
 mod expressions;
 mod loops;
 mod normalize;
+mod original_cycles;
 mod owners;
 mod phi;
 mod resources;
@@ -125,6 +126,9 @@ pub(super) fn check_originals_for(
     sources: &zryna_source::SourceMap,
     admission: Admission,
 ) -> Result<(), Failure> {
+    if admission == Admission::StructV4 {
+        original_cycles::check(originals, sources)?;
+    }
     let mut nominal_credit = type_facts::check_declarations_for(originals, admission)?;
     let mut aggregate = Budget::default();
     // Every original is checked before checking instances, including unused templates.

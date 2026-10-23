@@ -199,17 +199,25 @@ fn authenticated_by_value_cycle_rejects_and_vec_indirection_is_layout_finite() {
         let source = format!(
             "interface Node<T extends ZrynaValue> extends ZrynaStruct {{next:{member};}} function read(x:Node<i32>):i32 {{return 0;}}"
         );
-        checked(&[("main.zry", &source)], |instances| {
-            let result = verify_layouts(instances, StorageTarget::Linear32V1);
-            if accepted {
-                assert!(result.is_ok());
-            } else {
-                let Err(zryna_layout::generic_v1::Failure::Diagnostics(errors)) = result else {
-                    panic!("by-value layout rejection");
-                };
-                assert!(errors.iter().any(|error| error.code() == "ZRYNA-L3002"));
-            }
-        });
+        if accepted {
+            checked(&[("main.zry", &source)], |instances| {
+                for target in [StorageTarget::Linear32V1, StorageTarget::LinuxX8664V1] {
+                    verify_layouts(instances, target).expect("finite Vec-indirected layout");
+                }
+            });
+        } else {
+            // The same source now proves its universal cycle before any instance context.
+            let super::InstantiationFailure::Diagnostics(errors) =
+                super::tests::check(&[("main.zry", &source)])
+                    .expect_err("original cycle must not issue an instance context")
+            else {
+                panic!("by-value layout rejection");
+            };
+            assert_eq!(errors.len(), 1);
+            assert_eq!(errors[0].code(), "ZRYNA-L3002");
+            let span = errors[0].primary_span().expect("complete original member witness");
+            assert_eq!((span.file().index(), span.start(), span.end()), (0, 63, 70));
+        }
     }
 }
 
