@@ -242,3 +242,6 @@ mod argument_spans;
 
 #[path = "body_types/match_diagnostics.rs"]
 mod match_diagnostics;
+
+#[path = "body_types/duplicate_struct_fields.rs"]
+mod duplicate_struct_fields;

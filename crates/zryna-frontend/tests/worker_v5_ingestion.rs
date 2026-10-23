@@ -5,6 +5,8 @@ use zryna_source::{SourceFileInput, SourceMap};
 
 #[path = "worker_v5_ingestion/duplicate_arms.rs"]
 mod duplicate_arms;
+#[path = "worker_v5_ingestion/duplicate_struct_fields.rs"]
+mod duplicate_struct_fields;
 #[path = "worker_v5_ingestion/support.rs"]
 mod support;
 use support::*;

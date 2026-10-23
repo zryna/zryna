@@ -1,0 +1,115 @@
+{
+  "status": "Independent literal expected source DTOs and owning semantic oracles, authored before production; unvalidated until compiler source barriers run",
+  "cases": [
+    {
+      "id": "explicit",
+      "sources": "explicit-sources.json",
+      "expected": "explicit-expected.json",
+      "sourceFileSha256": [
+        {
+          "path": "main.zry",
+          "sha256": "8d499ffd713348d5318f9f2500be1b0b6b23ec753b37fcc2adca467b2a37a52b"
+        }
+      ],
+      "expectedSha256": "de40b0b022b99ca94d098c0f07ab45eb62993d3a985cba5c5b7acb504637c4d5",
+      "expectedCode": "ZRYNA-M7006",
+      "primarySpan": {
+        "file": 0,
+        "start": 143,
+        "end": 148
+      },
+      "expectedDiagnosticCount": 1
+    },
+    {
+      "id": "explicit-valid",
+      "sources": "explicit-valid-sources.json",
+      "expected": "explicit-valid-expected.json",
+      "sourceFileSha256": [
+        {
+          "path": "main.zry",
+          "sha256": "f239a4d2c04d483611fa96f1dee212b5e1fda67895c947e25fa9d92a9eed0c31"
+        }
+      ],
+      "expectedSha256": "fd661f64a487997b48dbf85027773fc81f2ffef196fad3486c22ec3c12beeb95",
+      "expectedCode": null,
+      "primarySpan": null,
+      "expectedDiagnosticCount": 0
+    },
+    {
+      "id": "shorthand",
+      "sources": "shorthand-sources.json",
+      "expected": "shorthand-expected.json",
+      "sourceFileSha256": [
+        {
+          "path": "main.zry",
+          "sha256": "710261677cb1b2fc594c48d59d91f645b24de9bc0ce9c3755738d2ab4758796b"
+        }
+      ],
+      "expectedSha256": "795d69d4e6b5c579cefafb05944928a001155ad3c2e6677b91f9b721975cb520",
+      "expectedCode": "ZRYNA-M7006",
+      "primarySpan": {
+        "file": 0,
+        "start": 144,
+        "end": 149
+      },
+      "expectedDiagnosticCount": 1
+    },
+    {
+      "id": "shorthand-valid",
+      "sources": "shorthand-valid-sources.json",
+      "expected": "shorthand-valid-expected.json",
+      "sourceFileSha256": [
+        {
+          "path": "main.zry",
+          "sha256": "7fc9ce8e2745c4a1d65540ad7fa87ab1f98038b1ee5a6619d9ac930645ea021f"
+        }
+      ],
+      "expectedSha256": "b5c93d33bb699e790c430f2264612284efb5c315cd4f021b52e7d1f2c9c50325",
+      "expectedCode": null,
+      "primarySpan": null,
+      "expectedDiagnosticCount": 0
+    },
+    {
+      "id": "import-alias",
+      "sources": "import-alias-sources.json",
+      "expected": "import-alias-expected.json",
+      "sourceFileSha256": [
+        {
+          "path": "main.zry",
+          "sha256": "e71a216b2d68412ae31ad7c3021448cb79484cf6423ec9738f8de81156d5463e"
+        },
+        {
+          "path": "values.zry",
+          "sha256": "27b585581eb9c4e2bd56df9b019223d2d74a108362f74bf8d04d2a5ef0350839"
+        }
+      ],
+      "expectedSha256": "ddefecb554a9d684b4cba634f7adc1f0a7180382f764231c4eaa202820190cb9",
+      "expectedCode": "ZRYNA-M7006",
+      "primarySpan": {
+        "file": 0,
+        "start": 116,
+        "end": 121
+      },
+      "expectedDiagnosticCount": 1
+    },
+    {
+      "id": "import-alias-valid",
+      "sources": "import-alias-valid-sources.json",
+      "expected": "import-alias-valid-expected.json",
+      "sourceFileSha256": [
+        {
+          "path": "main.zry",
+          "sha256": "646715d4360ad881040e3983a114bd7cab678664ba94858a7ab8004582a84790"
+        },
+        {
+          "path": "values.zry",
+          "sha256": "27b585581eb9c4e2bd56df9b019223d2d74a108362f74bf8d04d2a5ef0350839"
+        }
+      ],
+      "expectedSha256": "caa0c47057cbd282576cc916de2dc87752ec11e668d9b840b2e2c3efc5db03a7",
+      "expectedCode": null,
+      "primarySpan": null,
+      "expectedDiagnosticCount": 0
+    }
+  ]
+}

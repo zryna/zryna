@@ -1,7 +1,5 @@
 //! Data, ownership, and collection constructions for protocol v5.
 
-use std::collections::BTreeSet;
-
 use super::super::syntax;
 use zryna_source::UntrustedSpan;
 
@@ -79,16 +77,12 @@ impl FileParser<'_> {
         )?;
         self.count_aggregate_operands(count)?;
         let mut fields = Vec::new();
-        let mut seen = BTreeSet::new();
         let mut depth = 0;
         while self.current().is_some_and(|token| token.kind() != TokenKind::CloseBrace) {
             if fields.len() >= syntax::MAX_INITIALIZERS_PER_CONSTRUCTION {
                 return Err(resource("struct construction exceeds the initializer limit"));
             }
             let name = self.identifier()?;
-            if !seen.insert(name.text.clone()) {
-                return Err(unsupported(self.current(), "duplicate struct initializer"));
-            }
             let kind = if let Some(colon) = self.maybe(TokenKind::Colon) {
                 let (value, value_depth) = self.binary_expression(body, nesting + 1)?;
                 depth = depth.max(value_depth);

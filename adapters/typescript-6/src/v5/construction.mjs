@@ -45,7 +45,6 @@ export function countAggregateOperands(context, count) {
 export function normalizeConstructionFields(object, context, depth) {
   const { sourceFile, file, collector } = context;
   const fields = [];
-  const seen = new Set();
   if (object.properties.length > maxObjectInitializersPerConstruction) {
     failBudget('struct construction exceeds the initializer limit');
   }
@@ -60,11 +59,10 @@ export function normalizeConstructionFields(object, context, depth) {
       return null;
     }
     const name = dataName(property.name, sourceFile, file, collector, 'aggregate construction field name');
-    if (!name || seen.has(name.text)) {
+    if (!name) {
       collector.unsupported(property.name, sourceFile, file, 'duplicate aggregate construction field');
       return null;
     }
-    seen.add(name.text);
     if (ts.isShorthandPropertyAssignment(property)) {
       if (property.objectAssignmentInitializer) {
         collector.unsupported(property, sourceFile, file, 'aggregate shorthand initializer');
