@@ -105,14 +105,15 @@ pub(super) fn core(builder: &mut Builder<'_, '_>, op: &raw::Operation) -> Result
     Ok(())
 }
 impl Builder<'_, '_> {
-    pub(super) fn peek(&self, name: &str) -> Result<Value, Failure> {
-        let value = self
+    pub(super) fn peek(&mut self, name: &str) -> Result<Value, Failure> {
+        let binding = self
             .locals
             .iter()
             .rev()
             .find(|local| local.name == name)
-            .map(|binding| binding.value.clone())
             .ok_or_else(|| ownership("unknown exact local"))?;
+        self.budget.nominal_key(&binding.value.ty, 1)?;
+        let value = binding.value.clone();
         if !self.alive[value.id as usize] {
             return Err(ownership("use of moved or ended original binding"));
         }
@@ -128,7 +129,7 @@ impl Builder<'_, '_> {
         }
         Ok(value)
     }
-    pub(super) fn reference_operand(&self, id: u32) -> Result<Value, Failure> {
+    pub(super) fn reference_operand(&mut self, id: u32) -> Result<Value, Failure> {
         let zryna_syntax::v5::RawExpressionKind::Reference { name } =
             &self.original.body.expressions[id as usize].kind
         else {

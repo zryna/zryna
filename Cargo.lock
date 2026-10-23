@@ -1934,6 +1934,7 @@ dependencies = [
  "zryna-diagnostics",
  "zryna-frontend",
  "zryna-ir",
+ "zryna-layout",
  "zryna-native-c-ir",
  "zryna-native-mir",
  "zryna-ownership-runtime-abi",

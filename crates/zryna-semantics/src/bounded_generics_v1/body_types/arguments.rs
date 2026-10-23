@@ -1,5 +1,5 @@
 use zryna_source::UntrustedSpan;
-use zryna_syntax::v5::RawTypeArgumentList;
+use zryna_syntax::v5::{RawTypeArgumentList, RawTypeSyntaxKind};
 
 use super::super::DeclarationIdentity;
 use super::model::{Kind, Scalar, Ty};
@@ -23,11 +23,14 @@ pub(super) fn source_arguments(
     omitted: UntrustedSpan,
 ) -> Result<Option<[Option<Ty>; 2]>, BodyTypeFailure> {
     if list.map_or(0, |list| list.arguments.len()) != count {
-        error(
-            checker,
-            list.map_or(omitted, |list| list.span),
-            "explicit type argument count differs from the declaration",
-        );
+        let at = list.map_or(omitted, |list| {
+            list.arguments.get(count).map_or(list.span, |occurrence| {
+                checker.context.syntax().files()[owner.module().index() as usize].type_syntax
+                    [*occurrence as usize]
+                    .span
+            })
+        });
+        error(checker, at, "explicit type argument count differs from the declaration");
         return Ok(None);
     }
     let mut arguments = [None, None];
@@ -44,11 +47,12 @@ pub(super) fn source_arguments(
                         type_resolution::source(checker, owner.module().index(), *occurrence);
                 }
                 _ => {
-                    error(
-                        checker,
-                        node.span,
-                        "type argument is not a known storable ZrynaValue type",
-                    );
+                    let at = match &node.kind {
+                        RawTypeSyntaxKind::Borrow { keyword_span, .. }
+                        | RawTypeSyntaxKind::BorrowMut { keyword_span, .. } => *keyword_span,
+                        _ => node.span,
+                    };
+                    error(checker, at, "type argument is not a known storable ZrynaValue type");
                     valid = false;
                 }
             }

@@ -1,0 +1,1 @@
+interface Node<T extends ZrynaValue> extends ZrynaStruct { next: Node<T>; }

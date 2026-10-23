@@ -1,7 +1,5 @@
 //! Match expression construction and source-faithful qualified arm keys.
 
-use std::collections::BTreeSet;
-
 use super::super::syntax;
 use zryna_source::UntrustedSpan;
 
@@ -35,9 +33,8 @@ impl FileParser<'_> {
             return Err(resource("project exceeds the match-arm limit"));
         }
         let mut arms = Vec::new();
-        let mut seen = BTreeSet::new();
         while self.current().is_some_and(|token| token.kind() != TokenKind::CloseBrace) {
-            let (arm, value_depth) = self.match_arm(body, nesting, &mut seen)?;
+            let (arm, value_depth) = self.match_arm(body, nesting)?;
             depth = depth.max(value_depth);
             arms.push(arm);
             if self.maybe(TokenKind::Comma).is_none() {
@@ -73,7 +70,6 @@ impl FileParser<'_> {
         &mut self,
         body: &mut Body,
         nesting: u32,
-        seen: &mut BTreeSet<String>,
     ) -> Result<(syntax::RawMatchArm, u32), ParseError> {
         let key = self.take(TokenKind::StringLiteral)?;
         let spelling = self.spelling(key).to_owned();
@@ -84,11 +80,7 @@ impl FileParser<'_> {
         let Some((type_text, variant_text)) = qualified.split_once('.') else {
             return Err(unsupported(Some(key), "unsupported match arm key"));
         };
-        if !valid_name(type_text)
-            || !valid_name(variant_text)
-            || variant_text.contains('.')
-            || !seen.insert(qualified.clone())
-        {
+        if !valid_name(type_text) || !valid_name(variant_text) || variant_text.contains('.') {
             return Err(unsupported(Some(key), "unsupported match arm key"));
         }
         self.take(TokenKind::Colon)?;

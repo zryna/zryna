@@ -31,6 +31,8 @@ mod nested_clones;
 #[cfg(test)]
 mod nested_resources;
 #[cfg(test)]
+mod nominal_enum;
+#[cfg(test)]
 mod resources;
 #[cfg(test)]
 mod scalar_phi;

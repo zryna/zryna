@@ -1,0 +1,4 @@
+function probe(): i32 {
+let owner: Option<String> = Option.some<String>("text");
+const loan: Borrow<Option<String>> = borrow(owner); const moved: String = match(loan, { "Option.none": () => "", "Option.some": (item) => item });
+return 0; }

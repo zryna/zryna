@@ -41,14 +41,13 @@ impl<'b> Builder<'_, 'b> {
     }
 
     pub(super) fn value(&mut self, ty: Closed) -> Result<Value, Failure> {
-        owners::admitted(&ty)?;
+        let affine = self.type_facts.affine(self.resolver.originals, &ty, &mut self.budget)?;
         if self.next as usize >= crate::data_ownership_v1::MAX_VALUES_PER_FUNCTION {
             return Err(crate::generic_v1::budget("source replay exceeds inherited value ceiling"));
         }
         let id = self.next;
         self.budget.value()?;
         self.next = self.next.checked_add(1).ok_or(Failure::InternalFailure)?;
-        let affine = owners::affine(&ty)?;
         self.affine.push(affine);
         self.alive.push(true);
         if let Closed::Borrow(_, exclusive) = &ty {
@@ -57,7 +56,8 @@ impl<'b> Builder<'_, 'b> {
         Ok(Value { id, ty })
     }
 
-    pub(super) fn definition(&self, value: &Value) -> Result<raw::Definition, Failure> {
+    pub(super) fn definition(&mut self, value: &Value) -> Result<raw::Definition, Failure> {
+        self.budget.nominal_key(&value.ty, 1)?;
         Ok(raw::Definition {
             id: value.id,
             ty: if self.symbolic {

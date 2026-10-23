@@ -135,7 +135,7 @@ fn drop_value(
             let status = b.inst_results(call)[0];
             b.ins().trapnz(status, TrapCode::unwrap_user(7));
         }
-        0x14 | 0x15 => {
+        0x11 | 0x13 | 0x14 | 0x15 => {
             let done = b.create_block();
             for (ordinal, (_, payload)) in view.variants().enumerate() {
                 let active = b.create_block();

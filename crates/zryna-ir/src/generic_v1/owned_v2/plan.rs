@@ -8,6 +8,8 @@ mod concrete_copy_transport;
 mod mixed_clones;
 #[cfg(test)]
 mod nested_clones;
+#[cfg(test)]
+mod nominal_enum;
 mod state;
 mod topology;
 use state::State;

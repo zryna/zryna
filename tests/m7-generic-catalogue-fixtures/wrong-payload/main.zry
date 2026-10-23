@@ -1,0 +1,3 @@
+function probe(): i32 {
+Option.some<i32>(true);
+return 0; }

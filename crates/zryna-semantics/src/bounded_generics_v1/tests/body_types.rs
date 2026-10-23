@@ -236,3 +236,9 @@ fn ownership_misuse_remains_an_unresolved_obligation() {
 mod applications;
 #[path = "body_types/boundaries.rs"]
 mod boundaries;
+
+#[path = "body_types/argument_spans.rs"]
+mod argument_spans;
+
+#[path = "body_types/match_diagnostics.rs"]
+mod match_diagnostics;

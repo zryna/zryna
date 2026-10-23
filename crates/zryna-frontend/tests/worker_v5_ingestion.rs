@@ -3,6 +3,8 @@ use std::time::Duration;
 use zryna_frontend::{WorkerFailure, WorkerLimitsV5};
 use zryna_source::{SourceFileInput, SourceMap};
 
+#[path = "worker_v5_ingestion/duplicate_arms.rs"]
+mod duplicate_arms;
 #[path = "worker_v5_ingestion/support.rs"]
 mod support;
 use support::*;

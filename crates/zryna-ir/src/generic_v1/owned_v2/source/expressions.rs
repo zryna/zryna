@@ -22,6 +22,7 @@ impl Builder<'_, '_> {
             Expr::Reference { name } => {
                 let value = self.peek(&name.text)?;
                 if self.affine[value.id as usize] {
+                    self.budget.nominal_key(&value.ty, 1)?;
                     self.ext(value.ty.clone(), source.span, super::Owned::Move(value.id))
                 } else if self
                     .locals
@@ -52,6 +53,7 @@ impl Builder<'_, '_> {
                     return Err(reject("loan requires a stored owner"));
                 };
                 let exclusive = matches!(source.kind, Expr::BorrowMut { .. });
+                self.budget.nominal_key(&value.ty, 1)?;
                 self.ext(
                     Closed::Borrow(key.clone(), exclusive),
                     source.span,
@@ -200,6 +202,12 @@ impl Builder<'_, '_> {
             };
             arguments.push(key);
         }
+        self.type_facts.description(
+            &self.resolver,
+            &type_name.text,
+            &arguments,
+            &mut self.budget,
+        )?;
         let description =
             super::enums::describe(&self.resolver, &type_name.text, &arguments, self.symbolic)?;
         let ordinal = description

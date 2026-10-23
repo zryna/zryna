@@ -7,6 +7,8 @@ use super::{
     substitution, type_resolution,
 };
 
+mod results;
+
 pub(super) fn prepare(
     checker: &mut Checker<'_, '_>,
     owner: DeclarationIdentity,
@@ -65,7 +67,7 @@ pub(super) fn prepare(
             valid = false;
             constructions::variant_error(
                 checker,
-                arm.variant.span,
+                results::quoted_key(arm)?,
                 "match arm repeats an original variant",
             );
         }
@@ -135,6 +137,10 @@ pub(super) fn finish(
         if common.is_none() {
             common = actual;
         } else {
+            if results::borrowed_payload_conversion(checker, owner, common, actual)? {
+                valid = false;
+                continue;
+            }
             let require =
                 if checker.tables.function(owner).expressions[expression as usize].match_generic {
                     constraints::require_generic

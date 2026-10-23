@@ -165,3 +165,23 @@ fn synthetic_key_and_inventory_arithmetic_overflow_never_wraps() {
         usize::MAX
     );
 }
+
+#[test]
+fn generic_closing_calls_include_explicit_arguments_and_nongeneric_names_stay_exact() {
+    let source = "function banner():String {return \"é😀\";}\r\nfunction generic<T extends ZrynaValue>(value:T):T {return generic<T>(value);}\r\nfunction plain():i32 {return plain();}";
+    let InstantiationFailure::Diagnostics(errors) =
+        check(&[("main.zry", source)]).expect_err("both original cycles reject")
+    else {
+        panic!("source diagnostics");
+    };
+    assert_eq!(errors.len(), 2);
+    for (error, (call, token)) in
+        errors.iter().zip([("generic<T>(value)", "generic<T>"), ("plain();", "plain")])
+    {
+        assert_eq!(error.code(), "ZRYNA-M7003");
+        let start = source.find(call).expect("original closing call");
+        let span = error.primary_span().expect("authenticated source range");
+        assert_eq!((span.start() as usize, span.end() as usize), (start, start + token.len()));
+        assert_eq!(&source[span.start() as usize..span.end() as usize], token);
+    }
+}

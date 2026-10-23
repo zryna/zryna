@@ -8,7 +8,7 @@ use super::{Distribution, TEXT as LEGACY_TEXT, source_ref_matches_version};
 pub(super) const FORMAT: &str = "zryna.native-distribution.v2";
 pub(super) const RECIPE_FORMAT: &str = "zryna.native-distribution-recipe.v2";
 pub(super) const RECIPE_SHA256: &str =
-    "769fb09100c8823666b9f2a9f228ca2caad15d6fdc4da314577970bfea77a77b";
+    "e290d0be4fe29f5222186a67817372238af848f9182766ef540f6ea5ea605cf7";
 const TEXT: [&str; 5] = ["LICENSE", "NOTICE", "README.md", "SUPPORT.md", "VERSION"];
 const REQUIRED: [&str; 7] = [
     "LICENSE",

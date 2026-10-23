@@ -6,10 +6,8 @@ pub(super) fn hostile_inventory(
     use zryna_backend_native::generic_owned_v2::validate_object_inventory;
     validate_object_inventory(bytes, mir).expect("pristine exact inventory");
     let mut name = bytes.to_vec();
-    let offset = name
-        .windows(scalar_symbol.len())
-        .position(|b| b == scalar_symbol)
-        .expect("scalar symbol");
+    let offset =
+        name.windows(scalar_symbol.len()).position(|b| b == scalar_symbol).expect("scalar symbol");
     name[offset] = b'x';
     let mut executable = bytes.to_vec();
     executable[16] = 2; // Valid ELF type becomes ET_EXEC rather than relocatable.
@@ -18,7 +16,8 @@ pub(super) fn hostile_inventory(
     let mut truncated = bytes.to_vec();
     truncated.truncate(40);
     let section_table =
-        u64::from_le_bytes(bytes[40..48].try_into().expect("ELF section offset")) as usize;
+        usize::try_from(u64::from_le_bytes(bytes[40..48].try_into().expect("ELF section offset")))
+            .expect("ELF section offset fits host");
     let section_size =
         u16::from_le_bytes(bytes[58..60].try_into().expect("ELF section size")) as usize;
     let section_count =
@@ -27,9 +26,10 @@ pub(super) fn hostile_inventory(
         .map(|i| section_table + i * section_size)
         .find(|h| u32::from_le_bytes(bytes[h + 4..h + 8].try_into().expect("section type")) == 4)
         .expect("RELA");
-    let relocation = u64::from_le_bytes(
+    let relocation = usize::try_from(u64::from_le_bytes(
         bytes[relocation_header + 24..relocation_header + 32].try_into().expect("RELA offset"),
-    ) as usize;
+    ))
+    .expect("RELA offset fits host");
     let mut addend = bytes.to_vec();
     addend[relocation + 16..relocation + 24].copy_from_slice(&(-3i64).to_le_bytes());
     let mut unknown_target = bytes.to_vec();

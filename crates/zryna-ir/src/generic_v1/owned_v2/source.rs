@@ -21,6 +21,7 @@ mod owners;
 mod phi;
 mod resources;
 mod statements;
+mod type_facts;
 use super::raw::{Extension, Operation as Owned};
 use resources::Budget;
 use std::collections::BTreeMap;
@@ -56,6 +57,7 @@ struct Builder<'a, 'b> {
     loans: BTreeMap<u32, (u32, bool)>,
     loan_parents: BTreeMap<u32, u32>,
     budget: Budget,
+    type_facts: type_facts::SourceTypeFacts,
 }
 
 pub(super) fn check(
@@ -66,11 +68,6 @@ pub(super) fn check(
     let program = &claim.graph;
     if claim.extensions.len() != program.functions.len() {
         return Err(reject("incomplete owned extensions"));
-    }
-    if originals.units.iter().any(|unit| !unit.data_declarations.is_empty()) {
-        return Err(reject(
-            "executable Copy lane does not yet prove original nominal member obligations",
-        ));
     }
     check_originals(program, originals, sources)?;
     let mut budget = Budget::default();
@@ -101,6 +98,7 @@ pub(super) fn check_originals(
     originals: &Originals<'_>,
     sources: &zryna_source::SourceMap,
 ) -> Result<(), Failure> {
+    let mut nominal_credit = type_facts::check_declarations(originals)?;
     // Every original is checked before checking instances, including unused templates.
     for unit in originals.units {
         for original in &unit.functions {
@@ -114,6 +112,7 @@ pub(super) fn check_originals(
             }
             let mut arguments = reserve(arity)?;
             arguments.extend(parameters.iter().map(Vec::as_slice));
+            let mut original_budget = Budget::original(nominal_credit);
             build(
                 program,
                 originals,
@@ -122,8 +121,9 @@ pub(super) fn check_originals(
                 original,
                 arguments,
                 true,
-                &mut Budget::default(),
+                &mut original_budget,
             )?;
+            nominal_credit = original_budget.nominal_used();
         }
     }
     Ok(())
@@ -134,6 +134,7 @@ pub(super) fn produce(
     originals: &Originals<'_>,
     sources: &zryna_source::SourceMap,
 ) -> Result<Vec<Vec<Extension>>, Failure> {
+    check_originals(program, originals, sources)?;
     let mut all = reserve(program.functions.len())?;
     let mut budget = Budget::default();
     for function in &program.functions {
@@ -198,6 +199,7 @@ fn build<'a, 'b>(
         loans: BTreeMap::new(),
         loan_parents: BTreeMap::new(),
         budget: *budget,
+        type_facts: type_facts::SourceTypeFacts::default(),
     };
     builder.new_block(original.body.span)?;
     for parameter in &original.parameters {

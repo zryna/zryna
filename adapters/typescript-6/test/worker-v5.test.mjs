@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import test from 'node:test';
 import Ajv2020 from 'ajv/dist/2020.js';
 import './worker-v5-arity.test.mjs';
+import './worker-v5-duplicate-arms.test.mjs';
 
 const adapter = new URL('../', import.meta.url);
 const fixtures = new URL('../../../tests/m7-syntax-fixtures/', import.meta.url);

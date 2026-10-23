@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`45b6c01f537a0ffa6ea95d7a8e79a2ddd98bde5d863b1f3f100b992fa62fb2dc`. The matrix defines six bounded modes on the two
+`f4739259208699efa7965b5a7da51bb730971af7805ef5a850b6e907a11e7237`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "45b6c01f537a0ffa6ea95d7a8e79a2ddd98bde5d863b1f3f100b992fa62fb2dc",
+  "registrySha256": "f4739259208699efa7965b5a7da51bb730971af7805ef5a850b6e907a11e7237",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3347,8 +3347,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "Cargo.lock",
-      "bytes": 51997,
-      "sha256": "55cc6cbefb84ff9057520f65b453b1a0dcc82a32a93e2fc2401f85e2a9b361ea"
+      "bytes": 52014,
+      "sha256": "f934e994922d9d13797bc87df3345b879af11fe8a7d7eb30c8a0abf53ca6be9f"
     },
     {
       "path": "Cargo.toml",
@@ -4192,8 +4192,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/Cargo.toml",
-      "bytes": 2131,
-      "sha256": "f210a6f343422e5d6edf44d269641d1246abc6f1e3a2efc35ce27198a45073eb"
+      "bytes": 2264,
+      "sha256": "577c2e38bc2ab7130610ba309a047a155c6fed59c374d65b7c14be85f5da7591"
     },
     {
       "path": "crates/zryna-driver/src/browser_component.rs",
@@ -5083,12 +5083,12 @@ zryna.m4.support.v1:begin
     {
       "path": "scripts/distribution/command-h1-rust-binding-v1.json",
       "bytes": 994,
-      "sha256": "121a6ef38c54a0f9e385c381fd668fd14f451277163b14f01e3ddc6cfe7c702b"
+      "sha256": "b9b9d254f8078085619ea1abc5f5bd26075cf0a32211d09e8127f5dd08fa0e3e"
     },
     {
       "path": "scripts/distribution/command-h1-rust-binding.mjs",
       "bytes": 1707,
-      "sha256": "80175febff542e6e793734b8ed5547ae09ba52fab585c8a2f5db8fe911630c3a"
+      "sha256": "5a3cf568931af3cc7d4fdb6669c589510c00b90011b70f834afdb77f7df5ae5f"
     },
     {
       "path": "scripts/distribution/documents.mjs",
@@ -5882,8 +5882,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "zryna.workspace.json",
-      "bytes": 6776,
-      "sha256": "2e02e2e2ea00de83873e41df976de1e9ab2bafffcc20725e2c794ee324d40c8e"
+      "bytes": 6809,
+      "sha256": "0387a67801bd5208e7153b1f01d4479988ceca287c2ec3574b3450a2e2b8fd5d"
     }
   ],
   "requiredExternalEvidence": [

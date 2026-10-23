@@ -190,7 +190,7 @@ fn release_calls(p: &VerifiedProgram<'_, '_>, ty: raw::Type) -> Result<usize, Di
     }
     match t.key()[0] {
         2 => Ok(1),
-        0x14 | 0x15 => t.variants().try_fold(0usize, |sum, (_, payload)| {
+        0x11 | 0x13 | 0x14 | 0x15 => t.variants().try_fold(0usize, |sum, (_, payload)| {
             sum.checked_add(
                 payload.map_or(Ok(0), |v| release_calls(p, raw::Type::Stored(v.index())))?,
             )
@@ -204,8 +204,10 @@ fn edges<'a>(
     imports: &[&'a str],
 ) -> Result<BTreeMap<(&'a str, &'a str), usize>, Diagnostic> {
     let mut edges = BTreeMap::new();
-    let mut add = |from, to, n| {
-        *edges.entry((from, to)).or_insert(0) += n;
+    let mut add = |from, to, n: usize| -> Result<(), Diagnostic> {
+        let count = edges.entry((from, to)).or_insert(0usize);
+        *count = count.checked_add(n).ok_or_else(error)?;
+        Ok(())
     };
     for (index, plan) in p.functions().iter().enumerate() {
         let f = &p.program().functions()[index];
@@ -213,28 +215,28 @@ fn edges<'a>(
             for i in &block.instructions {
                 if let Some(ext) = p.program().extension(index, i.result.id) {
                     match ext {
-                        Operation::StringLiteral(_) => add(plan.symbol(), imports[0], 1),
+                        Operation::StringLiteral(_) => add(plan.symbol(), imports[0], 1)?,
                         Operation::CloneString(_) | Operation::CloneBorrowedString(_) => {
-                            add(plan.symbol(), imports[1], 1);
+                            add(plan.symbol(), imports[1], 1)?;
                         }
                         Operation::Drop(id) => {
-                            add(plan.symbol(), imports[2], release_calls(p, value_type(f, *id)?)?);
+                            add(plan.symbol(), imports[2], release_calls(p, value_type(f, *id)?)?)?;
                         }
                         _ => {}
                     }
                 } else if let Some(target) = super::body::target(p, &i.operation)? {
-                    add(plan.symbol(), p.functions()[target].symbol(), 1);
+                    add(plan.symbol(), p.functions()[target].symbol(), 1)?;
                 }
             }
         }
         for step in &p.program().plan(index).ok_or_else(invariant)?.steps {
             for id in &step.cleanup {
-                add(plan.symbol(), imports[2], release_calls(p, value_type(f, *id)?)?);
+                add(plan.symbol(), imports[2], release_calls(p, value_type(f, *id)?)?)?;
             }
         }
     }
     for (export, target) in p.program().scalar_abi().exports().zip(p.program().export_functions()) {
-        add(export.native_linux_x86_64_symbol().as_str(), p.functions()[*target].symbol(), 1);
+        add(export.native_linux_x86_64_symbol().as_str(), p.functions()[*target].symbol(), 1)?;
     }
     Ok(edges)
 }

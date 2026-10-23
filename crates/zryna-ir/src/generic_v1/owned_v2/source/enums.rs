@@ -29,6 +29,7 @@ impl<'b> Builder<'_, 'b> {
         depth: usize,
     ) -> Result<Value, Failure> {
         let scrutinee = self.expression(expression, depth + 1)?;
+        self.budget.nominal_key(&scrutinee.ty, 2)?;
         let (key, mode) = match &scrutinee.ty {
             Closed::Stored(key) => (key.clone(), raw::MatchMode::Value),
             Closed::Borrow(key, false) => (key.clone(), raw::MatchMode::SharedBorrow),
@@ -36,9 +37,17 @@ impl<'b> Builder<'_, 'b> {
             Closed::Unit => return Err(reject("cannot match unit")),
         };
         let first = arms.first().ok_or_else(|| reject("empty match"))?;
+        let decoded_arguments = arguments(&key)?;
+        self.type_facts.description(
+            &self.resolver,
+            &first.type_name.text,
+            &decoded_arguments,
+            &mut self.budget,
+        )?;
         let description =
-            describe(&self.resolver, &first.type_name.text, &arguments(&key)?, self.symbolic)?;
-        if description.ty != Closed::Stored(key.clone()) || arms.len() != description.variants.len()
+            describe(&self.resolver, &first.type_name.text, &decoded_arguments, self.symbolic)?;
+        if !matches!(&description.ty, Closed::Stored(expected) if expected == &key)
+            || arms.len() != description.variants.len()
         {
             return Err(reject("inexact enum match coverage"));
         }
@@ -59,8 +68,14 @@ impl<'b> Builder<'_, 'b> {
         for (ordinal, (name, payload)) in description.variants.iter().enumerate() {
             let mut selected = arms.iter().filter(|a| a.variant.text == *name);
             let arm = selected.next().ok_or_else(|| reject("missing enum ordinal"))?;
+            self.type_facts.description(
+                &self.resolver,
+                &arm.type_name.text,
+                &decoded_arguments,
+                &mut self.budget,
+            )?;
             if selected.next().is_some()
-                || describe(&self.resolver, &arm.type_name.text, &arguments(&key)?, self.symbolic)?
+                || describe(&self.resolver, &arm.type_name.text, &decoded_arguments, self.symbolic)?
                     .ty
                     != description.ty
             {

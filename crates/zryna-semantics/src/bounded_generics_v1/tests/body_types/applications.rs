@@ -127,7 +127,7 @@ fn match_family_coverage_bindings_and_results() {
         (
             "\"Option.none\":()=>0,\"Option.none\":()=>0,\"Option.some\":(v)=>v",
             "ZRYNA-M7004",
-            "none",
+            "\"Option.none\"",
         ),
         ("\"Result.ok\":(v)=>v,\"Option.none\":()=>0", "ZRYNA-M7004", "Result"),
         ("\"Option.none\":()=>true,\"Option.some\":(v)=>v", "ZRYNA-M7006", "v"),

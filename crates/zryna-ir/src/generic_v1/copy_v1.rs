@@ -134,6 +134,7 @@ pub fn verify<'a>(
     super::source_body::check(&program, &originals)?;
     type_demand::check(&program, linear)?;
     copy_ownership(&program, linear)?;
+    super::source_abi::check(&program, &originals, sources, entry.index())?;
     let (abi, exports) = scalar_abi(&program, entry.index())?;
     let brand = linear.types().next().ok_or(Failure::InternalFailure)?.id();
     Ok(VerifiedCopyProgram { program, brand, linear, linux, runtime, abi, exports, entry })

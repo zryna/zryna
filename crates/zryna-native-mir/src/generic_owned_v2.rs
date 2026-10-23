@@ -4,6 +4,7 @@ use zryna_diagnostics::Diagnostic;
 use zryna_ir::generic_v1::{owned_v2::VerifiedOwnedProgram, raw};
 use zryna_layout::{StorageTarget, TypeCategory, generic_v1::TypeView};
 
+mod expansion;
 mod plan;
 
 /// Maximum private i64 lanes of one represented type, independent of source admission.
@@ -118,12 +119,13 @@ pub fn lower<'p, 'a>(
     let mut types = Vec::new();
     types.try_reserve(views.len()).map_err(|_| budget())?;
     types.extend(views);
+    let mut units = 0;
+    expansion::preflight(program, &types, &mut units)?;
     let mut widths = Vec::new();
     widths.try_reserve(types.len()).map_err(|_| budget())?;
     widths.resize(types.len(), None);
     let mut functions = Vec::new();
     functions.try_reserve(program.functions().len()).map_err(|_| budget())?;
-    let mut units = 0;
     for (index, function) in program.functions().iter().enumerate() {
         functions.push(plan::function(index, function, &types, &mut widths, &mut units)?);
         for block in &function.blocks {

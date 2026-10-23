@@ -104,6 +104,7 @@ pub fn verify<'a>(
     if plan::derive(&claim.graph, &claim.extensions, linear)? != claim.plans {
         return Err(reject("owned cleanup/loan/failure plan is not exact"));
     }
+    super::source_abi::check(&claim.graph, &originals, sources, entry.index())?;
     let (abi, exports) = super::copy_v1::scalar_abi(&claim.graph, entry.index())?;
     Ok(VerifiedOwnedProgram { claim, linear, linux, runtime, abi, exports })
 }

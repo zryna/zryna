@@ -1,6 +1,6 @@
 //! Aggregate specialization credit is charged before retaining each generated operation.
 use crate::data_ownership_v1 as limits;
-use crate::generic_v1::{Failure, budget, raw};
+use crate::generic_v1::{Failure, budget, raw, source_types::Closed};
 
 #[derive(Clone, Copy, Default)]
 pub(super) struct Budget {
@@ -10,8 +10,27 @@ pub(super) struct Budget {
     operands: usize,
     literals: usize,
     branch_states: usize,
+    nominal_types: usize,
 }
 impl Budget {
+    pub(super) fn original(nominal_types: usize) -> Self {
+        Self { nominal_types, ..Self::default() }
+    }
+    pub(super) const fn nominal_used(&self) -> usize {
+        self.nominal_types
+    }
+    pub(super) fn nominal_key(&mut self, ty: &Closed, copies: usize) -> Result<(), Failure> {
+        if let Closed::Stored(key) | Closed::Borrow(key, _) = ty
+            && matches!(key.first(), Some(0x11 | 0x13))
+        {
+            let units = key.len().checked_mul(copies).ok_or(Failure::InternalFailure)?;
+            self.nominal(units)?;
+        }
+        Ok(())
+    }
+    pub(super) fn nominal(&mut self, units: usize) -> Result<(), Failure> {
+        add(&mut self.nominal_types, units, super::super::plan::MAX_OWNER_UNITS)
+    }
     pub(super) fn branch_state(&mut self, units: usize) -> Result<(), Failure> {
         add(&mut self.branch_states, units, super::super::plan::MAX_OWNER_UNITS)
     }

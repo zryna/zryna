@@ -100,7 +100,7 @@ fn graph(
         for (expression_id, expression) in function.body.expressions.iter().enumerate() {
             let expression_id =
                 u32::try_from(expression_id).map_err(|_| InstantiationFailure::InternalFailure)?;
-            if let RawExpressionKind::Call { callee, .. } = &expression.kind
+            if let RawExpressionKind::Call { callee, type_arguments, .. } = &expression.kind
                 && builder.bodies.intrinsic_call(*owner, expression_id).is_none()
                 && let Some(target) = builder.target(*owner, &callee.text)
                 && target.kind() == DeclarationKind::Function
@@ -108,7 +108,11 @@ fn graph(
                 let to = owners
                     .binary_search(&target)
                     .map_err(|_| InstantiationFailure::InternalFailure)?;
-                push(&mut edges[index], (to, callee.span))?;
+                let span = type_arguments.as_ref().map_or(callee.span, |arguments| UntrustedSpan {
+                    end: arguments.greater_than_span.end,
+                    ..callee.span
+                });
+                push(&mut edges[index], (to, span))?;
             }
         }
         edges[index].sort_unstable_by_key(|(to, span)| (*to, span.start, span.end));

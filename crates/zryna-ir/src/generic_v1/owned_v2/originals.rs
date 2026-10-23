@@ -18,9 +18,6 @@ pub fn check_original_bodies(
     let mut modules = reserve(syntax.files().len())?;
     let mut declarations = reserve(0)?;
     for unit in syntax.files() {
-        if !unit.data_declarations.is_empty() {
-            return Err(reject("owned successor does not yet prove nominal member obligations"));
-        }
         modules.push(raw::Module {
             id: unit.id,
             functions: u32::try_from(unit.functions.len()).map_err(|_| Failure::InternalFailure)?,

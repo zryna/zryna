@@ -5,7 +5,7 @@ import { LIMITS, bytes, exactKeys, parseCanonical, requireValue, sha256 } from '
 import { digestValue, roleFor, targetPaths, validateTuples } from './inventory.mjs';
 
 export const NATIVE_FORMAT = 'zryna.native-distribution.v2';
-export const NATIVE_RECIPE_SHA256 = '769fb09100c8823666b9f2a9f228ca2caad15d6fdc4da314577970bfea77a77b';
+export const NATIVE_RECIPE_SHA256 = 'e290d0be4fe29f5222186a67817372238af848f9182766ef540f6ea5ea605cf7';
 const rawRecipe = readFileSync(new URL('./native-recipe-v2.json', import.meta.url));
 requireValue(sha256(rawRecipe) === NATIVE_RECIPE_SHA256, 'native recipe identity');
 export const nativeRecipe = parseCanonical(rawRecipe);

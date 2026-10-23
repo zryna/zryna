@@ -1,0 +1,1 @@
+interface Nest<T extends ZrynaValue> extends ZrynaStruct { next: Vec<Nest<Vec<T>>>; }

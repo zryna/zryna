@@ -1,0 +1,3 @@
+function probe(value: Option<i32>): i32 {
+match(value, { "Option.none": () => 0, "Option.none": () => 1, "Option.some": (item) => item });
+return 0; }

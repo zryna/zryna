@@ -13,7 +13,10 @@ pub(super) fn check(
         return Err(reject("incomplete extension inventory"));
     }
     let views = layouts.types().collect::<Vec<_>>();
-    if views.iter().any(|ty| !matches!(ty.key().first(), Some(0 | 1 | 2 | 0x14 | 0x15))) {
+    if views
+        .iter()
+        .any(|ty| !matches!(ty.key().first(), Some(0 | 1 | 2 | 0x11 | 0x13 | 0x14 | 0x15)))
+    {
         return Err(reject("owned seal contains a type outside its admitted execution lane"));
     }
     let mut calls = reserve(0)?;

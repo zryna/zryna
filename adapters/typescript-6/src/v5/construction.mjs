@@ -189,7 +189,6 @@ export function normalizeMatchExpression(node, context, depth) {
   context.budgets.matchArms += object.properties.length;
   if (context.budgets.matchArms > maxMatchArmsPerProject) failBudget('project exceeds the match-arm limit');
   const arms = [];
-  const seen = new Set();
   for (const property of object.properties) {
     if (!ts.isPropertyAssignment(property) || !ts.isStringLiteral(property.name) || !ts.isArrowFunction(property.initializer)) {
       collector.unsupported(property, sourceFile, file, 'match arm');
@@ -200,12 +199,11 @@ export function normalizeMatchExpression(node, context, depth) {
     const match = /^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)$/.exec(qualified);
     if (
       raw[0] !== '"' || raw.at(-1) !== '"' || raw.slice(1, -1) !== qualified || raw.includes('\\') ||
-      !match || defensiveNames.has(match?.[1]) || defensiveNames.has(match?.[2]) || seen.has(qualified)
+      !match || defensiveNames.has(match?.[1]) || defensiveNames.has(match?.[2])
     ) {
       collector.unsupported(property.name, sourceFile, file, 'match arm key');
       return null;
     }
-    seen.add(qualified);
     const arrow = property.initializer;
     const arrowToken = requiredToken(arrow, ts.SyntaxKind.EqualsGreaterThanToken, sourceFile, 'a match arm arrow');
     const parameterSpelling = sourceFile.text.slice(arrow.getStart(sourceFile), arrowToken.getStart(sourceFile)).trim();
