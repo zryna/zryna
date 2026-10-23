@@ -1,0 +1,19 @@
+interface E0 extends ZrynaEnum { left: String; right: String; }
+interface E1 extends ZrynaEnum { left: E0; right: E0; }
+interface E2 extends ZrynaEnum { left: E1; right: E1; }
+interface E3 extends ZrynaEnum { left: E2; right: E2; }
+interface E4 extends ZrynaEnum { left: E3; right: E3; }
+interface E5 extends ZrynaEnum { left: E4; right: E4; }
+interface E6 extends ZrynaEnum { left: E5; right: E5; }
+interface E7 extends ZrynaEnum { left: E6; right: E6; }
+interface E8 extends ZrynaEnum { left: E7; right: E7; }
+interface E9 extends ZrynaEnum { left: E8; right: E8; }
+interface E10 extends ZrynaEnum { left: E9; right: E9; }
+interface E11 extends ZrynaEnum { left: E10; right: E10; }
+interface E12 extends ZrynaEnum { left: E11; right: E11; }
+interface Wrap<T extends ZrynaValue> extends ZrynaStruct { value: T; code: i32; }
+export function entry(): i32 {
+  const source: Wrap<E12> = Wrap<E12>({ value: E12.left(E11.left(E10.left(E9.left(E8.left(E7.left(E6.left(E5.left(E4.left(E3.left(E2.left(E1.left(E0.left("L"))))))))))))), code: 7 });
+  const copied: Wrap<E12> = clone(source);
+  return copied.code;
+}

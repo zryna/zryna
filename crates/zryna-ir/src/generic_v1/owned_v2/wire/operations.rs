@@ -42,7 +42,7 @@ impl Writer {
                 self.bytes(&id.to_le_bytes())
             }
             raw::Operation::StructConstruct { ty, fields } => {
-                if domain != Domain::V4 {
+                if !matches!(domain, Domain::V4 | Domain::V5) {
                     return Err(invalid());
                 }
                 if fields.len() > zryna_layout::MAX_MEMBERS_PER_DECLARATION {
@@ -53,12 +53,19 @@ impl Writer {
                 self.ids(fields)
             }
             raw::Operation::CopyStructField { value, ordinal } => {
-                if domain != Domain::V4 {
+                if !matches!(domain, Domain::V4 | Domain::V5) {
                     return Err(invalid());
                 }
                 self.bytes(&[9])?;
                 self.bytes(&value.to_le_bytes())?;
                 self.bytes(&ordinal.to_le_bytes())
+            }
+            raw::Operation::CloneStruct { value } => {
+                if domain != Domain::V5 {
+                    return Err(invalid());
+                }
+                self.bytes(&[10])?;
+                self.bytes(&value.to_le_bytes())
             }
         }
     }
@@ -84,13 +91,14 @@ impl Reader<'_> {
             5 => raw::Operation::Drop(self.u32()?),
             6 => raw::Operation::CloneString(self.u32()?),
             7 if domain != Domain::V2 => raw::Operation::CloneBorrowedString(self.u32()?),
-            8 if domain == Domain::V4 => raw::Operation::StructConstruct {
+            8 if matches!(domain, Domain::V4 | Domain::V5) => raw::Operation::StructConstruct {
                 ty: self.u32()?,
                 fields: self.vector(zryna_layout::MAX_MEMBERS_PER_DECLARATION, 4, Self::u32)?,
             },
-            9 if domain == Domain::V4 => {
+            9 if matches!(domain, Domain::V4 | Domain::V5) => {
                 raw::Operation::CopyStructField { value: self.u32()?, ordinal: self.u32()? }
             }
+            10 if domain == Domain::V5 => raw::Operation::CloneStruct { value: self.u32()? },
             _ => return Err(invalid()),
         })
     }

@@ -39,10 +39,10 @@ pub enum Operation {
     /// Explicit String clone, retaining its source on failure.
     CloneString(u32),
     /// Compiler-generated selected payload clone through a live shared String loan.
-    /// Encoded only in distinct private v3/v4 domains.
+    /// Encoded only in distinct private v3/v4/v5 domains.
     CloneBorrowedString(u32),
     /// Allocation-free construction from exact fields in original declaration order.
-    /// Encoded only in the distinct private v4 domain.
+    /// Encoded only in distinct private v4/v5 domains.
     StructConstruct {
         /// Exact sealed nominal Struct type index.
         ty: u32,
@@ -51,12 +51,18 @@ pub enum Operation {
     },
     /// Copy observation of one field while retaining its complete stored Struct base.
     /// Original-frame and independent field ownership proof remain mandatory.
-    /// Encoded only in the distinct private v4 domain.
+    /// Encoded only in distinct private v4/v5 domains.
     CopyStructField {
         /// Exact live complete Struct value ID.
         value: u32,
         /// Original zero-based field ordinal.
         ordinal: u32,
+    },
+    /// Explicit complete Struct clone; source, type and cleanup proof remain mandatory.
+    /// Encoded only in the distinct private v5 domain.
+    CloneStruct {
+        /// Exact complete stored Struct source value ID.
+        value: u32,
     },
 }
 /// Complete instruction and terminator cleanup records.

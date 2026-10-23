@@ -10,6 +10,7 @@ use zryna_ir::generic_v1::owned_v2::VerifiedOwnedProgram;
 
 mod audit;
 mod bytes;
+mod clones;
 mod control;
 mod effects;
 mod encode;

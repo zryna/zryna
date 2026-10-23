@@ -1,0 +1,12 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }
+interface Phantom<T extends ZrynaValue> extends ZrynaStruct { code: i32; }
+function duplicate<T extends ZrynaValue>(input: Phantom<T>): Phantom<T> {
+  const copied: Phantom<T> = clone(input);
+  const again: Phantom<T> = input;
+  return copied;
+}
+export function entry(): i32 {
+  const source: Phantom<Box<String>> = Phantom<Box<String>>({ code: 7 });
+  const copied: Phantom<Box<String>> = duplicate<Box<String>>(source);
+  return source.code;
+}

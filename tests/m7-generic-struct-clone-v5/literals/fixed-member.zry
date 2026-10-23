@@ -1,0 +1,11 @@
+interface Fixed<T extends ZrynaValue> extends ZrynaStruct { owned: String; code: i32; }
+function duplicate<T extends ZrynaValue>(input: Fixed<T>): Fixed<T> {
+  const copied: Fixed<T> = clone(input);
+  const observed: i32 = input.code;
+  return copied;
+}
+export function entry(): i32 {
+  const source: Fixed<i32> = Fixed<i32>({ code: 7, owned: "L" });
+  const copied: Fixed<i32> = duplicate<i32>(source);
+  return copied.code;
+}

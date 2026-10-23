@@ -17,8 +17,11 @@ pub(super) fn check(claim: &raw::Program, admission: Admission) -> Result<(), Fa
     }
     for operation in claim.extensions.iter().flatten().map(|e| &e.operation) {
         match operation {
+            raw::Operation::CloneStruct { .. } if admission != Admission::StructCloneV5 => {
+                return Err(reject("Struct Clone outside private V5 issuer"));
+            }
             raw::Operation::StructConstruct { fields, .. } => {
-                if admission != Admission::StructV4 {
+                if !admission.has_structs() {
                     return Err(reject("Struct operation outside private v4 issuer"));
                 }
                 if fields.len() > zryna_layout::MAX_MEMBERS_PER_DECLARATION {
@@ -26,7 +29,7 @@ pub(super) fn check(claim: &raw::Program, admission: Admission) -> Result<(), Fa
                 }
                 charge(&mut used, fields.len())?;
             }
-            raw::Operation::CopyStructField { .. } if admission != Admission::StructV4 => {
+            raw::Operation::CopyStructField { .. } if !admission.has_structs() => {
                 return Err(reject("Struct observation outside private v4 issuer"));
             }
             _ => {}

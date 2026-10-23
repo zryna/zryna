@@ -98,7 +98,13 @@ pub(super) fn build(
                     .find(|s| s.block == block_id && s.position as usize == position && s.failure)
             });
             let lanes = if let Some(op) = program.program().extension(index, i.result.id) {
-                super::effects::operation(&calls.effects, &mut b, &values, op, step)?
+                if matches!(op, zryna_ir::generic_v1::owned_v2::raw::Operation::CloneStruct { .. })
+                {
+                    let clone = program.struct_clone(index, i.result.id).ok_or_else(invariant)?;
+                    super::struct_clone::operation(&calls.effects, &mut b, &values, clone)?
+                } else {
+                    super::effects::operation(&calls.effects, &mut b, &values, op, step)?
+                }
             } else {
                 operation(&calls, &mut b, &values, i, step)?
             };

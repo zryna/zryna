@@ -222,6 +222,19 @@ fn edges<'a>(
                         Operation::CloneString(_) | Operation::CloneBorrowedString(_) => {
                             add(plan.symbol(), imports[1], 1)?;
                         }
+                        Operation::CloneStruct { value } => {
+                            let proof = p
+                                .program()
+                                .struct_clone(index, i.result.id)
+                                .ok_or_else(invariant)?;
+                            if proof.source() != *value {
+                                return Err(invariant());
+                            }
+                            let count =
+                                usize::try_from(proof.string_occurrences()).map_err(|_| error())?;
+                            add(plan.symbol(), imports[1], count)?;
+                            add(plan.symbol(), imports[2], count)?;
+                        }
                         Operation::Drop(id) => {
                             add(plan.symbol(), imports[2], release_calls(p, value_type(f, *id)?)?)?;
                         }

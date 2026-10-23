@@ -8,6 +8,8 @@ mod tests;
 pub mod v3;
 /// Separate nominal Struct construction and Copy field observation transport.
 pub mod v4;
+/// Separate complete Struct clone transport; raw decoding grants no Clone authority.
+pub mod v5;
 /// Distinct owned wire domain.
 pub const HEADER: &[u8] = b"ZRYNA-GENERIC-OWNED-IR-V2\0";
 /// Separate schema version.
@@ -22,6 +24,7 @@ enum Domain {
     V2,
     V3,
     V4,
+    V5,
 }
 impl Domain {
     const fn header(self) -> &'static [u8] {
@@ -29,6 +32,7 @@ impl Domain {
             Self::V2 => HEADER,
             Self::V3 => v3::HEADER,
             Self::V4 => v4::HEADER,
+            Self::V5 => v5::HEADER,
         }
     }
     const fn version(self) -> u32 {
@@ -36,6 +40,7 @@ impl Domain {
             Self::V2 => VERSION,
             Self::V3 => v3::VERSION,
             Self::V4 => v4::VERSION,
+            Self::V5 => v5::VERSION,
         }
     }
 }

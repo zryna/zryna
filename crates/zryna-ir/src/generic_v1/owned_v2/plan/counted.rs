@@ -6,7 +6,7 @@ pub(in super::super) fn derive(
     extensions: &[Vec<raw::Extension>],
     layouts: &VerifiedLayouts,
 ) -> Result<Vec<raw::Plan>, Failure> {
-    super::replay_counted(program, extensions, layouts).map(|(plans, _)| plans)
+    super::replay_with(program, extensions, layouts, None, 0).map(|(plans, _)| plans)
 }
 
 pub(in super::super) fn derive_counted(
@@ -14,5 +14,5 @@ pub(in super::super) fn derive_counted(
     extensions: &[Vec<raw::Extension>],
     layouts: &VerifiedLayouts,
 ) -> Result<(Vec<raw::Plan>, usize), Failure> {
-    super::replay_counted(program, extensions, layouts)
+    super::replay_with(program, extensions, layouts, None, 0)
 }

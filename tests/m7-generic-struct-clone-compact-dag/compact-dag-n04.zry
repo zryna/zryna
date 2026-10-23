@@ -1,0 +1,11 @@
+interface E0 extends ZrynaEnum { left: String; right: String; }
+interface E1 extends ZrynaEnum { left: E0; right: E0; }
+interface E2 extends ZrynaEnum { left: E1; right: E1; }
+interface E3 extends ZrynaEnum { left: E2; right: E2; }
+interface E4 extends ZrynaEnum { left: E3; right: E3; }
+interface Wrap<T extends ZrynaValue> extends ZrynaStruct { value: T; code: i32; }
+export function entry(): i32 {
+  const source: Wrap<E4> = Wrap<E4>({ value: E4.left(E3.left(E2.left(E1.left(E0.left("L"))))), code: 7 });
+  const copied: Wrap<E4> = clone(source);
+  return copied.code;
+}

@@ -30,6 +30,7 @@ pub(super) fn operation(function: &raw::Function, op: &Operation) -> Result<Stri
         }
         Operation::StructConstruct { fields, .. } => format!("[{}]", super::operands(fields)),
         Operation::CopyStructField { value, ordinal } => format!("$v{value}[{ordinal}]"),
+        Operation::CloneStruct { .. } => return Err(internal()),
         Operation::Drop(id) => {
             let ty = super::cleanup::value_type(function, *id)?;
             let raw::Type::Stored(index) = ty else {

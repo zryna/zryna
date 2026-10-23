@@ -10,7 +10,7 @@ impl Facts<'_, '_> {
         right: &Closed,
         credit: &mut Budget,
     ) -> Result<bool, Failure> {
-        if matches!(self, Self::V4(_)) {
+        if matches!(self, Self::V4(_) | Self::V5 { .. }) {
             credit.nominal(1)?;
             if let (Closed::Stored(a), Closed::Stored(b))
             | (Closed::Borrow(a, _), Closed::Borrow(b, _)) = (left, right)
@@ -38,7 +38,7 @@ impl Facts<'_, '_> {
         credit: &mut Budget,
     ) -> Result<bool, Failure> {
         let Closed::Stored(expected) = ty else { return Ok(false) };
-        if matches!(self, Self::V4(_)) {
+        if matches!(self, Self::V4(_) | Self::V5 { .. }) {
             bytes(expected.len(), key.len(), credit)?;
         }
         Ok(expected == key)

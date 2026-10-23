@@ -4,6 +4,7 @@ use crate::generic_v1::{
     Failure, budget, reject, reserve, source::Originals, source_types::Resolver,
 };
 use zryna_syntax::v5::RawTypeParameterList;
+pub(super) mod clone_v5;
 mod encoding;
 mod members;
 mod memo;

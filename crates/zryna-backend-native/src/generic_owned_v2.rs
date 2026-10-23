@@ -5,6 +5,7 @@ mod body;
 mod control;
 mod effects;
 mod runtime;
+mod struct_clone;
 mod structures;
 mod wrappers;
 

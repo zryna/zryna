@@ -1,0 +1,39 @@
+{
+  "status": "Genuine complete literals and independent runtime/resource obligations frozen BEFORE fresh native/TypeScript providers. No semantic/v5/backend/runtime qualification. Existing147oracles untouched.",
+  "cases": [
+    {
+      "case": "compact-dag-n04",
+      "N": 4,
+      "source": "compact-dag-n04.zry",
+      "sourceBytes": 574,
+      "sourceSha256": "31845bb558f03271bea318f1150f22cd70ae58621c995bcfbf8ad1786096ba9e",
+      "expected": "compact-dag-n04-expected.json",
+      "expectedSha256": "10dbfabbd5f7f78dbfdbcdad52ca6e63e7520c83e87c5744fedbace6f20075e3",
+      "resourceExpected": "compact-dag-n04-resource-expected.json",
+      "resourceExpectedSha256": "58ef21017ab09c3a4611d3ecf8c3342782ecddb2bd0f07ca9143533aea3d7733"
+    },
+    {
+      "case": "compact-dag-n12",
+      "N": 12,
+      "source": "compact-dag-n12.zry",
+      "sourceBytes": 1107,
+      "sourceSha256": "dac2449de8f7430f8e15d893cee0012fc74753a1c7d5eda827d88119c02b42f7",
+      "expected": "compact-dag-n12-expected.json",
+      "expectedSha256": "0f5f4e8807e585ed32ab8d33ef6e79cd62688ef6353607dd8cbb617c587d163a",
+      "resourceExpected": "compact-dag-n12-resource-expected.json",
+      "resourceExpectedSha256": "378cccf70fd08aeb90ed488660cd1802e2c75e8e771e0f6b12c45c80e96788fa"
+    },
+    {
+      "case": "compact-dag-n16",
+      "N": 16,
+      "source": "compact-dag-n16.zry",
+      "sourceBytes": 1383,
+      "sourceSha256": "8f86cd30cc705d3bf50ead1602b91ba90e9ad69bd0ba4b5c67582f0fe9370ce7",
+      "expected": "compact-dag-n16-expected.json",
+      "expectedSha256": "c90e402311732603e698140ee0cef9272bee355b187cbd061e37eba563618e14",
+      "resourceExpected": "compact-dag-n16-resource-expected.json",
+      "resourceExpectedSha256": "3eb21882ab59548d2081563781fcd30d8afb06d8cfccc677fa64d588168179ae"
+    }
+  ],
+  "caseCount": 3
+}

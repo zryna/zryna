@@ -8,9 +8,10 @@ including its public driver activation, remains open.
 The currently qualified source slice supports scalar/String/opaque stored fields,
 nested nominal fields and arguments, and both Option/Result roots and nominal
 members containing those families. Containers and fixed arrays, affine partial
-field moves, field subloans and structural Struct Clone remain separate
-implementation work. Layout representability alone does not grant execution
-authority for those remaining forms.
+field moves and field subloans remain separate implementation work. Whole Struct
+Clone uses the separate [private V5 issuer](M7_GENERIC_PRIVATE_STRUCT_CLONE_V5.md);
+the V4 issuer retains its original operation domain. Layout representability alone
+does not grant execution authority for remaining forms.
 
 The existing [owned execution](M7_GENERIC_OWNED_EXECUTION.md) and its frozen v1/v2/v3
 wire contracts remain separate. Syntax-v5 already carries StructConstruction and

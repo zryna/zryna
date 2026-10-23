@@ -41,6 +41,16 @@ pub(super) fn check(
             }
             Ok(graph::Type::Unit)
         }
+        raw::Operation::CloneStruct { value } => {
+            if admission != Admission::StructCloneV5 {
+                return Err(reject("Struct Clone requires private V5 admission"));
+            }
+            let graph::Type::Stored(base) = operand(*value)? else {
+                return Err(reject("Struct Clone requires an exact stored source"));
+            };
+            structure(views, base, admission)?;
+            Ok(graph::Type::Stored(base))
+        }
         raw::Operation::CloneString(id) => string_clone(operand(*id)?, false),
         raw::Operation::CloneBorrowedString(id) => string_clone(operand(*id)?, true),
         raw::Operation::StructConstruct { ty, fields } => {
@@ -84,7 +94,7 @@ fn structure<'a>(
     admission: Admission,
 ) -> Result<TypeView<'a>, Failure> {
     let view = layout(views, id)?;
-    if admission != Admission::StructV4
+    if !admission.has_structs()
         || !matches!(view.key().first(), Some(0x10 | 0x12))
         || view.fields().len() == 0
     {
@@ -106,3 +116,7 @@ fn string_clone(operand: graph::Type, borrowed: bool) -> Result<graph::Type, Fai
     }
     Ok(graph::Type::Stored(2))
 }
+
+#[cfg(test)]
+#[path = "extension/clone_v5_tests.rs"]
+mod clone_v5_tests;

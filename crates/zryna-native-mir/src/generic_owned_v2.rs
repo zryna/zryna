@@ -6,6 +6,8 @@ use zryna_layout::{StorageTarget, TypeCategory, generic_v1::TypeView};
 
 mod expansion;
 mod plan;
+mod struct_clone;
+pub use struct_clone::{CloneKind, CloneNode, VerifiedStructClone};
 #[cfg(test)]
 mod struct_tests;
 
@@ -30,6 +32,7 @@ pub struct VerifiedProgram<'p, 'a> {
     program: &'p VerifiedOwnedProgram<'a>,
     widths: Vec<Option<u32>>,
     functions: Vec<FunctionPlan>,
+    clones: Vec<struct_clone::CloneSite<'p>>,
 }
 
 /// Immutable checked private function shape and dominance-safe emission order.
@@ -80,6 +83,15 @@ impl<'p, 'a> VerifiedProgram<'p, 'a> {
     pub fn functions(&self) -> &[FunctionPlan] {
         &self.functions
     }
+    /// Exact operation-bound clone proof and checked private lane projection.
+    #[must_use]
+    pub fn struct_clone(&self, function: usize, result: u32) -> Option<VerifiedStructClone<'_>> {
+        let index = self
+            .clones
+            .binary_search_by_key(&(function, result), struct_clone::CloneSite::key)
+            .ok()?;
+        Some(self.clones[index].view())
+    }
     /// Width of a stored type, unit or private loan's exact referent representation.
     ///
     /// # Errors
@@ -117,11 +129,12 @@ impl<'p, 'a> VerifiedProgram<'p, 'a> {
 pub fn lower<'p, 'a>(
     program: &'p VerifiedOwnedProgram<'a>,
 ) -> Result<VerifiedProgram<'p, 'a>, Diagnostic> {
+    let mut units = 0;
+    struct_clone::preflight(program, &mut units)?;
     let views = program.layouts(StorageTarget::LinuxX8664V1).types();
     let mut types = Vec::new();
     types.try_reserve(views.len()).map_err(|_| budget())?;
     types.extend(views);
-    let mut units = 0;
     expansion::preflight(program, &types, &mut units)?;
     let mut widths = Vec::new();
     widths.try_reserve(types.len()).map_err(|_| budget())?;
@@ -149,7 +162,8 @@ pub fn lower<'p, 'a>(
             )?;
         }
     }
-    Ok(VerifiedProgram { program, widths, functions })
+    let clones = struct_clone::derive(program, &widths)?;
+    Ok(VerifiedProgram { program, widths, functions, clones })
 }
 
 fn width(

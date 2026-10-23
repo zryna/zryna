@@ -1,5 +1,5 @@
 //! Private v4 whole Struct construction and original-Copy field observations.
-use super::{Admission, Builder, Closed, Owned, Value};
+use super::{Builder, Closed, Owned, Value};
 use crate::generic_v1::{Failure, raw, reject, reserve};
 use zryna_source::UntrustedSpan;
 use zryna_syntax::{
@@ -19,7 +19,7 @@ impl Builder<'_, '_> {
         span: UntrustedSpan,
         depth: usize,
     ) -> Result<Value, Failure> {
-        if self.type_facts.admission() != Admission::StructV4 {
+        if !self.type_facts.admission().has_structs() {
             return Err(reject("Struct construction requires the distinct private v4 issuer"));
         }
         let mut types = reserve(arguments.map_or(0, |list| list.arguments.len()))?;
@@ -87,7 +87,7 @@ impl Builder<'_, '_> {
         span: UntrustedSpan,
         depth: usize,
     ) -> Result<Value, Failure> {
-        if self.type_facts.admission() != Admission::StructV4 {
+        if !self.type_facts.admission().has_structs() {
             return Err(reject("Struct field observation requires the distinct private v4 issuer"));
         }
         let value = if matches!(

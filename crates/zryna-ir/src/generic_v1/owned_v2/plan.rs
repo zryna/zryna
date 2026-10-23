@@ -5,6 +5,8 @@ use zryna_layout::generic_v1::VerifiedLayouts;
 #[cfg(test)]
 mod concrete_copy_transport;
 mod counted;
+mod v5;
+pub(super) use v5::derive_counted as derive_v5_counted;
 #[cfg(test)]
 mod mixed_clones;
 #[cfg(test)]
@@ -14,7 +16,7 @@ mod nominal_enum;
 mod state;
 pub(super) use counted::{derive, derive_counted};
 #[cfg(test)]
-mod struct_v4;
+pub(super) mod struct_v4;
 mod structures;
 mod topology;
 use state::State;
@@ -55,10 +57,12 @@ fn step(
     clippy::too_many_lines,
     reason = "One explicit path replay keeps failure cleanup and owner/loan merges together."
 )]
-fn replay_counted(
+fn replay_with(
     program: &graph::Program,
     extensions: &[Vec<raw::Extension>],
     layouts: &VerifiedLayouts,
+    clones: Option<&super::clone_v5::Table>,
+    mut used: usize,
 ) -> Result<(Vec<raw::Plan>, usize), Failure> {
     if extensions.len() != program.functions.len() {
         return Err(reject("missing owned effects"));
@@ -66,7 +70,6 @@ fn replay_counted(
     let ownership = layouts.types().map(|v| v.drop_kind() != 0).collect::<Vec<_>>();
     let generic_count = program.functions.iter().take_while(|f| f.key[0] == 0x40).count();
     let mut plans = reserve(program.functions.len())?;
-    let mut used = 0;
     for (fi, f) in program.functions.iter().enumerate() {
         let types = f
             .blocks
@@ -145,6 +148,14 @@ fn replay_counted(
                         raw::Operation::CopyStructField { value, .. } => {
                             structures::observe(&state, *value, &types, &ownership)?;
                         }
+                        raw::Operation::CloneStruct { value } => v5::clone(
+                            &mut plan,
+                            &state,
+                            (fi, bi, pi, i.result.id),
+                            (*value, ty(*value)?, owned(ty(*value)?, &ownership)),
+                            clones,
+                            &mut used,
+                        )?,
                     }
                 } else {
                     match &i.operation {
@@ -280,18 +291,7 @@ mod scalar_phi_tests;
 #[path = "plan/copy_enum_phi.rs"]
 mod copy_enum_phi_tests;
 #[cfg(test)]
+mod credit_tests;
+#[cfg(test)]
 #[path = "plan/tests.rs"]
 mod tests;
-#[cfg(test)]
-mod credit_tests {
-    #[test]
-    fn complete_owner_state_and_cleanup_credits_reject_first_extra_and_overflow() {
-        let mut credits = 0;
-        super::charge(&mut credits, super::MAX_OWNER_UNITS).expect("exact complete credit ceiling");
-        assert!(
-            matches!(super::charge(&mut credits,1),Err(super::Failure::Diagnostics(v)) if v[0].code=="ZRYNA-I3201")
-        );
-        let mut overflow = usize::MAX;
-        assert!(super::charge(&mut overflow, 1).is_err());
-    }
-}

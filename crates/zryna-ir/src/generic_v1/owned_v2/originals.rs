@@ -25,6 +25,16 @@ pub fn check_original_bodies_v4(
     check_originals_for(syntax, sources, Admission::StructV4)
 }
 
+/// Checks original ownership and Clone in the distinct private V5 domain.
+/// # Errors
+/// Rejects unavailable original capabilities, invalid ownership and inherited budgets.
+pub fn check_original_bodies_v5(
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+) -> Result<(), Failure> {
+    check_originals_for(syntax, sources, Admission::StructCloneV5)
+}
+
 fn check_originals_for(
     syntax: &VerifiedProjectSyntaxV5,
     sources: &SourceMap,
@@ -65,7 +75,7 @@ fn check_originals_for(
     let originals = Originals::check(&program, syntax)?;
     match admission {
         Admission::LegacyOwned => source::check_originals(&program, &originals, sources),
-        Admission::StructV4 => {
+        Admission::StructV4 | Admission::StructCloneV5 => {
             source::check_originals_for(&program, &originals, sources, admission)
         }
     }

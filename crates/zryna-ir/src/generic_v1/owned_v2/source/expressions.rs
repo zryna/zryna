@@ -41,10 +41,15 @@ impl Builder<'_, '_> {
                     super::Owned::Borrow { value: value.id, exclusive },
                 )
             }
-            Expr::Clone { value, .. } => {
+            Expr::Clone { value, keyword_span, .. } => {
                 let value = self.reference_operand(*value)?;
                 if super::clones::admitted(&value.ty) {
                     return self.clone_enum(value, source.span);
+                }
+                if self.type_facts.admission() == super::Admission::StructCloneV5
+                    && value.ty != Closed::Stored(vec![2])
+                {
+                    return self.clone_struct(&value, source.span, *keyword_span);
                 }
                 if value.ty != Closed::Stored(vec![2]) {
                     return Err(reject(

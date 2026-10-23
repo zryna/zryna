@@ -78,7 +78,9 @@ pub(super) fn run(blocks: &mut [raw::Block], extensions: &mut [Extension]) -> Re
             | Owned::CloneBorrowedString(id) => {
                 map(id)?;
             }
-            Owned::Borrow { value, .. } | Owned::CopyStructField { value, .. } => map(value)?,
+            Owned::Borrow { value, .. }
+            | Owned::CopyStructField { value, .. }
+            | Owned::CloneStruct { value } => map(value)?,
             Owned::StructConstruct { fields, .. } => {
                 for field in fields {
                     map(field)?;

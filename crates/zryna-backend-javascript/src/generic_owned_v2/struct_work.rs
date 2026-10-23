@@ -33,10 +33,20 @@ pub(super) fn check(program: &VerifiedOwnedProgram<'_>) -> Result<(), Diagnostic
     for (fi, f) in program.functions().iter().enumerate() {
         for block in &f.blocks {
             for i in &block.instructions {
-                if let Some(Operation::StructConstruct { fields, .. }) =
-                    program.extension(fi, i.result.id)
-                {
-                    charge(&mut work, fields.len().checked_mul(3).ok_or_else(emission_budget)?)?;
+                match program.extension(fi, i.result.id) {
+                    Some(Operation::StructConstruct { fields, .. }) => {
+                        charge(
+                            &mut work,
+                            fields.len().checked_mul(3).ok_or_else(emission_budget)?,
+                        )?;
+                    }
+                    Some(Operation::CloneStruct { .. }) => {
+                        super::clones::preflight(
+                            program.struct_clone(fi, i.result.id).ok_or_else(super::internal)?,
+                            &mut work,
+                        )?;
+                    }
+                    _ => {}
                 }
             }
         }

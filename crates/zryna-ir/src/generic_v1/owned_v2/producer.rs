@@ -35,6 +35,19 @@ pub fn produce_claim_v4(
     produce_for(syntax, sources, linear, linux, generic_keys, super::Admission::StructV4)
 }
 
+/// Produces untrusted claims for the distinct private Struct Clone V5 domain.
+/// # Errors
+/// Rejects unsupported original Clone, foreign layouts and inherited resource exhaustion.
+pub fn produce_claim_v5(
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    linear: &VerifiedLayouts,
+    linux: &VerifiedLayouts,
+    generic_keys: &[&[u8]],
+) -> Result<super::raw::Program, Failure> {
+    produce_for(syntax, sources, linear, linux, generic_keys, super::Admission::StructCloneV5)
+}
+
 fn produce_for(
     syntax: &VerifiedProjectSyntaxV5,
     sources: &SourceMap,
@@ -104,14 +117,14 @@ fn produce_for(
     crate::generic_v1::substitution::check(&program, linear, &originals)?;
     let extensions = match admission {
         super::Admission::LegacyOwned => super::source::produce(&mut program, &originals, sources)?,
-        super::Admission::StructV4 => {
+        super::Admission::StructV4 | super::Admission::StructCloneV5 => {
             super::source::produce_for(&mut program, &originals, sources, admission)?
         }
     };
     let mut claim = super::raw::Program { graph: program, extensions, plans: Vec::new() };
     match admission {
         super::Admission::LegacyOwned => super::source::check(&claim, &originals, sources)?,
-        super::Admission::StructV4 => {
+        super::Admission::StructV4 | super::Admission::StructCloneV5 => {
             super::source::check_for(&claim, &originals, sources, admission)?;
         }
     }
@@ -124,6 +137,12 @@ fn produce_for(
         super::Admission::StructV4 => {
             let (plans, mut used) =
                 super::plan::derive_counted(&claim.graph, &claim.extensions, linear)?;
+            super::extension_index::preflight(&claim.graph, &claim.extensions, &mut used)?;
+            plans
+        }
+        super::Admission::StructCloneV5 => {
+            let (plans, mut used, _) =
+                super::plan::derive_v5_counted(&claim.graph, &claim.extensions, linear)?;
             super::extension_index::preflight(&claim.graph, &claim.extensions, &mut used)?;
             plans
         }

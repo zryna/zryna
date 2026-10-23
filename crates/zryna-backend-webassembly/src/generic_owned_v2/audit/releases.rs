@@ -26,6 +26,13 @@ pub(super) fn check(bytes: &[u8], layout: &Layout<'_, '_>) -> Result<(), Diagnos
             if let Some(function) = layout.program.functions().get(index) {
                 for block in &function.blocks {
                     for i in &block.instructions {
+                        if let Some(clone) = layout.program.struct_clone(index, i.result.id) {
+                            add(
+                                &mut expected,
+                                usize::try_from(clone.string_occurrences())
+                                    .map_err(|_| budget())?,
+                            )?;
+                        }
                         if let Some(Operation::Drop(id)) =
                             layout.program.extension(index, i.result.id)
                         {

@@ -1,5 +1,5 @@
 //! Whole-constructor commit and nonconsuming Copy observation retain exact root loans.
-use super::super::{Admission, Builder, owners::ownership};
+use super::super::{Builder, owners::ownership};
 use crate::generic_v1::Failure;
 use std::collections::BTreeSet;
 
@@ -8,7 +8,7 @@ impl Builder<'_, '_> {
         &mut self,
         fields: &[u32],
     ) -> Result<(), Failure> {
-        if self.type_facts.admission() != Admission::StructV4 {
+        if !self.type_facts.admission().has_structs() {
             return Err(ownership("Struct ownership requires the distinct private v4 issuer"));
         }
         let mut owners = BTreeSet::new();
@@ -30,7 +30,7 @@ impl Builder<'_, '_> {
     }
 
     pub(in super::super) fn observe_struct(&self, value: u32) -> Result<(), Failure> {
-        if self.type_facts.admission() != Admission::StructV4
+        if !self.type_facts.admission().has_structs()
             || !self.alive.get(value as usize).copied().unwrap_or(false)
             || self.loans.values().any(|(root, exclusive)| *root == value && *exclusive)
         {

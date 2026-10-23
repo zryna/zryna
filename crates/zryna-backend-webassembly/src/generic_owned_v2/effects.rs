@@ -23,6 +23,13 @@ pub(super) fn operation(
 ) -> Result<(), Diagnostic> {
     let result = locals.values[i.result.id as usize];
     match op {
+        Operation::CloneStruct { value } => {
+            let clone = layout.program.struct_clone(fi, i.result.id).ok_or_else(invariant)?;
+            if clone.source() != *value || clone.result() != i.result.id {
+                return Err(invariant());
+            }
+            super::clones::emit(body, layout, locals, clone)?;
+        }
         Operation::StructConstruct { ty, fields } => {
             let destinations = layout.fields(raw::Type::Stored(*ty), result)?;
             if destinations.len() != fields.len() {

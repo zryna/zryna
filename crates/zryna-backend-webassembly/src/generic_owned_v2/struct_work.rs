@@ -37,6 +37,13 @@ pub(super) fn check(program: &VerifiedOwnedProgram<'_>) -> Result<(), Diagnostic
         for block in &f.blocks {
             for i in &block.instructions {
                 match program.extension(fi, i.result.id) {
+                    Some(Operation::CloneStruct { .. }) => {
+                        super::clones::preflight(
+                            program,
+                            program.struct_clone(fi, i.result.id).ok_or_else(invariant)?,
+                            &mut work,
+                        )?;
+                    }
                     Some(Operation::StructConstruct { ty, fields }) => {
                         charge(&mut work, (*ty as usize).checked_add(1).ok_or_else(budget)?)?;
                         charge(&mut work, fields.len().checked_mul(3).ok_or_else(budget)?)?;

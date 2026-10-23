@@ -4,4 +4,5 @@ mod faults;
 mod nested_nominal;
 mod ownership;
 mod packets;
+mod struct_clone;
 mod support;

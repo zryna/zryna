@@ -33,6 +33,7 @@ pub(super) fn operation(
     Ok(match op {
         Operation::Move(id) | Operation::Borrow { value: id, .. } => get(values, *id)?.to_vec(),
         Operation::EndLoan(_) => Vec::new(),
+        Operation::CloneStruct { .. } => return Err(invariant()),
         Operation::StructConstruct { ty, fields } => {
             super::structures::construct(context.p, values, *ty, fields)?
         }

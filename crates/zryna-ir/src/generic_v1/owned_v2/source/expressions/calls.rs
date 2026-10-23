@@ -19,9 +19,7 @@ impl Builder<'_, '_> {
                 "source call names a lexical value rather than its shadowed original function",
             ));
         }
-        let Target::Function(module, function) = (if self.type_facts.admission()
-            == super::super::Admission::StructV4
-        {
+        let Target::Function(module, function) = (if self.type_facts.admission().has_structs() {
             self.resolver
                 .originals
                 .resolve_v4(self.resolver.module, &callee.text, &mut |n| self.budget.nominal(n))?
@@ -94,7 +92,7 @@ impl Builder<'_, '_> {
             let instance = if self.symbolic {
                 0
             } else {
-                if self.type_facts.admission() == super::super::Admission::StructV4 {
+                if self.type_facts.admission().has_structs() {
                     let bytes = types
                         .iter()
                         .try_fold(13usize, |n, key| n.checked_add(4)?.checked_add(key.len()))

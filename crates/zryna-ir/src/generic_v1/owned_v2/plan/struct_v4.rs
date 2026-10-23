@@ -4,7 +4,7 @@ use zryna_layout::{StorageTarget, generic_v1 as layout};
 use zryna_source::{SourceFileInput, SourceMap, UntrustedSpan};
 const AT: UntrustedSpan = UntrustedSpan { file: 0, start: 0, end: 1 };
 
-fn layouts() -> VerifiedLayouts {
+pub(in super::super) fn layouts() -> VerifiedLayouts {
     use layout::raw::{
         Declaration, Field, Graph, Module, ModuleId, NodeId, NominalKind, TypeKind, TypeNode,
     };
@@ -54,7 +54,7 @@ fn layouts() -> VerifiedLayouts {
     )
     .expect("independent sealed field/drop inventory")
 }
-fn claim() -> (graph::Program, Vec<Vec<raw::Extension>>) {
+pub(in super::super) fn claim() -> (graph::Program, Vec<Vec<raw::Extension>>) {
     let types = [2, 2, 2, 3, 1];
     let instructions = types
         .into_iter()

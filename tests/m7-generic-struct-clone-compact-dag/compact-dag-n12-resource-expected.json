@@ -1,0 +1,41 @@
+{
+  "status": "Independent compact-source amplification obligation before all provider/compiler execution; exact phase remains unqualified until root runs",
+  "case": "compact-dag-n12",
+  "genericInstantiation": "Wrap<E12>",
+  "closedEnumKey": "11000000000c000000",
+  "closedWrapKey": "12000000000d000000010000000900000011000000000c000000",
+  "enumNominalKeyBytes": 9,
+  "wrapperClosedKeyBytes": 26,
+  "maximumCanonicalKeyDepth": 1,
+  "storedMemberHeight": 15,
+  "enumPrivateLanes": 16,
+  "wrapperPrivateLanes": 17,
+  "possibleStringOccurrences": 8192,
+  "possibleStoredOccurrences": 16385,
+  "activeRuntimeStringLiterals": 1,
+  "activeRuntimeStringClones": 1,
+  "sourceCloneAllPossiblePayloads": true,
+  "semanticOutcome": "accept",
+  "independentV5Seal": "required-success-before-backend-resource-observation",
+  "native": {
+    "outcome": "budget",
+    "diagnostic": "ZRYNA-N7001",
+    "existingCodegenUnitsCap": 1000000,
+    "minimumStringOccurrenceUnits": 1048576
+  },
+  "javascript": {
+    "qualification": "must check its own existing emission budget after same genuine seal; native outcome grants no web authority",
+    "outcome": "independent-observation-required",
+    "diagnostic": null,
+    "existingEmissionBytesCap": 33554432,
+    "minimumExpandedNodeCharge": 12583680
+  },
+  "webassembly": {
+    "qualification": "must check its own existing emission budget after same genuine seal; native outcome grants no web authority",
+    "outcome": "independent-observation-required",
+    "diagnostic": null,
+    "existingEmissionBytesCap": 33554432,
+    "minimumStringOccurrenceCharge": 16777216
+  },
+  "noFullProfileClaimBeforeRootExecution": true
+}

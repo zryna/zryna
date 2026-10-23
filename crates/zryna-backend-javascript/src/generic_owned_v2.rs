@@ -6,6 +6,7 @@ use zryna_diagnostics::Diagnostic;
 use zryna_ir::generic_v1::{owned_v2::VerifiedOwnedProgram, raw};
 
 mod cleanup;
+mod clones;
 mod runtime;
 #[cfg(test)]
 mod struct_tests;
@@ -51,7 +52,18 @@ pub fn emit(program: &VerifiedOwnedProgram<'_>) -> Result<JavaScriptArtifact, Di
             for (position, instruction) in block.instructions.iter().enumerate() {
                 let extended = program.extension(index, instruction.result.id);
                 let expression = if let Some(op) = extended {
-                    runtime::operation(function, op)?
+                    if matches!(
+                        op,
+                        zryna_ir::generic_v1::owned_v2::raw::Operation::CloneStruct { .. }
+                    ) {
+                        clones::expression(
+                            program
+                                .struct_clone(index, instruction.result.id)
+                                .ok_or_else(internal)?,
+                        )?
+                    } else {
+                        runtime::operation(function, op)?
+                    }
                 } else {
                     operation(program, &instruction.operation)?
                 };

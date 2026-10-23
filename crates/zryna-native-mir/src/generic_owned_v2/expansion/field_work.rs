@@ -59,7 +59,8 @@ pub(super) fn charge(
                     | Operation::EndLoan(_)
                     | Operation::Drop(_)
                     | Operation::CloneString(_)
-                    | Operation::CloneBorrowedString(_),
+                    | Operation::CloneBorrowedString(_)
+                    | Operation::CloneStruct { .. },
                 )
                 | None => {}
             }

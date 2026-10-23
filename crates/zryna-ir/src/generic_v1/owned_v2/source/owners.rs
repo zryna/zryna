@@ -174,6 +174,7 @@ impl Builder<'_, '_> {
                 self.loan_parents.remove(id);
                 self.alive[*id as usize] = false;
             }
+            Owned::CloneStruct { value: id } => self.observe_struct(*id)?,
             Owned::CloneString(id) => {
                 if !self.alive[*id as usize]
                     || self.loans.values().any(|(root, ex)| *root == *id && *ex)

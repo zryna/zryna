@@ -12,6 +12,7 @@ use super::{DeclarationIdentity, DeclarationKind};
 pub mod copy_v1;
 pub mod owned_v2;
 pub mod owned_v4;
+pub mod owned_v5;
 
 #[cfg(test)]
 mod original_cycle_tests;

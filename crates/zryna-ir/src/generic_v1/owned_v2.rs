@@ -10,7 +10,15 @@ pub(super) enum Admission {
     #[default]
     LegacyOwned,
     StructV4,
+    StructCloneV5,
 }
+impl Admission {
+    pub(super) const fn has_structs(self) -> bool {
+        matches!(self, Self::StructV4 | Self::StructCloneV5)
+    }
+}
+pub mod clone_v5;
+pub use clone_v5::{CloneNodeKind, VerifiedCloneNode, VerifiedStructClone};
 mod extension_index;
 mod originals;
 mod plan;
@@ -19,8 +27,8 @@ pub mod raw;
 mod source;
 mod typed;
 pub mod wire;
-pub use originals::{check_original_bodies, check_original_bodies_v4};
-pub use producer::{produce_claim, produce_claim_v4};
+pub use originals::{check_original_bodies, check_original_bodies_v4, check_original_bodies_v5};
+pub use producer::{produce_claim, produce_claim_v4, produce_claim_v5};
 /// Immutable exact source/layout/runtime/ABI-bound owned program.
 /// ```compile_fail
 /// fn forge(raw: zryna_ir::generic_v1::owned_v2::raw::Program) {
@@ -36,6 +44,7 @@ pub struct VerifiedOwnedProgram<'a> {
     abi: zryna_abi::VerifiedScalarAbiModule,
     exports: Vec<usize>,
     extension_index: Option<extension_index::ExtensionIndex>,
+    clones: Option<clone_v5::Table>,
 }
 impl<'a> VerifiedOwnedProgram<'a> {
     /// Complete authenticated functions in unsigned key order.
@@ -87,6 +96,15 @@ impl<'a> VerifiedOwnedProgram<'a> {
             })
             .map(|e| &e.operation)
     }
+    /// Exact operation-bound Struct Clone view, available only after independent V5 sealing.
+    #[must_use]
+    pub fn struct_clone(&self, function: usize, result: u32) -> Option<VerifiedStructClone<'_>> {
+        self.clones.as_ref()?.view(function, result, &self.claim.plans)
+    }
+    /// Retained Struct Clone sites in function/result order; older admissions yield no sites.
+    pub fn struct_clones(&self) -> impl Iterator<Item = VerifiedStructClone<'_>> {
+        self.clones.iter().flat_map(|table| table.views(&self.claim.plans))
+    }
     /// Complete immutable cleanup plan.
     #[must_use]
     pub fn plan(&self, function: usize) -> Option<&raw::Plan> {
@@ -129,6 +147,28 @@ pub fn verify_v4<'a>(
 ) -> Result<VerifiedOwnedProgram<'a>, Failure> {
     verify_claim((decoded.0, Admission::StructV4), syntax, sources, entry, linear, linux, runtime)
 }
+/// Verifies private Struct Clone claims with independent source, type and owner proofs.
+/// # Errors
+/// Rejects foreign authorities, unavailable original Clone and inexact cleanup.
+pub fn verify_v5<'a>(
+    decoded: wire::v5::DecodedOwnedV5,
+    syntax: &VerifiedProjectSyntaxV5,
+    sources: &SourceMap,
+    entry: FileId,
+    linear: &'a VerifiedLayouts,
+    linux: &'a VerifiedLayouts,
+    runtime: &'a VerifiedOwnershipRuntimeAbi<'a>,
+) -> Result<VerifiedOwnedProgram<'a>, Failure> {
+    verify_claim(
+        (decoded.0, Admission::StructCloneV5),
+        syntax,
+        sources,
+        entry,
+        linear,
+        linux,
+        runtime,
+    )
+}
 fn verify_claim<'a>(
     (claim, admission): (raw::Program, Admission),
     syntax: &VerifiedProjectSyntaxV5,
@@ -153,20 +193,29 @@ fn verify_claim<'a>(
     super::source_body::demand(&claim.graph)?;
     match admission {
         Admission::LegacyOwned => super::copy_v1::check_type_demand(&claim.graph, linear)?,
-        Admission::StructV4 => {
+        Admission::StructV4 | Admission::StructCloneV5 => {
             let roots = super::source_demand::derive(&claim.graph, &originals)?;
             super::copy_v1::check_type_demand_with_roots(&claim.graph, linear, &roots)?;
         }
     }
     match admission {
         Admission::LegacyOwned => typed::check(&claim, sources, linear, &inventory)?,
-        Admission::StructV4 => typed::check_for(&claim, sources, linear, &inventory, admission)?,
+        Admission::StructV4 | Admission::StructCloneV5 => {
+            typed::check_for(&claim, sources, linear, &inventory, admission)?;
+        }
     }
-    let (plans, spent) = match admission {
-        Admission::LegacyOwned => (plan::derive(&claim.graph, &claim.extensions, linear)?, None),
+    let (plans, spent, clones) = match admission {
+        Admission::LegacyOwned => {
+            (plan::derive(&claim.graph, &claim.extensions, linear)?, None, None)
+        }
         Admission::StructV4 => {
             let (plans, used) = plan::derive_counted(&claim.graph, &claim.extensions, linear)?;
-            (plans, Some(used))
+            (plans, Some(used), None)
+        }
+        Admission::StructCloneV5 => {
+            let (plans, used, clones) =
+                plan::derive_v5_counted(&claim.graph, &claim.extensions, linear)?;
+            (plans, Some(used), Some(clones))
         }
     };
     if plans != claim.plans {
@@ -179,7 +228,16 @@ fn verify_claim<'a>(
     } else {
         None
     };
-    Ok(VerifiedOwnedProgram { claim, linear, linux, runtime, abi, exports, extension_index })
+    Ok(VerifiedOwnedProgram {
+        claim,
+        linear,
+        linux,
+        runtime,
+        abi,
+        exports,
+        extension_index,
+        clones,
+    })
 }
 
 #[cfg(doctest)]

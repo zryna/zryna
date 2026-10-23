@@ -4,7 +4,7 @@ use crate::generic_v1::raw;
 use zryna_source::{SourceFileInput, SourceMap};
 use zryna_syntax::v5;
 
-fn with(case: &str, test: impl FnOnce(&Originals<'_>)) {
+pub(super) fn with(case: &str, test: impl FnOnce(&Originals<'_>)) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/m7-generic-struct-v4-nested");
     let sources = SourceMap::build(vec![SourceFileInput {

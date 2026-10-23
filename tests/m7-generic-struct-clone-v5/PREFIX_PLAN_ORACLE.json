@@ -1,0 +1,165 @@
+{
+  "status": "Independent literal operation/plan proposal, frozen before provider or compiler execution. No closed layout or IR authority claimed.",
+  "case": "nested-prefix",
+  "coreFunctionCount": 1,
+  "block": 0,
+  "instructionCount": 9,
+  "keyOrder": {
+    "3": "100000000001000000",
+    "4": "120000000000000000010000000100000002"
+  },
+  "extensions": [
+    {
+      "result": 0,
+      "kind": "StringLiteral",
+      "bytes": "E"
+    },
+    {
+      "result": 1,
+      "kind": "StringLiteral",
+      "bytes": "L"
+    },
+    {
+      "result": 2,
+      "kind": "StringLiteral",
+      "bytes": "R"
+    },
+    {
+      "result": 3,
+      "kind": "StructConstruct",
+      "ty": 4,
+      "fields": [
+        1,
+        2
+      ]
+    },
+    {
+      "result": 4,
+      "kind": "StringLiteral",
+      "bytes": "T"
+    },
+    {
+      "result": 6,
+      "kind": "StructConstruct",
+      "ty": 3,
+      "fields": [
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "result": 7,
+      "kind": "CloneStruct",
+      "value": 6
+    },
+    {
+      "result": 8,
+      "kind": "CopyStructField",
+      "value": 6,
+      "ordinal": 2
+    }
+  ],
+  "coreScalarInstruction": {
+    "result": 5,
+    "kind": "I32Literal",
+    "value": 7
+  },
+  "steps": [
+    {
+      "block": 0,
+      "position": 0,
+      "end_loans": [],
+      "cleanup": [],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 1,
+      "end_loans": [],
+      "cleanup": [
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 2,
+      "end_loans": [],
+      "cleanup": [
+        1,
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 4,
+      "end_loans": [],
+      "cleanup": [
+        3,
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 7,
+      "end_loans": [],
+      "cleanup": [
+        6,
+        0
+      ],
+      "failure": true
+    },
+    {
+      "block": 0,
+      "position": 9,
+      "end_loans": [],
+      "cleanup": [
+        7,
+        6,
+        0
+      ],
+      "failure": false
+    }
+  ],
+  "cloneSite": {
+    "result": 7,
+    "source": 6,
+    "sourceRetainedDuringPrefixRollback": true,
+    "destinationStringLeafPaths": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1
+      ]
+    ],
+    "failedLeafOrdinal1BasedToDestinationReleaseAttemptIds": {
+      "1": [],
+      "2": [
+        5
+      ],
+      "3": [
+        6,
+        5
+      ]
+    },
+    "outerFailureCleanupAfterLocalPrefix": "source Envelope first, then earlierRoot; result7 absent"
+  },
+  "indexDimensionControl": {
+    "F": 1,
+    "B": 1,
+    "D": 9,
+    "E": 8,
+    "formula": "2F+3B+2D+E",
+    "debit": 31
+  },
+  "limits": "Index dimensions are an isolated census, not a production plan/recipe cost or source/backend qualification."
+}

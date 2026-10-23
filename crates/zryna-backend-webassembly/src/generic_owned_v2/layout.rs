@@ -23,6 +23,7 @@ pub(super) struct Locals {
     pub(super) declared: u32,
     pub(super) status: u32,
     pub(super) frame: u32,
+    pub(super) clone_cursor: Option<u32>,
 }
 
 #[derive(Clone, Copy)]
@@ -43,7 +44,7 @@ impl<'p, 'a> Layout<'p, 'a> {
         let mut functions = Vec::new();
         functions.try_reserve(program.functions().len()).map_err(|_| budget())?;
         let mut return_lanes = 0;
-        for function in program.functions() {
+        for (fi, function) in program.functions().iter().enumerate() {
             let result = width(function.result, &types, &mut widths, 0)?;
             return_lanes = return_lanes.max(result);
             let mut parameters = 0;
@@ -77,7 +78,19 @@ impl<'p, 'a> Layout<'p, 'a> {
             let state = add(scratch, scratch_width)?;
             let status = add(state, 1)?;
             let frame = add(status, 1)?;
-            let end = add(frame, 1)?;
+            let mut end = add(frame, 1)?;
+            let needs_cursor = function.blocks.iter().flat_map(|b| &b.instructions).any(|i| {
+                program
+                    .struct_clone(fi, i.result.id)
+                    .is_some_and(|clone| clone.string_occurrences() != 0)
+            });
+            let clone_cursor = if needs_cursor {
+                let cursor = end;
+                end = add(end, 1)?;
+                Some(cursor)
+            } else {
+                None
+            };
             functions.push(Locals {
                 parameters,
                 values,
@@ -85,6 +98,7 @@ impl<'p, 'a> Layout<'p, 'a> {
                 state,
                 status,
                 frame,
+                clone_cursor,
                 declared: end - parameters,
             });
         }

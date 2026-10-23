@@ -12,6 +12,7 @@ use zryna_syntax::{v4::RawStatementKind, v5::RawFunctionSyntax};
 
 mod branches;
 mod clones;
+mod clones_v5;
 mod contextual_facts;
 mod copy;
 mod enums;
@@ -129,12 +130,14 @@ pub(super) fn check_originals_for(
     sources: &zryna_source::SourceMap,
     admission: Admission,
 ) -> Result<(), Failure> {
-    if admission == Admission::StructV4 {
+    if admission.has_structs() {
         original_cycles::check(originals, sources)?;
     }
     let mut nominal_credit = match admission {
         Admission::LegacyOwned => type_facts::check_declarations_for(originals, admission)?,
-        Admission::StructV4 => contextual_facts::declarations(originals)?,
+        Admission::StructV4 | Admission::StructCloneV5 => {
+            contextual_facts::declarations(originals)?
+        }
     };
     let mut aggregate = Budget::default();
     // Every original is checked before checking instances, including unused templates.
@@ -151,7 +154,7 @@ pub(super) fn check_originals_for(
             let mut arguments = reserve(arity)?;
             arguments.extend(parameters.iter().map(Vec::as_slice));
             let mut original_budget = Budget::original(nominal_credit);
-            if admission == Admission::StructV4 {
+            if admission.has_structs() {
                 original_budget.inherit_operands(&aggregate);
             }
             build(
@@ -169,7 +172,7 @@ pub(super) fn check_originals_for(
                 &mut original_budget,
             )?;
             nominal_credit = original_budget.nominal_used();
-            if admission == Admission::StructV4 {
+            if admission.has_structs() {
                 aggregate.inherit_operands(&original_budget);
             }
         }
