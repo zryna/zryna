@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import test from 'node:test';
 import { launchOwned } from './owner-client.mjs';
+import './windows-inventory.test.mjs';
 
 async function fixture(t) {
   const stage = await mkdtemp(join(await realpath(tmpdir()), 'm6-process-owner-unit-'));
