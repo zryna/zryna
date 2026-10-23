@@ -82,7 +82,7 @@ def collect(output):
             'maximumSelectedBytes': SELECTED_LIMIT, 'resourceBaseline': resources.baseline,
             'defaultCompilerPrefixPolicy': 'None', 'runtimeExecuted': False,
             'profileSourceSha256': sha(catalog_bytes)})
-        write_json(held, 'SOURCE_BEFORE.json', before)
+        write_json(held, 'SOURCE_BEFORE.json', before, compact=True)
         for name in ('observations', 'tools', 'providers'):
             os.mkdir(name, mode=0o700, dir_fd=held.fd)
     tool_materials = capture([s['canonicalPath'] for s in selected], output / 'tools', pins, TOOL_ROOTS)
@@ -119,7 +119,7 @@ def collect(output):
     again, again_tools = validate(report, output / 'observations', catalog)
     assert again == observations and again_tools == observed_tools
     with Directory(output) as held:
-        write_json(held, 'SOURCE_AFTER.json', after)
+        write_json(held, 'SOURCE_AFTER.json', after, compact=True)
         write_json(held, 'TRACE_PROVIDER_ALIASES.json', {'aliases': aliases,
             'sameCanonicalFullBytesBeforeAfter': True, 'scripts': 'UNRESOLVED_OPAQUE_DATA',
             'loaderSelectionProven': False, 'completeInputUse': False})

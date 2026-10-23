@@ -3,6 +3,8 @@
 
 mod authorities;
 mod borrowed_replay;
+mod copy_transport;
+mod copy_transport_source;
 mod layout_attacks;
 mod owner_replay;
 mod source_bound;

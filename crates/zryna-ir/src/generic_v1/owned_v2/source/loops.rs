@@ -106,7 +106,12 @@ impl Builder<'_, '_> {
         let mut units = 0usize;
         let mut composite = false;
         for binding in &self.locals {
-            if let Some(key) = carried_key(binding)? {
+            if let Some(key) = carried_key(
+                binding,
+                self.resolver.originals,
+                &mut self.type_facts,
+                &mut self.budget,
+            )? {
                 count = count.checked_add(1).ok_or_else(header_credit_overflow)?;
                 composite |= key.len() > 1;
                 // Index and both edge operand inventories, plus both complete type-key
@@ -131,7 +136,14 @@ impl Builder<'_, '_> {
         let mut carried = reserve(count)?;
         let mut arguments = reserve(count)?;
         for (index, binding) in self.locals.iter().enumerate() {
-            if carried_key(binding)?.is_some() {
+            if carried_key(
+                binding,
+                self.resolver.originals,
+                &mut self.type_facts,
+                &mut self.budget,
+            )?
+            .is_some()
+            {
                 if !self.alive[binding.value.id as usize]
                     || self.loans.values().any(|(root, _)| *root == binding.value.id)
                 {
@@ -148,8 +160,13 @@ impl Builder<'_, '_> {
     }
 }
 
-fn carried_key<'a>(binding: &'a super::Binding<'_>) -> Result<Option<&'a [u8]>, Failure> {
-    if binding.mutable { copy::key(&binding.value.ty) } else { Ok(None) }
+fn carried_key<'a>(
+    binding: &'a super::Binding<'_>,
+    originals: &crate::generic_v1::source::Originals<'_>,
+    facts: &mut super::type_facts::SourceTypeFacts,
+    credit: &mut super::Budget,
+) -> Result<Option<&'a [u8]>, Failure> {
+    if binding.mutable { copy::key(&binding.value.ty, originals, facts, credit) } else { Ok(None) }
 }
 
 fn header_credit_overflow() -> Failure {

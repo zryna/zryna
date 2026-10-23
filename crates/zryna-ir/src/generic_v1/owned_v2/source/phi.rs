@@ -36,7 +36,13 @@ impl Builder<'_, '_> {
                 continue;
             }
             if !prior.mutable
-                || copy::key(&prior.value.ty)?.is_none()
+                || copy::key(
+                    &prior.value.ty,
+                    self.resolver.originals,
+                    &mut self.type_facts,
+                    &mut self.budget,
+                )?
+                .is_none()
                 || current.value.ty != prior.value.ty
                 || current.name != prior.name
                 || current.mutable != prior.mutable
@@ -56,7 +62,13 @@ impl Builder<'_, '_> {
                 ));
             }
             count = count.checked_add(1).ok_or(Failure::InternalFailure)?;
-            let key = copy::key(&prior.value.ty)?.ok_or(Failure::InternalFailure)?;
+            let key = copy::key(
+                &prior.value.ty,
+                self.resolver.originals,
+                &mut self.type_facts,
+                &mut self.budget,
+            )?
+            .ok_or(Failure::InternalFailure)?;
             composite |= key.len() > 1;
             units = units
                 .checked_add(3)
@@ -86,8 +98,13 @@ impl Builder<'_, '_> {
         if count > crate::data_ownership_v1::MAX_BLOCK_PARAMETERS {
             let mut composite = false;
             for index in (0..self.locals.len()).filter(|&index| changed(index)) {
-                composite |=
-                    copy::key(&self.locals[index].value.ty)?.is_some_and(|key| key.len() > 1);
+                composite |= copy::key(
+                    &self.locals[index].value.ty,
+                    self.resolver.originals,
+                    &mut self.type_facts,
+                    &mut self.budget,
+                )?
+                .is_some_and(|key| key.len() > 1);
             }
             return Err(parameter_ceiling(composite));
         }
@@ -99,8 +116,13 @@ impl Builder<'_, '_> {
         let units = (0..self.locals.len()).filter(|&index| changed(index)).try_fold(
             0usize,
             |used, index| {
-                let key =
-                    copy::key(&self.locals[index].value.ty)?.ok_or(Failure::InternalFailure)?;
+                let key = copy::key(
+                    &self.locals[index].value.ty,
+                    self.resolver.originals,
+                    &mut self.type_facts,
+                    &mut self.budget,
+                )?
+                .ok_or(Failure::InternalFailure)?;
                 key.len()
                     .checked_mul(2)
                     .and_then(|keys| keys.checked_add(2))

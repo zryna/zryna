@@ -17,25 +17,28 @@ fn nominal_enum_admission_keeps_unqualified_operations_and_opaque_payloads_rejec
             "even unused declarations must have qualified stored members"
         );
     }
-    let source_with = |operation: &str| {
+    let source_with = |ty: &str, operation: &str| {
         format!(
-            "interface Box<T extends ZrynaValue> extends ZrynaEnum {{none:ZrynaNone;value:T;}} export function root(flag:bool):i32 {{let item:Box<i32> =Box.none<i32>(); {operation} return 0;}}"
+            "interface Box<T extends ZrynaValue> extends ZrynaEnum {{none:ZrynaNone;value:T;}} export function root(flag:bool):i32 {{let item:Box<{ty}> =Box.none<{ty}>(); {operation} return 0;}}"
         )
     };
-    let baseline = source_with("");
-    assert_original_types(&[("main.zry", &baseline)]);
-    let p = project(&[("main.zry", &baseline)]);
-    owned_v2::check_original_bodies(&p.syntax, &p.sources)
-        .expect("the same nominal declaration, constructor and local need no successor operation");
-    for operation in
-        ["clone(item);", "if(flag){item=Box.none<i32>();}", "while(flag){item=Box.none<i32>();}"]
-    {
-        let source = source_with(operation);
+    for (ty, operation, code) in [
+        ("i32", "clone(item);", "ZRYNA-I7001"),
+        ("String", "if(flag){item=Box.none<String>();}", "ZRYNA-M7007"),
+        ("String", "while(flag){item=Box.none<String>();}", "ZRYNA-M7007"),
+    ] {
+        let baseline = source_with(ty, "");
+        assert_original_types(&[("main.zry", &baseline)]);
+        let p = project(&[("main.zry", &baseline)]);
+        owned_v2::check_original_bodies(&p.syntax, &p.sources).expect(
+            "the same nominal declaration, constructor and local need no successor operation",
+        );
+        let source = source_with(ty, operation);
         let errors = original_ownership_errors(&source);
-        // These remain private execution exclusions, not accepted-language diagnostics.
-        // Body typing above succeeds; the operation alone requires a successor IR proof.
+        // Clone remains unqualified. String in an inactive variant still makes its whole
+        // nominal type owned: replacement needs an ownership proof, unlike concrete Copy.
         assert_eq!(errors.len(), 1, "{operation}: {errors:?}");
-        assert_eq!(errors[0].code(), "ZRYNA-I7001", "{operation}: {errors:?}");
+        assert_eq!(errors[0].code(), code, "{operation}: {errors:?}");
     }
     let opaque = "interface Box<T extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;value:T;} function bad<T extends ZrynaValue>(value:Box<T>):i32 {return match(value,{\"Box.none\":()=>0,\"Box.value\":(item)=>item+item});} export function root(input:i32):i32 {return input;}";
     let p = project(&[("main.zry", opaque)]);

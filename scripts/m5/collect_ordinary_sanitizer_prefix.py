@@ -118,7 +118,7 @@ def collect(output):
         os.mkdir('observations', mode=0o700, dir_fd=held.fd)
         before = source(workflow['M5_PREFIX_CANDIDATE'])
         assert before['checkoutCommit'] == workflow['GITHUB_SHA']
-        write_json(held, 'SOURCE_BEFORE.json', before)
+        write_json(held, 'SOURCE_BEFORE.json', before, compact=True)
     env = os.environ.copy()
     env['ZRYNA_RUST_ORDINARY_EVIDENCE_PARENT'] = str(output / 'observations')
     env['ZRYNA_RUST_ORDINARY_PREFIX_CAPTURE'] = '1'
@@ -163,7 +163,7 @@ def collect(output):
     after = source(workflow['M5_PREFIX_CANDIDATE'])
     assert after == before
     with Directory(output) as held:
-        write_json(held, 'SOURCE_AFTER.json', after)
+        write_json(held, 'SOURCE_AFTER.json', after, compact=True)
         write_json(held, 'OBSERVED_MACHINE.json', {'cases': observations,
             'fullArraysRetained': True, 'reviewedBindings': False, 'targets': 'UNRUN'})
         resource = resources.check()

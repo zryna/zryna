@@ -8,6 +8,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[path = "listener_identity_holders.rs"]
+mod holder_diagnostics;
+
 const TABLE_BYTES: u64 = 1024 * 1024;
 const TABLE_ROWS: usize = 4096;
 const PROBE_TIME: Duration = Duration::from_millis(100);
@@ -62,10 +65,11 @@ impl Identity {
         let matching: Vec<_> = rows.iter().filter(|row| row.inode == self.inode).collect();
         assert!(
             matching.is_empty(),
-            "original listener really closed: process={} address={} inode={} surviving={matching:?}",
+            "original listener really closed: process={} address={} inode={} surviving={matching:?} holders={}",
             self.process,
             self.address,
-            self.inode
+            self.inode,
+            holder_diagnostics::collect(self.process, self.inode, deadline)
         );
         assert!(Instant::now() < deadline, "original listener closure deadline");
     }
