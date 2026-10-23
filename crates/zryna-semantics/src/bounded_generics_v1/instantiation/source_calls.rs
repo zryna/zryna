@@ -30,12 +30,14 @@ fn concat_import_alias_creates_no_original_source_call_edge() {
     assert!(edges.iter().all(Vec::is_empty), "intrinsic must not be a source-call edge");
 }
 
-pub(super) fn check(builder: &Builder<'_, '_, '_>) -> Result<(), InstantiationFailure> {
+pub(super) fn collect(
+    builder: &Builder<'_, '_, '_>,
+    errors: &mut Errors,
+) -> Result<(), InstantiationFailure> {
     let (owners, edges) = graph(builder)?;
     let mut states = reserve(owners.len())?;
     states.resize(owners.len(), 0u8);
     let mut stack = reserve(owners.len())?;
-    let mut errors = Errors::default();
     for root in 0..owners.len() {
         if states[root] != 0 {
             continue;
@@ -72,11 +74,7 @@ pub(super) fn check(builder: &Builder<'_, '_, '_>) -> Result<(), InstantiationFa
             }
         }
     }
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(InstantiationFailure::Diagnostics(errors.finish()?))
-    }
+    Ok(())
 }
 
 fn graph(

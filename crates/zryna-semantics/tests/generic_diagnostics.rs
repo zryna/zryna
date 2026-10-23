@@ -1,5 +1,5 @@
 //! Implemented private diagnostic cases checked against frozen catalogue oracles.
-//! Unrooted generic-definition cycle coverage remains a separate, unqualified authority.
+//! Unrooted by-value-cycle coverage remains a separate, unqualified layout authority.
 
 use std::path::PathBuf;
 
@@ -232,6 +232,7 @@ catalogue_case!(unit_argument, "unit-argument");
 catalogue_case!(opaque_clone, "opaque-clone");
 catalogue_case!(opaque_arithmetic, "opaque-arithmetic");
 catalogue_case!(recursive_function, "recursive-function");
+catalogue_case!(expanding_declaration, "expanding-declaration");
 catalogue_case!(unknown_variant, "unknown-variant");
 catalogue_case!(missing_arm, "missing-arm");
 catalogue_case!(aggregate_export, "aggregate-export");

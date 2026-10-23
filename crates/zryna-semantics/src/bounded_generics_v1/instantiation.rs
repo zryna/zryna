@@ -12,6 +12,9 @@ use super::{DeclarationIdentity, DeclarationKind};
 pub mod copy_v1;
 pub mod owned_v2;
 
+mod definition_expansion;
+#[cfg(test)]
+mod definition_expansion_tests;
 #[cfg(test)]
 mod diagnostic_tests;
 mod diagnostics;
@@ -106,9 +109,18 @@ pub fn discover<'b, 'c, 's>(
     bodies: &'b BodyTypeContext<'c, 's>,
 ) -> Result<InstanceContext<'b, 'c, 's>, InstantiationFailure> {
     let mut builder = Builder::new(bodies)?;
-    source_calls::check(&builder)?;
-    discovery::roots(&mut builder)?;
-    builder.check_errors()?;
+    let mut original_errors = diagnostics::Errors::default();
+    source_calls::collect(&builder, &mut original_errors)?;
+    if original_errors.is_empty() {
+        // Preserve supplied-argument validation before any generated-definition expansion.
+        // Existing source-call errors retain their earlier precedence over closed discovery.
+        discovery::roots(&mut builder)?;
+        builder.check_errors()?;
+    }
+    definition_expansion::collect(&builder, &mut original_errors)?;
+    if !original_errors.is_empty() {
+        return Err(InstantiationFailure::Diagnostics(original_errors.finish()?));
+    }
     discovery::pending(&mut builder)?;
     discovery::value_arguments(&mut builder)?;
     builder.check_errors()?;
