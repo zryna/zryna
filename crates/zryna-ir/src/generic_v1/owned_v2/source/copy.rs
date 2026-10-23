@@ -1,15 +1,15 @@
 //! Original concrete Copy transport; closed IR still checks independent sealed layout ownership.
-use super::{Budget, Closed, Failure, owners, type_facts::SourceTypeFacts};
+use super::{Budget, Closed, Failure, facts::Facts, owners};
 use crate::generic_v1::source::Originals;
 
 pub(super) fn key<'k>(
     ty: &'k Closed,
     originals: &Originals<'_>,
-    facts: &mut SourceTypeFacts,
+    facts: &mut Facts<'_, '_>,
     credit: &mut Budget,
 ) -> Result<Option<&'k [u8]>, Failure> {
     let Closed::Stored(key) = ty else { return Ok(None) };
-    if matches!(key.first(), Some(0x10..=0x13)) {
+    if facts.admission() == super::Admission::StructV4 || matches!(key.first(), Some(0x10..=0x13)) {
         // The original frame checks every substituted member, including inactive variants.
         // This is source Copy qualification; typed IR independently requires sealed drop_kind 0.
         return Ok((!facts.affine(originals, ty, credit)?).then_some(key.as_slice()));

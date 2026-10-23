@@ -1,0 +1,33 @@
+{
+  "status": "Independent cached-child plus prefix height oracle before provider emission",
+  "qualification": "Kernel-only authenticated Originals Engine query; NOT full semantic profile admission. No fabricated term/member graph.",
+  "nominalKeyBytes": 9,
+  "keyDepth": 0,
+  "queries": [
+    {
+      "role": "cachedChild",
+      "name": "N001",
+      "key": "100000000001000000",
+      "storedNodes": 255,
+      "outcome": "pass",
+      "affine": false
+    },
+    {
+      "role": "sharedPass",
+      "name": "SharedPass",
+      "key": "1000000000ff000000",
+      "storedNodes": 256,
+      "outcome": "pass",
+      "affine": false
+    },
+    {
+      "role": "sharedReject",
+      "name": "SharedReject",
+      "key": "100000000000010000",
+      "storedNodes": 257,
+      "outcome": "budget",
+      "budgetReason": "contextual stored path exceeds inherited layout traversal depth"
+    }
+  ],
+  "cacheRule": "Prove N001 first, then prove SharedPass and SharedReject in the same Engine. The retained N001 height255 must be added to the incoming prefix; SharedReject remains257."
+}

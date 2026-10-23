@@ -5,11 +5,12 @@ transport and Copy field observation through a distinct owned-IRv4 issuer. The
 accepted #415 language and decision contracts remain normative. Full #416,
 including its public driver activation, remains open.
 
-The currently qualified source slice supports scalar/String/opaque stored fields
-and the existing Option/Result field vocabulary. Nested nominal fields/arguments,
-containers and fixed arrays, affine partial field moves, field subloans and
-structural Struct Clone remain separate implementation work. Layout
-representability alone does not grant execution authority for those forms.
+The currently qualified source slice supports scalar/String/opaque stored fields,
+nested nominal fields and arguments, and both Option/Result roots and nominal
+members containing those families. Containers and fixed arrays, affine partial
+field moves, field subloans and structural Struct Clone remain separate
+implementation work. Layout representability alone does not grant execution
+authority for those remaining forms.
 
 The existing [owned execution](M7_GENERIC_OWNED_EXECUTION.md) and its frozen v1/v2/v3
 wire contracts remain separate. Syntax-v5 already carries StructConstruction and
@@ -85,6 +86,28 @@ subloan, erase an exclusive loan or read a moved/uninitialized base. General par
 places, opaque field moves, field loans and structural Struct Clone remain separate
 acceptance gaps.
 
+## Contextual nested source facts
+
+Private v4 resolves each occurrence in its exact original function or data frame.
+Opaque atoms retain definition kind, module, declaration and ordered slot identity;
+a callee substitution keeps its caller's atom. Complete closed keys keep their
+existing bytes. Every actual stored field and possible enum payload determines
+Copy affinity; a phantom argument is validated independently and does not add
+stored affinity or height. Option/Result roots use the same contextual proof.
+
+A per-request normalized term graph separates argument discovery from by-value
+member evaluation. Only stored edges determine cycles, ownership and physical
+height. Explicit traversal retains key depth64, key bytes4,096 and the layout's
+stored-path depth256 as separate bounds. The only persistent cache row contains a
+completed root fact. A hit pays the same logical proof work as a cold request;
+a failed miss preserves the last completed row and retains only its completed
+root-lookup debit. No gray node supplies Copy authority or an acyclicity promise.
+
+Name and type-registry comparisons, key retention and graph expansion are prepaid
+on the existing nominal-work ledger. Both declaration-module resolution and
+ordered substitutions are independent of sealed layout. The old owned admission
+continues through its original facts, resolver and charging paths.
+
 ## Original definition rejections
 
 A direct generic stored member whose nominal head and complete ordered parameter
@@ -134,6 +157,17 @@ units before allocation; target output remains32MiB. Recompute recursive Struct
 drop, lane-copy and field-fanout work from actual emitted operations. No backend
 wildcard, temporary rejection waiver or guessed enum-only cost can qualify v4.
 
+A sealed v4 program retains a private dense result-to-extension index. Its full
+`2F + sum(3B + 2D + E)` debit shares the actual ownership replay ledger and precedes
+all index table allocation. Here F counts functions, B blocks, D value definitions
+and E extension records. Failed construction preserves caller credit. Old v2/v3
+programs retain their previous lookup and charges.
+
+For Struct-containing programs, JavaScript prepays full definition scans for every
+explicit drop and cleanup occurrence on its existing output-work ledger. Wasm
+prepays every Struct field and enum width edge, including Copy enums with shared
+children. No-Struct paths and all target ceilings retain their previous behavior.
+
 ## Fixed test authorities and qualification
 
 The [source oracle](../tests/m7-generic-struct-v4/oracle.json) retains the exact
@@ -142,7 +176,9 @@ i32:7 and no release trace. Its independently packed440-byte wire vector uses ta
 at offsets389/406 and a343-byte frozen core. The repeated11/22/33 fingerprints are
 deliberate wire-only sentinels, so this literal grants no executable authority.
 The independent277-byte Copy-v1 vector stays byte-for-byte exact. Separate191-byte
-v2/v3 vectors fix the inherited clone tags6/7 and their old envelopes.
+v2/v3 vectors fix the inherited clone tags6/7 and their old envelopes. These wire
+literals are stored as unchanged text hex and decoded at compile time with exact
+length and digit checks; their decoded byte counts and hashes are unchanged.
 
 The [fault oracle](../tests/m7-generic-struct-v4/fault-oracle.json) retains the accepted
 constructor-fault outcome `zryna.trap.allocation-v1` and exactly
@@ -171,8 +207,32 @@ Native resource tests first obtain genuine source, semantic, dual-layout, runtim
 and v4 IR authorities. A flat Struct with 32 String fields and 1,024 cleanup sites
 has a measured exact old fixed-cost census below the unchanged 1M limit; complete
 Struct destructor expansion exceeds it and must reject before backend emission.
-A one-site control must pass. The nested wrapped-enum witness remains unqualified
-because its source lies outside the current private field vocabulary.
+A one-site control must pass. A separate preserved nested wrapped-enum witness
+now crosses original ownership, discovery, both layouts, runtime and the v4 seal
+before native lowering. Its one-site control passes; 24 sites exceed the unchanged
+1M native work ceiling, including the fixed enum-only lower bound1,007,616, and
+report N7001 before code generation.
+
+The additive [nested same-seal test](../crates/zryna-driver/tests/generic_struct_v4_nested/README.md)
+authenticates all 13 complete literals with fresh native parsing and both frozen
+provider packets. Eight accepted cases cover nested Copy observations, whole owned
+call transport, both Option/nominal nesting directions, plain nominal fields,
+reversed type arguments, phantom versus fixed-member affinity and declaration-order
+failure prefixes. Each retained program feeds all three emitters. Fixed allocation
+identities require26 observations per target,78 total, including nine separate
+native SIGILL cases and a pristine retry after every controlled fault. The five
+negative originals retain owning M7007 rejection before closed discovery.
+
+An additive imported case uses three authenticated modules, aliases and affine
+same-spelled caller decoys. It retains the declaring module's exact nested member
+keys and independently feeds its one seal to all three targets, with three separate
+zero-allocation observations. This does not change the earlier total of 78 observations.
+
+Authenticated plain-source kernel fixtures separately exercise actual member paths
+of256 versus257 stored nodes while each nominal key remains9 bytes. A shared child
+completed at height255 is rechecked against each incoming prefix. These are
+Originals-bound graph-kernel tests; they do not claim that the complete declaration
+set passes the separate whole-original aggregate proof budget.
 
 Qualification on one local host does not establish a hosted matrix or the full
 accepted #416 scope. Final supported-platform gates, remaining language forms,

@@ -1,0 +1,70 @@
+{
+  "status": "Independent complete source literals and expected value/trace/key/height oracles frozen BEFORE fresh native/TypeScript providers. No semantic or runtime qualification.",
+  "caseCount": 4,
+  "cases": [
+    {
+      "id": "imported-alias-decoy",
+      "files": [
+        {
+          "path": "main.zry",
+          "file": "imported-alias-decoy/main.zry",
+          "bytes": 555,
+          "sha256": "eb0f6960f171de7d8708067e2a5c0c84e57fe900ea659a7fcc6071e42a8bf449"
+        },
+        {
+          "path": "values.zry",
+          "file": "imported-alias-decoy/values.zry",
+          "bytes": 234,
+          "sha256": "4cfb6aee7d66fdc42b8368e56cb1f2d08c592521e97ae32019b67bcf7f387272"
+        },
+        {
+          "path": "z-leaf.zry",
+          "file": "imported-alias-decoy/z-leaf.zry",
+          "bytes": 61,
+          "sha256": "8de1e93e516bf88b85dd732902c12a8a63fbca144ca15c80d974eb6cf13256ec"
+        }
+      ],
+      "expected": "imported-alias-decoy-expected.json",
+      "expectedSha256": "d342e4407c43929255198934de3053ecb9f57fa975920236bc3ee4af29517df8"
+    },
+    {
+      "id": "member-height-256",
+      "files": [
+        {
+          "path": "main.zry",
+          "file": "member-height-256/main.zry",
+          "bytes": 13302,
+          "sha256": "0f49ca9f07d1e61b918d5da047f877b9468d9f1c77dc57a5d200112f4c39f230"
+        }
+      ],
+      "expected": "member-height-256-expected.json",
+      "expectedSha256": "74bef4b41498647a494258d61de7a4352616d75b91519542862b0faf423da335"
+    },
+    {
+      "id": "member-height-257",
+      "files": [
+        {
+          "path": "main.zry",
+          "file": "member-height-257/main.zry",
+          "bytes": 13354,
+          "sha256": "3b0f64f3cac228716790bfd05de542e41ea3fb3ca1b5c787b8291b2330c0b179"
+        }
+      ],
+      "expected": "member-height-257-expected.json",
+      "expectedSha256": "487ab3310fdbaeaedf97fe265b17a74954c01a099b1e2da10d2c54bf6c22338b"
+    },
+    {
+      "id": "member-height-shared-prefix",
+      "files": [
+        {
+          "path": "main.zry",
+          "file": "member-height-shared-prefix/main.zry",
+          "bytes": 13448,
+          "sha256": "cd18a50b015a2781b301ede340b09db6b754188f8c9d9de203f6e5c027baf73d"
+        }
+      ],
+      "expected": "member-height-shared-prefix-expected.json",
+      "expectedSha256": "fb0f51e9316fa9e56a71d1a8070f0d8bcc2ea7562678390142a014fc692c81ac"
+    }
+  ]
+}

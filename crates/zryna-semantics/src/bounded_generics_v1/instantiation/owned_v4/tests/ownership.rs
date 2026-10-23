@@ -78,7 +78,7 @@ fn unused_opaque_projection_and_moved_or_exclusively_loaned_bases_reject() {
 }
 
 #[test]
-fn old_source_issuers_stay_closed_and_nested_nominal_fields_remain_unqualified() {
+fn old_source_issuers_stay_closed_while_v4_seals_unused_nested_originals() {
     for provider in PROVIDERS {
         with_claim("plain-enum", provider, |_, _, _, _, _| {});
         for case in ["construction", "fixed-copy", "opaque-identity"] {
@@ -88,11 +88,25 @@ fn old_source_issuers_stay_closed_and_nested_nominal_fields_remain_unqualified()
                 "legacy issuer: {case}/{provider}"
             );
         }
-        let errors = original_rejection("nested-unused", provider);
-        assert_eq!(errors.len(), 1);
-        assert_eq!(
-            errors[0].code, "ZRYNA-M3008",
-            "private boundary, not full accepted #416 qualification"
+        let (sources, syntax) = project("nested-unused", provider);
+        assert!(
+            owned::check_original_bodies(&syntax, &sources).is_err(),
+            "the old issuer retains its original nested/Struct exclusion"
         );
+        with_claim("nested-unused", provider, |claim, syntax, sources, linear, linux| {
+            assert_eq!(
+                claim.graph.type_keys,
+                vec![
+                    vec![0],
+                    vec![1],
+                    vec![2],
+                    vec![0x10, 0, 0, 0, 0, 1, 0, 0, 0],
+                    vec![0x11, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                "unused Wrapper and its Inner enum remain exact original stored roots"
+            );
+            seal(&claim, syntax, sources, linear, linux)
+                .expect("v4 independently seals the same preserved unused originals");
+        });
     }
 }

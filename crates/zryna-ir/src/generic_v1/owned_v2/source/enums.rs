@@ -1,10 +1,7 @@
 //! Source/family enum identities, active payloads and canonical exhaustive match transfers.
 
 use super::{Builder, Value};
-use crate::generic_v1::{
-    Failure, raw, reject, reserve,
-    source_types::{Closed, type_id},
-};
+use crate::generic_v1::{Failure, raw, reject, reserve, source_types::Closed};
 use zryna_syntax::v4::RawMatchArm;
 
 pub(super) struct Description<'a> {
@@ -12,6 +9,7 @@ pub(super) struct Description<'a> {
     pub variants: Vec<(&'a str, Option<Closed>)>,
 }
 
+mod comparisons;
 mod identity;
 use identity::arguments;
 pub(super) use identity::describe;
@@ -29,7 +27,7 @@ impl<'b> Builder<'_, 'b> {
         depth: usize,
     ) -> Result<Value, Failure> {
         let scrutinee = self.expression(expression, depth + 1)?;
-        self.budget.nominal_key(&scrutinee.ty, 2)?;
+        self.type_facts.key_copy(&scrutinee.ty, 2, &mut self.budget)?;
         let (key, mode) = match &scrutinee.ty {
             Closed::Stored(key) => (key.clone(), raw::MatchMode::Value),
             Closed::Borrow(key, false) => (key.clone(), raw::MatchMode::SharedBorrow),
@@ -38,15 +36,14 @@ impl<'b> Builder<'_, 'b> {
         };
         let first = arms.first().ok_or_else(|| reject("empty match"))?;
         let decoded_arguments = arguments(&key)?;
-        self.type_facts.description(
+        let description = self.type_facts.enum_description(
             &self.resolver,
             &first.type_name.text,
             &decoded_arguments,
+            self.symbolic,
             &mut self.budget,
         )?;
-        let description =
-            describe(&self.resolver, &first.type_name.text, &decoded_arguments, self.symbolic)?;
-        if !matches!(&description.ty, Closed::Stored(expected) if expected == &key)
+        if !self.type_facts.stored_key(&description.ty, &key, &mut self.budget)?
             || arms.len() != description.variants.len()
         {
             return Err(reject("inexact enum match coverage"));
@@ -66,21 +63,7 @@ impl<'b> Builder<'_, 'b> {
         let mut successors = reserve(arms.len())?;
         let mut outputs = reserve(arms.len())?;
         for (ordinal, (name, payload)) in description.variants.iter().enumerate() {
-            let mut selected = arms.iter().filter(|a| a.variant.text == *name);
-            let arm = selected.next().ok_or_else(|| reject("missing enum ordinal"))?;
-            self.type_facts.description(
-                &self.resolver,
-                &arm.type_name.text,
-                &decoded_arguments,
-                &mut self.budget,
-            )?;
-            if selected.next().is_some()
-                || describe(&self.resolver, &arm.type_name.text, &decoded_arguments, self.symbolic)?
-                    .ty
-                    != description.ty
-            {
-                return Err(reject("duplicate/foreign enum match arm"));
-            }
+            let arm = self.match_arm(arms, name, &decoded_arguments, &description.ty)?;
             self.charge_branch_state()?;
             self.locals = saved.clone();
             self.scope_start = saved.len();
@@ -93,6 +76,7 @@ impl<'b> Builder<'_, 'b> {
             let from = self.next as usize;
             let binding = match (&arm.binding, payload) {
                 (Some(name), Some(ty)) => {
+                    self.type_facts.v4_copy(ty, 1, &mut self.budget)?;
                     let ty = if mode == raw::MatchMode::Value {
                         ty.clone()
                     } else {
@@ -133,6 +117,7 @@ impl<'b> Builder<'_, 'b> {
                 },
             });
         }
+        self.type_facts.v4_copy(&outputs[0].1.ty, 1, &mut self.budget)?;
         let result_type = outputs[0].1.ty.clone();
         if outputs.iter().any(|(_, v, _)| v.ty != result_type) {
             return Err(reject("different enum arm result types"));
@@ -183,7 +168,9 @@ impl<'b> Builder<'_, 'b> {
         let ty = if self.symbolic {
             0
         } else {
-            let raw::Type::Stored(id) = type_id(self.program, Closed::Stored(key))? else {
+            let raw::Type::Stored(id) =
+                self.type_facts.type_id(self.program, Closed::Stored(key), &mut self.budget)?
+            else {
                 return Err(Failure::InternalFailure);
             };
             id

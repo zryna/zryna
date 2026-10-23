@@ -7,12 +7,12 @@ use crate::generic_v1::{
 };
 use zryna_syntax::v5::RawDataDeclarationKind;
 
-pub(super) struct Description<'a> {
+pub(in super::super) struct Description<'a> {
     pub ty: Closed,
     pub fields: Vec<(&'a str, Closed)>,
 }
 
-pub(super) fn describe<'a>(
+pub(in super::super) fn describe<'a>(
     resolver: &Resolver<'_, 'a>,
     name: &str,
     arguments: &[Vec<u8>],
@@ -73,7 +73,7 @@ fn describe_identity<'a>(
     })
 }
 
-pub(super) fn stored<'a>(
+pub(in super::super) fn stored<'a>(
     resolver: &Resolver<'_, 'a>,
     key: &[u8],
     symbolic: bool,

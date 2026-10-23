@@ -1,13 +1,13 @@
 //! Private v4 whole Struct construction and original-Copy field observations.
 use super::{Admission, Builder, Closed, Owned, Value};
-use crate::generic_v1::{Failure, raw, reject, reserve, source_types::type_id};
+use crate::generic_v1::{Failure, raw, reject, reserve};
 use zryna_source::UntrustedSpan;
 use zryna_syntax::{
     v4::{RawFieldInitializer, RawFieldInitializerKind, RawIdentifierSyntax},
     v5::{RawExpressionKind, RawTypeArgumentList},
 };
 mod effects;
-mod identity;
+pub(super) mod identity;
 mod lookup;
 
 impl Builder<'_, '_> {
@@ -29,13 +29,12 @@ impl Builder<'_, '_> {
             };
             types.push(key);
         }
-        self.type_facts.description(&self.resolver, &name.text, &types, &mut self.budget)?;
-        let description = identity::describe(
+        let description = self.type_facts.structure(
             &self.resolver,
             &name.text,
             &types,
             self.symbolic,
-            self.type_facts.admission(),
+            &mut self.budget,
         )?;
         // Complete declaration-name mapping precedes every initializer evaluation/move.
         let mut mapping = reserve(description.fields.len())?;
@@ -70,7 +69,10 @@ impl Builder<'_, '_> {
         let ty = if self.symbolic {
             0
         } else {
-            let raw::Type::Stored(id) = type_id(self.program, description.ty.clone())? else {
+            self.type_facts.v4_copy(&description.ty, 1, &mut self.budget)?;
+            let raw::Type::Stored(id) =
+                self.type_facts.type_id(self.program, description.ty.clone(), &mut self.budget)?
+            else {
                 return Err(Failure::InternalFailure);
             };
             id
@@ -100,11 +102,10 @@ impl Builder<'_, '_> {
             return Err(reject("Struct field observation requires a complete stored base"));
         };
         self.type_facts.affine(self.resolver.originals, &value.ty, &mut self.budget)?;
-        let description = identity::stored(
+        let description = self.type_facts.stored_structure(
             &self.resolver,
             key,
             self.symbolic,
-            self.type_facts.admission(),
             &mut self.budget,
         )?;
         let Some(ordinal) = lookup::ordinal(&description.fields, &field.text, &mut self.budget)?
@@ -117,7 +118,7 @@ impl Builder<'_, '_> {
                 "field observation requires original Copy; opaque or affine fields cannot move partially",
             ));
         }
-        self.budget.nominal_key(ty, 1)?;
+        self.type_facts.key_copy(ty, 1, &mut self.budget)?;
         self.ext(
             ty.clone(),
             span,

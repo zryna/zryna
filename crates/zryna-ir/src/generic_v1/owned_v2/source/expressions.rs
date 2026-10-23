@@ -1,12 +1,9 @@
 //! Exact original operand order and symbolic source call substitution.
 
 use super::{Builder, Value};
-use crate::generic_v1::{
-    Failure, raw, reject, reserve,
-    source::Target,
-    source_types::{Closed, Resolver},
-};
+use crate::generic_v1::{Failure, raw, reject, reserve, source_types::Closed};
 use zryna_syntax::v5::RawExpressionKind as Expr;
+mod calls;
 
 impl Builder<'_, '_> {
     pub(super) fn expression(&mut self, index: u32, depth: usize) -> Result<Value, Failure> {
@@ -37,7 +34,7 @@ impl Builder<'_, '_> {
                     return Err(reject("loan requires a stored owner"));
                 };
                 let exclusive = matches!(source.kind, Expr::BorrowMut { .. });
-                self.budget.nominal_key(&value.ty, 1)?;
+                self.type_facts.key_copy(&value.ty, 1, &mut self.budget)?;
                 self.ext(
                     Closed::Borrow(key.clone(), exclusive),
                     source.span,
@@ -111,7 +108,7 @@ impl Builder<'_, '_> {
     ) -> Result<Value, Failure> {
         let value = self.peek(&name.text)?;
         if self.affine[value.id as usize] {
-            self.budget.nominal_key(&value.ty, 1)?;
+            self.type_facts.key_copy(&value.ty, 1, &mut self.budget)?;
             self.ext(value.ty.clone(), span, super::Owned::Move(value.id))
         } else if self
             .locals
@@ -125,77 +122,6 @@ impl Builder<'_, '_> {
             Ok(value)
         }
     }
-    fn call(
-        &mut self,
-        callee: &zryna_syntax::v4::RawIdentifierSyntax,
-        type_arguments: Option<&zryna_syntax::v5::RawTypeArgumentList>,
-        arguments: &[u32],
-        span: zryna_source::UntrustedSpan,
-        depth: usize,
-    ) -> Result<Value, Failure> {
-        if self.locals.iter().any(|local| local.name == callee.text) {
-            return Err(reject(
-                "source call names a lexical value rather than its shadowed original function",
-            ));
-        }
-        let Target::Function(module, function) =
-            self.resolver.originals.resolve(self.resolver.module, &callee.text)?
-        else {
-            return Err(reject("source call target is not an original function"));
-        };
-        let original = &self.resolver.originals.units[module as usize].functions[function as usize];
-        let arity = original.type_parameters.as_ref().map_or(0, |list| list.parameters.len());
-        if arity != type_arguments.map_or(0, |list| list.arguments.len())
-            || (arity == 0 && type_arguments.is_some())
-        {
-            return Err(reject("source call requires the exact explicit generic arity"));
-        }
-        let mut types = reserve(arity)?;
-        for occurrence in type_arguments.map_or(&[][..], |list| &list.arguments) {
-            let Closed::Stored(key) = self.resolve(*occurrence)? else {
-                return Err(reject("generic call argument is not a stored value type"));
-            };
-            types.push(key);
-        }
-        let mut keys = reserve(arity)?;
-        keys.extend(types.iter().map(Vec::as_slice));
-        let resolver = Resolver {
-            originals: self.resolver.originals,
-            module,
-            parameters: original.type_parameters.as_ref(),
-            arguments: keys,
-        };
-        if arguments.len() != original.parameters.len() {
-            return Err(reject("source call has wrong value arity"));
-        }
-        let mut operands = reserve(arguments.len())?;
-        for (argument, parameter) in arguments.iter().zip(&original.parameters) {
-            let value = self.expression(*argument, depth + 1)?;
-            if value.ty != resolver.resolve_symbolic(parameter.type_syntax)? {
-                return Err(reject("source call operand is not exact original substitution"));
-            }
-            operands.push(value.id);
-        }
-        let result = resolver.resolve_symbolic(original.result_type)?;
-        let operation = if arity == 0 {
-            raw::Operation::SourceCall { module, function, arguments: operands }
-        } else {
-            let instance = if self.symbolic {
-                0
-            } else {
-                let key = function_key(module, function, &types)?;
-                let index = self
-                    .program
-                    .functions
-                    .binary_search_by(|candidate| candidate.key.cmp(&key))
-                    .map_err(|_| reject("complete demanded generic instance is absent"))?;
-                u32::try_from(index).map_err(|_| Failure::InternalFailure)?
-            };
-            raw::Operation::ClosedGenericCall { instance, arguments: operands }
-        };
-        self.emit(result, span, operation)
-    }
-
     fn construct_enum(
         &mut self,
         type_name: &zryna_syntax::v4::RawIdentifierSyntax,
@@ -212,21 +138,23 @@ impl Builder<'_, '_> {
             };
             arguments.push(key);
         }
-        self.type_facts.description(
+        let description = self.type_facts.enum_description(
             &self.resolver,
             &type_name.text,
             &arguments,
+            self.symbolic,
             &mut self.budget,
         )?;
-        let description =
-            super::enums::describe(&self.resolver, &type_name.text, &arguments, self.symbolic)?;
-        let ordinal = description
-            .variants
-            .iter()
-            .position(|(name, _)| *name == variant.text)
+        let ordinal = self
+            .type_facts
+            .variant(&description.variants, &variant.text, &mut self.budget)?
             .ok_or_else(|| reject("source constructor names an unknown enum variant"))?;
         let value = payload.map(|payload| self.expression(payload, depth + 1)).transpose()?;
-        if value.as_ref().map(|value| &value.ty) != description.variants[ordinal].1.as_ref() {
+        if !self.type_facts.equal_payload(
+            value.as_ref().map(|value| &value.ty),
+            description.variants[ordinal].1.as_ref(),
+            &mut self.budget,
+        )? {
             return Err(reject(
                 "source enum constructor payload differs from exact original active variant",
             ));
@@ -234,8 +162,9 @@ impl Builder<'_, '_> {
         let ty = if self.symbolic {
             0
         } else {
+            self.type_facts.v4_copy(&description.ty, 1, &mut self.budget)?;
             let raw::Type::Stored(id) =
-                crate::generic_v1::source_types::type_id(self.program, description.ty.clone())?
+                self.type_facts.type_id(self.program, description.ty.clone(), &mut self.budget)?
             else {
                 return Err(Failure::InternalFailure);
             };
@@ -251,32 +180,4 @@ impl Builder<'_, '_> {
             },
         )
     }
-}
-
-pub(super) fn function_key(
-    module: u32,
-    function: u32,
-    arguments: &[Vec<u8>],
-) -> Result<Vec<u8>, Failure> {
-    let count = arguments
-        .iter()
-        .try_fold(13usize, |length, key| length.checked_add(4)?.checked_add(key.len()))
-        .ok_or(Failure::InternalFailure)?;
-    if count > 4096 {
-        return Err(crate::generic_v1::budget("source call key exceeds 4096 bytes"));
-    }
-    let mut key = reserve(count)?;
-    key.push(0x40);
-    for lane in
-        [module, function, u32::try_from(arguments.len()).map_err(|_| Failure::InternalFailure)?]
-    {
-        key.extend_from_slice(&lane.to_le_bytes());
-    }
-    for argument in arguments {
-        key.extend_from_slice(
-            &u32::try_from(argument.len()).map_err(|_| Failure::InternalFailure)?.to_le_bytes(),
-        );
-        key.extend_from_slice(argument);
-    }
-    Ok(key)
 }

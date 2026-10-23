@@ -1,6 +1,6 @@
 //! Affine source Builder values, blocks, diagnostics and charged instruction emission.
 
-use super::{Binding, Builder, Closed, Failure, Value, owners, raw, reject, type_id};
+use super::{Binding, Builder, Closed, Failure, Value, owners, raw, reject};
 
 impl<'b> Builder<'_, 'b> {
     pub(super) fn locate(&self, failure: Failure, at: zryna_source::UntrustedSpan) -> Failure {
@@ -22,12 +22,14 @@ impl<'b> Builder<'_, 'b> {
         }
         Failure::Diagnostics(errors)
     }
-    pub(super) fn resolve(&self, occurrence: u32) -> Result<Closed, Failure> {
-        if self.symbolic {
-            self.resolver.resolve_symbolic(occurrence)
-        } else {
-            self.resolver.resolve(occurrence)
-        }
+    pub(super) fn resolve(&mut self, occurrence: u32) -> Result<Closed, Failure> {
+        self.type_facts.resolve(
+            &self.resolver,
+            self.original_frame,
+            occurrence,
+            self.symbolic,
+            &mut self.budget,
+        )
     }
 
     pub(super) fn bind(&mut self, name: &'b str, value: Value) -> Result<(), Failure> {
@@ -57,13 +59,13 @@ impl<'b> Builder<'_, 'b> {
     }
 
     pub(super) fn definition(&mut self, value: &Value) -> Result<raw::Definition, Failure> {
-        self.budget.nominal_key(&value.ty, 1)?;
+        self.type_facts.key_copy(&value.ty, 1, &mut self.budget)?;
         Ok(raw::Definition {
             id: value.id,
             ty: if self.symbolic {
                 raw::Type::Unit
             } else {
-                type_id(self.program, value.ty.clone())?
+                self.type_facts.type_id(self.program, value.ty.clone(), &mut self.budget)?
             },
         })
     }

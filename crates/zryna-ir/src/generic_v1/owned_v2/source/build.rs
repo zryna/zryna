@@ -1,12 +1,13 @@
 //! One original source frame, retaining immutable admission and separate budget credit.
 use super::{
     Admission, Budget, Builder, Closed, Extension, Failure, Originals, RawFunctionSyntax, Resolver,
-    normalize, raw, reject, reserve, type_facts,
+    facts, normalize, raw, reject, reserve,
 };
 use std::collections::BTreeMap;
 
 pub(super) struct Frame<'a, 'b> {
     pub module: u32,
+    pub index: u32,
     pub original: &'b RawFunctionSyntax,
     pub arguments: Vec<&'a [u8]>,
     pub symbolic: bool,
@@ -20,10 +21,13 @@ pub(super) fn build<'a, 'b>(
     frame: Frame<'a, 'b>,
     budget: &mut Budget,
 ) -> Result<(Vec<raw::Block>, Vec<Extension>), Failure> {
-    let Frame { module, original, arguments, symbolic, admission } = frame;
+    let Frame { module, index, original, arguments, symbolic, admission } = frame;
     let resolver =
         Resolver { originals, module, parameters: original.type_parameters.as_ref(), arguments };
-    let result = resolver.resolve_symbolic(original.result_type)?;
+    let original_frame = facts::Frame { kind: 0, module, index };
+    let type_facts = facts::Facts::new(originals, admission, original_frame, symbolic);
+    let result =
+        type_facts.resolve(&resolver, original_frame, original.result_type, true, budget)?;
     let mut builder = Builder {
         program,
         sources,
@@ -42,7 +46,8 @@ pub(super) fn build<'a, 'b>(
         loans: BTreeMap::new(),
         loan_parents: BTreeMap::new(),
         budget: *budget,
-        type_facts: type_facts::SourceTypeFacts::new(admission),
+        type_facts,
+        original_frame,
     };
     builder.new_block(original.body.span)?;
     for parameter in &original.parameters {

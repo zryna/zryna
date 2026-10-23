@@ -6,15 +6,17 @@
 use crate::generic_v1::{
     Failure, keys, raw, reject, reserve,
     source::Originals,
-    source_types::{Closed, Resolver, type_id},
+    source_types::{Closed, Resolver},
 };
 use zryna_syntax::{v4::RawStatementKind, v5::RawFunctionSyntax};
 
 mod branches;
 mod clones;
+mod contextual_facts;
 mod copy;
 mod enums;
 mod expressions;
+mod facts;
 mod loops;
 mod normalize;
 mod original_cycles;
@@ -62,7 +64,8 @@ struct Builder<'a, 'b> {
     loans: BTreeMap<u32, (u32, bool)>,
     loan_parents: BTreeMap<u32, u32>,
     budget: Budget,
-    type_facts: type_facts::SourceTypeFacts,
+    type_facts: facts::Facts<'a, 'b>,
+    original_frame: facts::Frame,
 }
 
 pub(super) fn check(
@@ -100,7 +103,7 @@ pub(super) fn check_for(
             program,
             originals,
             sources,
-            BuildFrame { module, original, arguments, symbolic: false, admission },
+            BuildFrame { module, index, original, arguments, symbolic: false, admission },
             &mut budget,
         )?;
         if function.blocks != blocks || claim.extensions[function_index] != extensions {
@@ -129,11 +132,14 @@ pub(super) fn check_originals_for(
     if admission == Admission::StructV4 {
         original_cycles::check(originals, sources)?;
     }
-    let mut nominal_credit = type_facts::check_declarations_for(originals, admission)?;
+    let mut nominal_credit = match admission {
+        Admission::LegacyOwned => type_facts::check_declarations_for(originals, admission)?,
+        Admission::StructV4 => contextual_facts::declarations(originals)?,
+    };
     let mut aggregate = Budget::default();
     // Every original is checked before checking instances, including unused templates.
     for unit in originals.units {
-        for original in &unit.functions {
+        for (index, original) in unit.functions.iter().enumerate() {
             let arity = original.type_parameters.as_ref().map_or(0, |list| list.parameters.len());
             let mut parameters = reserve(arity)?;
             for slot in 0..arity {
@@ -152,7 +158,14 @@ pub(super) fn check_originals_for(
                 program,
                 originals,
                 sources,
-                BuildFrame { module: unit.id, original, arguments, symbolic: true, admission },
+                BuildFrame {
+                    module: unit.id,
+                    index: u32::try_from(index).map_err(|_| Failure::InternalFailure)?,
+                    original,
+                    arguments,
+                    symbolic: true,
+                    admission,
+                },
                 &mut original_budget,
             )?;
             nominal_credit = original_budget.nominal_used();
@@ -196,7 +209,7 @@ pub(super) fn produce_for(
             program,
             originals,
             sources,
-            BuildFrame { module, original, arguments, symbolic: false, admission },
+            BuildFrame { module, index, original, arguments, symbolic: false, admission },
             &mut budget,
         )?);
     }

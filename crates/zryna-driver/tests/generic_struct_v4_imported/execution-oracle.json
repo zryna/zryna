@@ -1,0 +1,59 @@
+{
+  "status": "Exact independent imported case expectation copied after pre-provider freeze; no observed result",
+  "cases": {
+    "imported-alias-decoy": {
+      "status": "Independent source/declaring-module identity and runtime expectation before provider emission",
+      "qualification": "Full semantic/v4/target execution remains pending root runs",
+      "decision": "admit",
+      "result": 7,
+      "allocations": 0,
+      "success": [],
+      "allocationFailures": {},
+      "retryAfterEveryFailure": true,
+      "canonicalModuleIds": {
+        "main.zry": 0,
+        "values.zry": 1,
+        "z-leaf.zry": 2
+      },
+      "closedKeys": {
+        "rootCarrierI32": "120100000001000000010000000100000001",
+        "nestedBoxPayload": "1201000000000000000100000009000000100200000000000000",
+        "leafPayload": "100200000000000000",
+        "callerDeclaredDecoy": "100000000000000000",
+        "callerBoxI32Decoy": "120000000001000000010000000100000001"
+      },
+      "members": {
+        "rootCarrierI32": [
+          [
+            "nested",
+            "1201000000000000000100000009000000100200000000000000"
+          ],
+          [
+            "marker",
+            "01"
+          ]
+        ],
+        "nestedBoxPayload": [
+          [
+            "value",
+            "100200000000000000"
+          ]
+        ],
+        "leafPayload": [
+          [
+            "value",
+            "01"
+          ]
+        ]
+      },
+      "affinity": {
+        "rootCarrierI32": false,
+        "nestedBoxPayload": false,
+        "leafPayload": false,
+        "callerDeclaredDecoy": true,
+        "callerBoxI32Decoy": true
+      },
+      "nominalIdentityRule": "Stored members resolve in their declaring module; values Box and z-leaf Payload remain distinct from caller Box and Declared aliases/decoys despite affine caller shape."
+    }
+  }
+}

@@ -1,5 +1,5 @@
 //! Concrete structural clone; a compiler-created shared match retains the named owner.
-use super::{Builder, Closed, Failure, Owned, Value, raw, reserve, type_id};
+use super::{Builder, Closed, Failure, Owned, Value, raw, reserve};
 use zryna_source::UntrustedSpan;
 
 const OPTION: &[u8] = &[0x14, 1, 0, 0, 0, 1, 0, 0, 0, 2];
@@ -68,7 +68,9 @@ impl Builder<'_, '_> {
         let ty = if self.symbolic {
             0
         } else {
-            let raw::Type::Stored(id) = type_id(self.program, stored.clone())? else {
+            let raw::Type::Stored(id) =
+                self.type_facts.type_id(self.program, stored.clone(), &mut self.budget)?
+            else {
                 return Err(Failure::InternalFailure);
             };
             id

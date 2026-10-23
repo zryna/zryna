@@ -163,7 +163,7 @@ impl Builder<'_, '_> {
 fn carried_key<'a>(
     binding: &'a super::Binding<'_>,
     originals: &crate::generic_v1::source::Originals<'_>,
-    facts: &mut super::type_facts::SourceTypeFacts,
+    facts: &mut super::facts::Facts<'_, '_>,
     credit: &mut super::Budget,
 ) -> Result<Option<&'a [u8]>, Failure> {
     if binding.mutable { copy::key(&binding.value.ty, originals, facts, credit) } else { Ok(None) }

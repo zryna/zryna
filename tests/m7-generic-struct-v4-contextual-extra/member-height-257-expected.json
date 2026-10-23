@@ -1,0 +1,14 @@
+{
+  "status": "Independent source graph height oracle before provider emission",
+  "qualification": "Kernel-only authenticated Originals Engine/Facts query; NOT full semantic profile admission. Whole-original aggregate proof budget can reject earlier.",
+  "nominalCount": 256,
+  "scalarLeaves": 1,
+  "storedNodes": 257,
+  "nominalKeyBytes": 9,
+  "keyDepth": 0,
+  "rootName": "N000",
+  "rootKey": "100000000000000000",
+  "kernelOutcome": "budget",
+  "affine": null,
+  "budgetReason": "contextual stored path exceeds inherited layout traversal depth"
+}

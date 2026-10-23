@@ -1,5 +1,6 @@
 //! Independent original-name/import inventory and unused-template call graph.
 
+mod names_v4;
 use super::{Failure, budget, calls, raw, reject, reserve};
 use zryna_source::{NormalizedSourcePath, resolve_explicit_zry_import};
 use zryna_syntax::v5::{

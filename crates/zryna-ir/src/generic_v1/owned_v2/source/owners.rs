@@ -112,7 +112,7 @@ impl Builder<'_, '_> {
             .rev()
             .find(|local| local.name == name)
             .ok_or_else(|| ownership("unknown exact local"))?;
-        self.budget.nominal_key(&binding.value.ty, 1)?;
+        self.type_facts.key_copy(&binding.value.ty, 1, &mut self.budget)?;
         let value = binding.value.clone();
         if !self.alive[value.id as usize] {
             return Err(ownership("use of moved or ended original binding"));
