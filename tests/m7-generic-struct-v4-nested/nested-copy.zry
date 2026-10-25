@@ -1,0 +1,1 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } export function entry(): i32 { const outer: Box<Box<i32>> = Box<Box<i32>>({ value: Box<i32>({ value: 7 }) }); return outer.value.value; }

@@ -1,16 +1,16 @@
 //! Match strong definitions to the retained ABI; validate every local and undefined symbol.
 
 use super::{
-    Diagnostic, IMPORTS, error,
+    Failure, IMPORTS, error,
     tables::{self, Tables},
 };
 use std::collections::BTreeSet;
 
-pub(super) struct Symbol<'a> {
-    pub(super) name: &'a str,
-    pub(super) kind: u8,
-    pub(super) section: usize,
-    pub(super) value: u64,
+pub(in crate::native) struct Symbol<'a> {
+    pub(in crate::native) name: &'a str,
+    pub(in crate::native) kind: u8,
+    pub(in crate::native) section: usize,
+    pub(in crate::native) value: u64,
 }
 
 fn identifier(name: &str) -> bool {
@@ -20,10 +20,10 @@ fn identifier(name: &str) -> bool {
         })
 }
 
-pub(super) fn check<'a>(
+pub(in crate::native) fn check<'a>(
     table: &Tables<'a>,
     expected: &BTreeSet<&str>,
-) -> Result<Vec<Symbol<'a>>, Diagnostic> {
+) -> Result<Vec<Symbol<'a>>, Failure> {
     let mut result = Vec::new();
     let mut defined = BTreeSet::new();
     let mut imported = BTreeSet::new();

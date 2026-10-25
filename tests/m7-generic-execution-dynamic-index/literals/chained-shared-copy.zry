@@ -1,0 +1,6 @@
+export function entry(row: i32, column: i32): i32 {
+  const root: Vec<FixedArray<i32, 2>> = Vec<FixedArray<i32, 2>>([FixedArray<i32, 2>([3, 5]), FixedArray<i32, 2>([7, 11])]);
+  let result: i32 = 0;
+  { const slot: Borrow<i32> = borrow(root[row][column]); result = slot; }
+  return result;
+}

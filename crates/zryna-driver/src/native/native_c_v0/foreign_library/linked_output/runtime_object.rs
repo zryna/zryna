@@ -4,18 +4,11 @@ use super::{Diagnostic, HandleLinkRequirements};
 use sha2::{Digest as _, Sha256};
 use std::collections::BTreeSet;
 
-mod inventory;
-mod relocations;
-mod tables;
+use crate::native::runtime_object_bytes::{Failure, inventory, relocations, tables};
+#[cfg(test)]
+use crate::native::runtime_object_bytes::{MAX_RELOCATIONS, MAX_SECTIONS, MAX_SYMBOLS};
 #[cfg(test)]
 mod tests;
-
-const MAX_SECTIONS: usize = 16;
-const MAX_SYMBOLS: usize = 4096;
-const MAX_RELOCATIONS: usize = 32768;
-// The checked uninstrumented runtime implementation uses exactly these four imports.
-// This checks names only and cannot authenticate libc, its loader, or any host permission.
-const IMPORTS: [&str; 4] = ["free", "malloc", "memcpy", "memset"];
 
 pub(super) fn check(requirements: &HandleLinkRequirements, bytes: &[u8]) -> Result<(), Diagnostic> {
     if bytes.len() > zryna_backend_native::MAX_NATIVE_OBJECT_BYTES {
@@ -34,9 +27,16 @@ pub(super) fn check(requirements: &HandleLinkRequirements, bytes: &[u8]) -> Resu
         .native_linux_x86_64_functions()
         .map(zryna_ownership_runtime_abi::VerifiedNativeFunction::symbol)
         .collect::<BTreeSet<_>>();
-    let table = tables::read(bytes)?;
-    let symbols = inventory::check(&table, &expected)?;
-    relocations::check(&table, &symbols)
+    let table = tables::read(bytes).map_err(structural_failure)?;
+    let symbols = inventory::check(&table, &expected).map_err(structural_failure)?;
+    relocations::check(&table, &symbols).map_err(structural_failure)
+}
+
+fn structural_failure(failure: Failure) -> Diagnostic {
+    match failure {
+        Failure::Inventory => error(),
+        Failure::Limit => limit(),
+    }
 }
 
 fn error() -> Diagnostic {

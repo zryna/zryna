@@ -1,0 +1,456 @@
+{
+  "diagnostics": [],
+  "files": [
+    {
+      "data_declarations": [],
+      "functions": [
+        {
+          "body": {
+            "blocks": [
+              {
+                "close_brace_span": {
+                  "end": 110,
+                  "file": 0,
+                  "start": 109
+                },
+                "open_brace_span": {
+                  "end": 69,
+                  "file": 0,
+                  "start": 68
+                },
+                "span": {
+                  "end": 110,
+                  "file": 0,
+                  "start": 68
+                },
+                "statements": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "expressions": [
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 97,
+                      "file": 0,
+                      "start": 92
+                    },
+                    "text": "first"
+                  }
+                },
+                "span": {
+                  "end": 97,
+                  "file": 0,
+                  "start": 92
+                }
+              },
+              {
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                },
+                "span": {
+                  "end": 107,
+                  "file": 0,
+                  "start": 106
+                }
+              }
+            ],
+            "root_block": 0,
+            "span": {
+              "end": 110,
+              "file": 0,
+              "start": 68
+            },
+            "statements": [
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 91,
+                    "file": 0,
+                    "start": 90
+                  },
+                  "initializer": 0,
+                  "keyword_span": {
+                    "end": 75,
+                    "file": 0,
+                    "start": 70
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 81,
+                      "file": 0,
+                      "start": 76
+                    },
+                    "text": "moved"
+                  },
+                  "semicolon_span": {
+                    "end": 98,
+                    "file": 0,
+                    "start": 97
+                  },
+                  "type_syntax": 4
+                },
+                "span": {
+                  "end": 98,
+                  "file": 0,
+                  "start": 70
+                }
+              },
+              {
+                "kind": {
+                  "keyword_span": {
+                    "end": 105,
+                    "file": 0,
+                    "start": 99
+                  },
+                  "kind": "return",
+                  "semicolon_span": {
+                    "end": 108,
+                    "file": 0,
+                    "start": 107
+                  },
+                  "value": 1
+                },
+                "span": {
+                  "end": 108,
+                  "file": 0,
+                  "start": 99
+                }
+              }
+            ]
+          },
+          "export_span": null,
+          "function_span": {
+            "end": 8,
+            "file": 0,
+            "start": 0
+          },
+          "name": {
+            "span": {
+              "end": 17,
+              "file": 0,
+              "start": 9
+            },
+            "text": "transfer"
+          },
+          "parameters": [
+            {
+              "name": {
+                "span": {
+                  "end": 23,
+                  "file": 0,
+                  "start": 18
+                },
+                "text": "first"
+              },
+              "span": {
+                "end": 31,
+                "file": 0,
+                "start": 18
+              },
+              "type_syntax": 0
+            },
+            {
+              "name": {
+                "span": {
+                  "end": 39,
+                  "file": 0,
+                  "start": 33
+                },
+                "text": "middle"
+              },
+              "span": {
+                "end": 47,
+                "file": 0,
+                "start": 33
+              },
+              "type_syntax": 1
+            },
+            {
+              "name": {
+                "span": {
+                  "end": 53,
+                  "file": 0,
+                  "start": 49
+                },
+                "text": "last"
+              },
+              "span": {
+                "end": 61,
+                "file": 0,
+                "start": 49
+              },
+              "type_syntax": 2
+            }
+          ],
+          "result_type": 3,
+          "span": {
+            "end": 110,
+            "file": 0,
+            "start": 0
+          },
+          "type_parameters": null
+        },
+        {
+          "body": {
+            "blocks": [
+              {
+                "close_brace_span": {
+                  "end": 187,
+                  "file": 0,
+                  "start": 186
+                },
+                "open_brace_span": {
+                  "end": 141,
+                  "file": 0,
+                  "start": 140
+                },
+                "span": {
+                  "end": 187,
+                  "file": 0,
+                  "start": 140
+                },
+                "statements": [
+                  0
+                ]
+              }
+            ],
+            "expressions": [
+              {
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"first\""
+                },
+                "span": {
+                  "end": 165,
+                  "file": 0,
+                  "start": 158
+                }
+              },
+              {
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"middle\""
+                },
+                "span": {
+                  "end": 175,
+                  "file": 0,
+                  "start": 167
+                }
+              },
+              {
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"last\""
+                },
+                "span": {
+                  "end": 183,
+                  "file": 0,
+                  "start": 177
+                }
+              },
+              {
+                "kind": {
+                  "arguments": [
+                    0,
+                    1,
+                    2
+                  ],
+                  "callee": {
+                    "span": {
+                      "end": 157,
+                      "file": 0,
+                      "start": 149
+                    },
+                    "text": "transfer"
+                  },
+                  "close_paren_span": {
+                    "end": 184,
+                    "file": 0,
+                    "start": 183
+                  },
+                  "kind": "call",
+                  "open_paren_span": {
+                    "end": 158,
+                    "file": 0,
+                    "start": 157
+                  },
+                  "type_arguments": null
+                },
+                "span": {
+                  "end": 184,
+                  "file": 0,
+                  "start": 149
+                }
+              }
+            ],
+            "root_block": 0,
+            "span": {
+              "end": 187,
+              "file": 0,
+              "start": 140
+            },
+            "statements": [
+              {
+                "kind": {
+                  "keyword_span": {
+                    "end": 148,
+                    "file": 0,
+                    "start": 142
+                  },
+                  "kind": "return",
+                  "semicolon_span": {
+                    "end": 185,
+                    "file": 0,
+                    "start": 184
+                  },
+                  "value": 3
+                },
+                "span": {
+                  "end": 185,
+                  "file": 0,
+                  "start": 142
+                }
+              }
+            ]
+          },
+          "export_span": {
+            "end": 117,
+            "file": 0,
+            "start": 111
+          },
+          "function_span": {
+            "end": 126,
+            "file": 0,
+            "start": 118
+          },
+          "name": {
+            "span": {
+              "end": 132,
+              "file": 0,
+              "start": 127
+            },
+            "text": "entry"
+          },
+          "parameters": [],
+          "result_type": 5,
+          "span": {
+            "end": 187,
+            "file": 0,
+            "start": 111
+          },
+          "type_parameters": null
+        }
+      ],
+      "id": 0,
+      "imports": [],
+      "path": "main.zry",
+      "type_syntax": [
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 31,
+              "file": 0,
+              "start": 25
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 31,
+            "file": 0,
+            "start": 25
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 47,
+              "file": 0,
+              "start": 41
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 47,
+            "file": 0,
+            "start": 41
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 61,
+              "file": 0,
+              "start": 55
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 61,
+            "file": 0,
+            "start": 55
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 67,
+                "file": 0,
+                "start": 64
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 67,
+            "file": 0,
+            "start": 64
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 89,
+              "file": 0,
+              "start": 83
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 89,
+            "file": 0,
+            "start": 83
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 139,
+                "file": 0,
+                "start": 136
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 139,
+            "file": 0,
+            "start": 136
+          }
+        }
+      ]
+    }
+  ],
+  "schema_version": 5
+}

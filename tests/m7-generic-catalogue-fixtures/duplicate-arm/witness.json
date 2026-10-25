@@ -1,0 +1,39 @@
+{
+  "id": "duplicate-arm",
+  "authoring": "Independent complete literal-source DTO; no production parser or normalizer and no mutation of producer DTOs. Original source wrapper and catalogue oracle frozen at e639.",
+  "sourceSha256": "68aa48e20c24fad4ea968647e7802d74d40eaec3c20bdad158a642bb01af003e",
+  "payloadSha256": "3e7f31cf357e0a838b5198666ef01ebc84791f1d9abf1c9809ceef159b6c076e",
+  "expectedCode": "ZRYNA-M7004",
+  "expectedPrimarySpan": {
+    "file": 0,
+    "start": 81,
+    "end": 94
+  },
+  "expectedPrimaryToken": "\"Option.none\"",
+  "cataloguePrimaryOccurrence": 1,
+  "catalogueSource": "match(value, { \"Option.none\": () => 0, \"Option.none\": () => 1, \"Option.some\": (item) => item });",
+  "wrapper": {
+    "prefix": "function probe(value: Option<i32>): i32 {\n",
+    "suffix": "\nreturn 0; }\n",
+    "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+    "segments": [
+      {
+        "catalogueStart": 0,
+        "catalogueEnd": 96,
+        "sourceStart": 42,
+        "sourceEnd": 138
+      }
+    ],
+    "files": [
+      {
+        "path": "main.zry",
+        "text": "function probe(value: Option<i32>): i32 {\nmatch(value, { \"Option.none\": () => 0, \"Option.none\": () => 1, \"Option.some\": (item) => item });\nreturn 0; }\n"
+      }
+    ]
+  },
+  "typeCount": 3,
+  "blockCount": 1,
+  "statementCount": 2,
+  "expressionCount": 6,
+  "armCount": 3
+}

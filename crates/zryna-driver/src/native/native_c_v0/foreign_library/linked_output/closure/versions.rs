@@ -1,6 +1,12 @@
 //! Bound GNU need/definition chains to their active dynamic entries and symbol table.
-use super::{dynamic::Dynamic, image::*, *};
+use super::{
+    Diagnostic, Serialize,
+    dynamic::Dynamic,
+    image::{Image, MAX_STRINGS, string, string_bytes, u16_word, u32_word, word},
+    rejected, symbols,
+};
 use std::collections::BTreeMap;
+#[path = "versions/chains.rs"]
 mod chains;
 
 #[derive(Debug, Serialize)]

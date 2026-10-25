@@ -6,7 +6,7 @@ use std::{ffi::OsString, path::PathBuf, process::ExitStatus};
 use zryna_diagnostics::Diagnostic;
 
 mod acquisition;
-mod closure;
+use crate::native::closure_inventory as closure;
 mod elf;
 mod export;
 mod postlink;

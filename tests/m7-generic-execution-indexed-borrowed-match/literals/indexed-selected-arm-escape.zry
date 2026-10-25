@@ -1,0 +1,5 @@
+interface Sides extends ZrynaEnum { left: String; right: String; }
+function escape(values: Borrow<FixedArray<Sides, 2>>, index: i32): Borrow<String> {
+  return match(borrow(values[index]), { "Sides.left": (payload) => payload, "Sides.right": (payload) => payload });
+}
+export function entry(): i32 { return 0; }

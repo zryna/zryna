@@ -1,0 +1,1 @@
+export function entry(): i32 { const root: String = "root"; const loan: Borrow<String> = borrow(root); const moved: String = root; return 0; }

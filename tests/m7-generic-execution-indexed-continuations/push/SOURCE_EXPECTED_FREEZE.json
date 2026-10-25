@@ -1,0 +1,60 @@
+{
+  "format": "m416.indexed-push-source-first.v1",
+  "basis": "DATA_OWNERSHIP_V1 sections5,8,9; original checking must reject invalidating prepared indexed receiver before resize may relocate its outer backing",
+  "cases": [
+    {
+      "case": "indexed-push-copy",
+      "bytes": 186,
+      "sha256": "b46ff330872d036351bdfb49e9bd416b66a392ec27cf9f7d9d087e5ef259f766",
+      "syntaxAccepted": true,
+      "originalAccepted": true,
+      "wholeSourceSealAccepted": true,
+      "values": [
+        {
+          "index": 0,
+          "result": 18
+        },
+        {
+          "index": 1,
+          "result": 26
+        }
+      ],
+      "bounds": [
+        {
+          "index": -1,
+          "trap": "Bounds"
+        },
+        {
+          "index": 2,
+          "trap": "Bounds"
+        }
+      ],
+      "obligations": [
+        "receiver is evaluated once and its exclusive indexed authority retained before RHS",
+        "selected inner Vec grows and receives 7; other inner Vec remains initialized",
+        "ordinary nonindexed push semantics unchanged",
+        "cleanup releases reverse inner Vec storage then outer Vec storage; growth retires old backing internally, no extra logical release"
+      ]
+    },
+    {
+      "case": "indexed-push-rhs-relocates-owner",
+      "bytes": 277,
+      "sha256": "1c51248429b8c9c59964e69ff384c6cef6e482345af4cef4a1201f77460bcbff",
+      "syntaxAccepted": true,
+      "originalAccepted": false,
+      "diagnostic": {
+        "case": "indexed-push-rhs-relocates-owner",
+        "sourceSha256": "1c51248429b8c9c59964e69ff384c6cef6e482345af4cef4a1201f77460bcbff",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 244,
+          "end": 253
+        },
+        "primaryText": "borrowMut",
+        "AST_role": "incompatible explicit exclusive borrow keyword during RHS preparation",
+        "reason": "Prepared indexed push receiver aliases entire outer Vec; RHS cannot exclusively borrow/resize that outer Vec while the selected receiver address is retained."
+      }
+    }
+  ]
+}

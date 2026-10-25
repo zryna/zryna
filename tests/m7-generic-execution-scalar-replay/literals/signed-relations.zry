@@ -1,0 +1,9 @@
+export function entry(left: i32, right: i32): i32 {
+  let score: i32 = 0;
+  if (left === right) { score = score + 1; }
+  if (left !== right) { score = score + 2; }
+  if (left <= right) { score = score + 4; }
+  if (left > right) { score = score + 8; }
+  if (left >= right) { score = score + 16; }
+  return score;
+}

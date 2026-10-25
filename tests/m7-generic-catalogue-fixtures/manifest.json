@@ -1,0 +1,999 @@
+{
+  "format": "zryna.generic-catalogue-source-witnesses.v1",
+  "commit": "e639c525c0b506a5606429a9f99c59ad3a9b7a5c",
+  "tree": "23824c5ad08a48043cfb8da38571134dff5112a3",
+  "catalogue": "spec/language/generic-review-v1-fixtures.json",
+  "catalogueSha256": "c248a56812f33bd32a587482e9fe577784f66931a132a207c7d64f8523f9ea0a",
+  "producerPlanSha256": "24851a529fe2b014594704f24dad003d92afcf70481701f428114a1c53db80a9",
+  "oracleNotice": "Codes and half-open UTF-8 primary spans come solely from accepted catalogue; source wrappers were frozen before compiler API observations. Producer payloads are untrusted syntax inputs, never diagnostic oracles.",
+  "cases": [
+    {
+      "id": "wrong-bound",
+      "code": "ZRYNA-D7001",
+      "primaryToken": "Copy",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 21,
+        "end": 25
+      },
+      "catalogueSource": "function f<T extends Copy>(value: T): T { return value; }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 21,
+        "end": 25
+      },
+      "source": "wrong-bound/main.zry",
+      "sourceSha256": "574531c7d47c495b0686cd007a9e3e790f03dc5701635d4342e07a62f4a92b08",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 57,
+            "sourceStart": 0,
+            "sourceEnd": 57
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function f<T extends Copy>(value: T): T { return value; }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "wrong-bound/native.json",
+          "bytes": 1647,
+          "sha256": "db101864b5ba8f0d0d9a7ce7906d797ed4a0131ada454393a92cd9203c1ab432",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/wrong-bound.native.json"
+        },
+        "typescript": {
+          "path": "wrong-bound/typescript.json",
+          "bytes": 1647,
+          "sha256": "2810259b8a6b904764f15c9f42b4600736595fd385dd94a2c7efdd59a39a0f7b",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/wrong-bound.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "omitted-argument",
+      "code": "ZRYNA-M7001",
+      "primaryToken": "identity",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 95,
+        "end": 103
+      },
+      "catalogueSource": "identity(7);",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 0,
+        "end": 8
+      },
+      "source": "omitted-argument/main.zry",
+      "sourceSha256": "aa8e9002628303e5d24018d8eb0d386ca91a4d46313d7147286475eecb7ff6c3",
+      "wrapper": {
+        "prefix": "function identity<T extends ZrynaValue>(value: T): T { return value; }\nfunction probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 12,
+            "sourceStart": 95,
+            "sourceEnd": 107
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function identity<T extends ZrynaValue>(value: T): T { return value; }\nfunction probe(): i32 {\nidentity(7);\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "omitted-argument/native.json",
+          "bytes": 3041,
+          "sha256": "f2c3346389e012317f4482511bdf32bf4934ec29a54987ddad8f9b8fd2667ef7",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/omitted-argument.native.json"
+        },
+        "typescript": {
+          "path": "omitted-argument/typescript.json",
+          "bytes": 3041,
+          "sha256": "7e3af860a10e398fc74f8e7bb3aff3e8c24da2eddaf5e21ac6f34d7224c896b4",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/omitted-argument.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "extra-argument",
+      "code": "ZRYNA-M7001",
+      "primaryToken": "bool",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 109,
+        "end": 113
+      },
+      "catalogueSource": "identity<i32, bool>(7);",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 14,
+        "end": 18
+      },
+      "source": "extra-argument/main.zry",
+      "sourceSha256": "4c8e469e33782fb513c7c796147c97f05869e458dc9c4440678eccac561d34d0",
+      "wrapper": {
+        "prefix": "function identity<T extends ZrynaValue>(value: T): T { return value; }\nfunction probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 23,
+            "sourceStart": 95,
+            "sourceEnd": 118
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function identity<T extends ZrynaValue>(value: T): T { return value; }\nfunction probe(): i32 {\nidentity<i32, bool>(7);\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "extra-argument/native.json",
+          "bytes": 3505,
+          "sha256": "8fd6f77cd8f9bdc31f69220d60cd468ba808405692b794eb9e07756815fd84f7",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/extra-argument.native.json"
+        },
+        "typescript": {
+          "path": "extra-argument/typescript.json",
+          "bytes": 3505,
+          "sha256": "06fcf8ceeedfcddf4f1e77a2747297bc713725f27691c4a15dbfd63eb7bdd342",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/extra-argument.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "borrow-argument",
+      "code": "ZRYNA-M7001",
+      "primaryToken": "Borrow",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 121,
+        "end": 127
+      },
+      "catalogueSource": "identity<Borrow<i32>>(loan);",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 9,
+        "end": 15
+      },
+      "source": "borrow-argument/main.zry",
+      "sourceSha256": "1f0cd25505c97de5dd459ca6aac5dd64579a943b625e4072199ca78bb92a74dc",
+      "wrapper": {
+        "prefix": "function identity<T extends ZrynaValue>(value: T): T { return value; }\nfunction probe(loan: Borrow<i32>): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 28,
+            "sourceStart": 112,
+            "sourceEnd": 140
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function identity<T extends ZrynaValue>(value: T): T { return value; }\nfunction probe(loan: Borrow<i32>): i32 {\nidentity<Borrow<i32>>(loan);\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "borrow-argument/native.json",
+          "bytes": 4099,
+          "sha256": "d60b2d8c43bcbd23b95515df3f77317482d6add6412f86546e9716e6485bb91d",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/borrow-argument.native.json"
+        },
+        "typescript": {
+          "path": "borrow-argument/typescript.json",
+          "bytes": 4099,
+          "sha256": "fe00f452e0960371c4c2d4c5a7213703c241b1f3b6cec93f2eb7e7371660cc76",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/borrow-argument.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "unit-argument",
+      "code": "ZRYNA-M7001",
+      "primaryToken": "unit",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 36,
+        "end": 40
+      },
+      "catalogueSource": "Option.none<unit>();",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 12,
+        "end": 16
+      },
+      "source": "unit-argument/main.zry",
+      "sourceSha256": "37916f6709de190ff5fa994d4c3bab5beb1f8807031e68eb923d4c7371672319",
+      "wrapper": {
+        "prefix": "function probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 20,
+            "sourceStart": 24,
+            "sourceEnd": 44
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(): i32 {\nOption.none<unit>();\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "unit-argument/native.json",
+          "bytes": 1819,
+          "sha256": "8ab136f88e7848c3c644fa6d6160f904f1b6393faeb9087a387e73aefbb75bba",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/unit-argument.native.json"
+        },
+        "typescript": {
+          "path": "unit-argument/typescript.json",
+          "bytes": 1819,
+          "sha256": "a4cf2d64c31a01f30c179faa10b6f7f760edbf4dfac9d4a4f8c415fb42cf7bc3",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/unit-argument.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "opaque-clone",
+      "code": "ZRYNA-M7002",
+      "primaryToken": "clone",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 55,
+        "end": 60
+      },
+      "catalogueSource": "function f<T extends ZrynaValue>(value: T): T { return clone(value); }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 55,
+        "end": 60
+      },
+      "source": "opaque-clone/main.zry",
+      "sourceSha256": "2092e4765fca01fc5a8fd6a6c73928ac31a8e5a5e430ae71453730fa39fcf276",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 70,
+            "sourceStart": 0,
+            "sourceEnd": 70
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function f<T extends ZrynaValue>(value: T): T { return clone(value); }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "opaque-clone/native.json",
+          "bytes": 1872,
+          "sha256": "52c8bd930196b8a3535625753ec9c75608b26e2f035d98b891e5bf110c591dc1",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/opaque-clone.native.json"
+        },
+        "typescript": {
+          "path": "opaque-clone/typescript.json",
+          "bytes": 1872,
+          "sha256": "2809e7930c45d50bcaf5a0752f389ab55aa6b1c59591a918a877178c46443320",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/opaque-clone.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "opaque-arithmetic",
+      "code": "ZRYNA-M7002",
+      "primaryToken": "+",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 61,
+        "end": 62
+      },
+      "catalogueSource": "function f<T extends ZrynaValue>(value: T): T { return value + value; }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 61,
+        "end": 62
+      },
+      "source": "opaque-arithmetic/main.zry",
+      "sourceSha256": "83899fdf37296b309ffeffb7ba10eec588a40d5fc8c82760bd94f65eb9de8be3",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 71,
+            "sourceStart": 0,
+            "sourceEnd": 71
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function f<T extends ZrynaValue>(value: T): T { return value + value; }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "opaque-arithmetic/native.json",
+          "bytes": 1913,
+          "sha256": "8b42a9c7656e4b4f2c6f92bcb29ef180a4258921fe9689ad5dc90f8eef898d99",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/opaque-arithmetic.native.json"
+        },
+        "typescript": {
+          "path": "opaque-arithmetic/typescript.json",
+          "bytes": 1913,
+          "sha256": "47089716327211fce657485dfed3aebfb2393d6cbcd57597dc1b73f88287f8f6",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/opaque-arithmetic.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "recursive-function",
+      "code": "ZRYNA-M7003",
+      "primaryToken": "f<T>",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 55,
+        "end": 59
+      },
+      "catalogueSource": "function f<T extends ZrynaValue>(value: T): T { return f<T>(value); }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 55,
+        "end": 59
+      },
+      "source": "recursive-function/main.zry",
+      "sourceSha256": "55bca1b210a6c6f79be51f8fbf024974c8d7ff2b2ede1c4b45104ec546a88ca2",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 69,
+            "sourceStart": 0,
+            "sourceEnd": 69
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function f<T extends ZrynaValue>(value: T): T { return f<T>(value); }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "recursive-function/native.json",
+          "bytes": 2202,
+          "sha256": "9e9e95889a03d50bd2473b28999965fd29a904d7c19bc1e8cc420ece728db38f",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/recursive-function.native.json"
+        },
+        "typescript": {
+          "path": "recursive-function/typescript.json",
+          "bytes": 2202,
+          "sha256": "a36f7b522aef099854363594a86c921dc66cca56b985c116624c7b50fecf5947",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/recursive-function.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "expanding-declaration",
+      "code": "ZRYNA-M7003",
+      "primaryToken": "Nest<Vec<T>>",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 69,
+        "end": 81
+      },
+      "catalogueSource": "interface Nest<T extends ZrynaValue> extends ZrynaStruct { next: Vec<Nest<Vec<T>>>; }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 69,
+        "end": 81
+      },
+      "source": "expanding-declaration/main.zry",
+      "sourceSha256": "538478ebd054f28d62deee99516a5ba40536cfff081080201ec72dc4764fe8d8",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 85,
+            "sourceStart": 0,
+            "sourceEnd": 85
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "interface Nest<T extends ZrynaValue> extends ZrynaStruct { next: Vec<Nest<Vec<T>>>; }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "expanding-declaration/native.json",
+          "bytes": 2023,
+          "sha256": "bc47ac940274a290231bef1deff543492ad24c8bba81553399166b5793055971",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/expanding-declaration.native.json"
+        },
+        "typescript": {
+          "path": "expanding-declaration/typescript.json",
+          "bytes": 2023,
+          "sha256": "466fa88bc401f95f79ef19a0ff705eb31aa9c4a0c9c5bb9490a258b26e7cc337",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/expanding-declaration.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "by-value-cycle",
+      "code": "ZRYNA-L3002",
+      "primaryToken": "Node<T>",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 65,
+        "end": 72
+      },
+      "catalogueSource": "interface Node<T extends ZrynaValue> extends ZrynaStruct { next: Node<T>; }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 65,
+        "end": 72
+      },
+      "source": "by-value-cycle/main.zry",
+      "sourceSha256": "45aee60f23b46047716e89e61b4d7af432ffd1399eb538c6ef4540099eaeeef6",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 75,
+            "sourceStart": 0,
+            "sourceEnd": 75
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "interface Node<T extends ZrynaValue> extends ZrynaStruct { next: Node<T>; }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "by-value-cycle/native.json",
+          "bytes": 1583,
+          "sha256": "b1f7b419b82a10fd7f5578353b5ecbda20820c79c3e665ad3fc5925bb6160f14",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/by-value-cycle.native.json"
+        },
+        "typescript": {
+          "path": "by-value-cycle/typescript.json",
+          "bytes": 1583,
+          "sha256": "26b0d797e2969f300b8bcc179bebc6d53906f5b833a6649fbc8429aa19921d82",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/by-value-cycle.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "unknown-variant",
+      "code": "ZRYNA-M7004",
+      "primaryToken": "empty",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 31,
+        "end": 36
+      },
+      "catalogueSource": "Option.empty<i32>();",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 7,
+        "end": 12
+      },
+      "source": "unknown-variant/main.zry",
+      "sourceSha256": "cc1f350aa94bbed7642f930350e49dd7dd3fe92882caa1f6f06e09469c059b4f",
+      "wrapper": {
+        "prefix": "function probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 20,
+            "sourceStart": 24,
+            "sourceEnd": 44
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(): i32 {\nOption.empty<i32>();\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "unknown-variant/native.json",
+          "bytes": 1819,
+          "sha256": "e0eb932c530b361528c9301c140c9ca6a277d8a1a33f66853c0865ecbb6d41c9",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/unknown-variant.native.json"
+        },
+        "typescript": {
+          "path": "unknown-variant/typescript.json",
+          "bytes": 1819,
+          "sha256": "7d88d1cd66f3f3b62031879a148fae7bf7ae8760d1bc80f512c6e122dbd4e2e4",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/unknown-variant.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "missing-arm",
+      "code": "ZRYNA-M7004",
+      "primaryToken": "match",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 47,
+        "end": 52
+      },
+      "catalogueSource": "match(value, { \"Result.ok\": (item) => item });",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 0,
+        "end": 5
+      },
+      "source": "missing-arm/main.zry",
+      "sourceSha256": "f2ecdff67010fc989532ac99a41755540ead72116147be83e71503f645731a4e",
+      "wrapper": {
+        "prefix": "function probe(value: Result<i32, i32>): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 46,
+            "sourceStart": 47,
+            "sourceEnd": 93
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(value: Result<i32, i32>): i32 {\nmatch(value, { \"Result.ok\": (item) => item });\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "missing-arm/native.json",
+          "bytes": 2791,
+          "sha256": "220c92720f6fdacd63790562ce4018e1212ea031ebe8e971108fb22a8b3b4b13",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/missing-arm.native.json"
+        },
+        "typescript": {
+          "path": "missing-arm/typescript.json",
+          "bytes": 2791,
+          "sha256": "288c5262e5b940c1233ff382c00a4000023874173340d1979b8c6257449a9c61",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/missing-arm.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "aggregate-export",
+      "code": "ZRYNA-M7005",
+      "primaryToken": "value",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 16,
+        "end": 21
+      },
+      "catalogueSource": "export function value(): Option<i32> { return Option.none<i32>(); }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 16,
+        "end": 21
+      },
+      "source": "aggregate-export/main.zry",
+      "sourceSha256": "bba3aafdf5371ccc5e1497d7d9f719549fc18cd3d5af808de1a6b4a91357e3b0",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 67,
+            "sourceStart": 0,
+            "sourceEnd": 67
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "export function value(): Option<i32> { return Option.none<i32>(); }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "aggregate-export/native.json",
+          "bytes": 1937,
+          "sha256": "7944a5e47525bdb58489f1591e6206a225867de2ebc64bc05fdc086e39c99f0c",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/aggregate-export.native.json"
+        },
+        "typescript": {
+          "path": "aggregate-export/typescript.json",
+          "bytes": 1937,
+          "sha256": "1797f25b9f0a90183924f6cbf4e2a715cb20e3974341be3a270a062ff1545067",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/aggregate-export.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "wrong-payload",
+      "code": "ZRYNA-M7006",
+      "primaryToken": "true",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 41,
+        "end": 45
+      },
+      "catalogueSource": "Option.some<i32>(true);",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 17,
+        "end": 21
+      },
+      "source": "wrong-payload/main.zry",
+      "sourceSha256": "356729d27ff21653ede04f5f7e8a137462318f6139fff3f58af63a47b6934a3a",
+      "wrapper": {
+        "prefix": "function probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 23,
+            "sourceStart": 24,
+            "sourceEnd": 47
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(): i32 {\nOption.some<i32>(true);\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "wrong-payload/native.json",
+          "bytes": 1899,
+          "sha256": "7cbfec95a16fdff727864dda94c3916663eb000c9d74c77c73526f6d8aae8514",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/wrong-payload.native.json"
+        },
+        "typescript": {
+          "path": "wrong-payload/typescript.json",
+          "bytes": 1899,
+          "sha256": "c914a4865e26bb2990a491b557c76462a4cfa76706a4fb23de021495eaa640dc",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/wrong-payload.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "extra-payload",
+      "code": "ZRYNA-M7006",
+      "primaryToken": "none",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 31,
+        "end": 35
+      },
+      "catalogueSource": "Option.none<i32>(7);",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 7,
+        "end": 11
+      },
+      "source": "extra-payload/main.zry",
+      "sourceSha256": "eca8d4967991a286fc35dcd4b2b6188643b6bb635353445359abf7be9fdd7197",
+      "wrapper": {
+        "prefix": "function probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 20,
+            "sourceStart": 24,
+            "sourceEnd": 44
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(): i32 {\nOption.none<i32>(7);\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "extra-payload/native.json",
+          "bytes": 1900,
+          "sha256": "713b685bae90261cbad673555d711d46265d016ad24ac15da07d6deb51a2ce38",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/extra-payload.native.json"
+        },
+        "typescript": {
+          "path": "extra-payload/typescript.json",
+          "bytes": 1900,
+          "sha256": "28bba890dd9329e12dfcf60a252998f725d9cdee1678bbea1ba20f08303fd78a",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/extra-payload.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "borrowed-payload-move",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "item",
+      "primaryOccurrence": 1,
+      "primarySpan": {
+        "file": 0,
+        "start": 219,
+        "end": 223
+      },
+      "catalogueSource": "const loan: Borrow<Option<String>> = borrow(owner); const moved: String = match(loan, { \"Option.none\": () => \"\", \"Option.some\": (item) => item });",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 138,
+        "end": 142
+      },
+      "source": "borrowed-payload-move/main.zry",
+      "sourceSha256": "59f695fb186795dc36d9815c0be5092266afcd829613c146b0ababfc005ad330",
+      "wrapper": {
+        "prefix": "function probe(): i32 {\nlet owner: Option<String> = Option.some<String>(\"text\");\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 146,
+            "sourceStart": 81,
+            "sourceEnd": 227
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(): i32 {\nlet owner: Option<String> = Option.some<String>(\"text\");\nconst loan: Borrow<Option<String>> = borrow(owner); const moved: String = match(loan, { \"Option.none\": () => \"\", \"Option.some\": (item) => item });\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "borrowed-payload-move/native.json",
+          "bytes": 5683,
+          "sha256": "3fd0947fbe0004e7fcd0cdb4bca527d7574e60ec7cda74c73b82901c8c399f67",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/borrowed-payload-move.native.json"
+        },
+        "typescript": {
+          "path": "borrowed-payload-move/typescript.json",
+          "bytes": 5683,
+          "sha256": "5287eaa436c7c2cbd7f827e7570277915e871e6d923817c88f2b79e2ab76f147",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/borrowed-payload-move.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "declaration-merge",
+      "code": "ZRYNA-D7001",
+      "primaryToken": "Box",
+      "primaryOccurrence": 1,
+      "primarySpan": {
+        "file": 0,
+        "start": 80,
+        "end": 83
+      },
+      "catalogueSource": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 80,
+        "end": 83
+      },
+      "source": "declaration-merge/main.zry",
+      "sourceSha256": "a55c63cbc7e490fd0370b6d4ea9e7cb719b4a5491607e9cf4a4ecc5582b9cccc",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 139,
+            "sourceStart": 0,
+            "sourceEnd": 139
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "declaration-merge/native.json",
+          "bytes": 2415,
+          "sha256": "784fcd9c1351bcc223c9ed3ed4ca1a37ca26eb679a286d73ace8284e2997b2a0",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/declaration-merge.native.json"
+        },
+        "typescript": {
+          "path": "declaration-merge/typescript.json",
+          "bytes": 2415,
+          "sha256": "5ea0e01279a3aa13d2b418babd0bde3a0eba511162d05e3717c4ee5b2dd9ef0f",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/declaration-merge.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "higher-kinded-use",
+      "code": "ZRYNA-M7002",
+      "primaryToken": "F<i32>",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 40,
+        "end": 46
+      },
+      "catalogueSource": "function f<F extends ZrynaValue>(value: F<i32>): F<i32> { return value; }",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 40,
+        "end": 46
+      },
+      "source": "higher-kinded-use/main.zry",
+      "sourceSha256": "b938120b4fc91de2734e8a9aa5baab96ce03126343b8e963114b7ad02273d2b8",
+      "wrapper": {
+        "prefix": "",
+        "suffix": "",
+        "note": "Exact catalogue fragment is a complete source unit.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 73,
+            "sourceStart": 0,
+            "sourceEnd": 73
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function f<F extends ZrynaValue>(value: F<i32>): F<i32> { return value; }"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "higher-kinded-use/native.json",
+          "bytes": 2291,
+          "sha256": "5f859fac2bfd7d210f915e23a50346028b912f06d538feb7894c541c5d156937",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/higher-kinded-use.native.json"
+        },
+        "typescript": {
+          "path": "higher-kinded-use/typescript.json",
+          "bytes": 2291,
+          "sha256": "b0dd024cdd7ec3360bd54bbab1560bfb7bc625d1e5fa257d264322963516b954",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/higher-kinded-use.typescript.json"
+        }
+      }
+    },
+    {
+      "id": "utf8-primary-span",
+      "code": "ZRYNA-M7006",
+      "primaryToken": "true",
+      "primaryOccurrence": 0,
+      "primarySpan": {
+        "file": 0,
+        "start": 71,
+        "end": 75
+      },
+      "catalogueSource": "// π precedes a source error\nOption.some<i32>(true);",
+      "cataloguePrimarySpan": {
+        "file": 0,
+        "start": 47,
+        "end": 51
+      },
+      "source": "utf8-primary-span/main.zry",
+      "sourceSha256": "0d7c129bc5a2689c43fd923b119a08b0267d37cfc07e5a31bb5f7848bc31cc3d",
+      "wrapper": {
+        "prefix": "function probe(): i32 {\n",
+        "suffix": "\nreturn 0; }\n",
+        "note": "Original fragment retained literally inside private function; explicit declarations/parameters supply only named catalogue context.",
+        "segments": [
+          {
+            "catalogueStart": 0,
+            "catalogueEnd": 53,
+            "sourceStart": 24,
+            "sourceEnd": 77
+          }
+        ],
+        "files": [
+          {
+            "path": "main.zry",
+            "text": "function probe(): i32 {\n// π precedes a source error\nOption.some<i32>(true);\nreturn 0; }\n"
+          }
+        ]
+      },
+      "providers": {
+        "native": {
+          "path": "utf8-primary-span/native.json",
+          "bytes": 1899,
+          "sha256": "25baf56761da902dafab35b7fc1fc3af0a6207f65578a01aa28dd00fcf6f5cb2",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/utf8-primary-span.native.json"
+        },
+        "typescript": {
+          "path": "utf8-primary-span/typescript.json",
+          "bytes": 1899,
+          "sha256": "cafc1011cc0ee08c66609ddf54aabfa3c1ec529a48d1dd92f18046641c7afd02",
+          "receipt": "/tmp/m416-catalogue-gap-map/pr570/utf8-primary-span.typescript.json"
+        }
+      }
+    }
+  ]
+}

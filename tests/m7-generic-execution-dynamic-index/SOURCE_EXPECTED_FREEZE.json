@@ -1,0 +1,371 @@
+{
+  "format": "m416.execution-dynamic-index-source.v2",
+  "timing": "V2 source-author correction frozen before NEW changed-source provider/semantic/IR/backend/runtime output. V1 and its actual first-run evidence retained unchanged; prior syntax declaration rejection is not indexing semantic RED.",
+  "scope": "Ten positives including one existing IndexCopy control; six generic hostile permission cases. Finite representative indexing closure, not whole-profile completion.",
+  "cases": [
+    {
+      "case": "array-exclusive-copy",
+      "source": "literals/array-exclusive-copy.zry",
+      "sha256": "fc1006341f970c79e1843b1496e10ae76a043715e7b7bfba35cbd36392788361",
+      "bytes": 313,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 51,
+        "1": 46
+      },
+      "reason_and_cleanup": "Exclusive indexed element passed to internal call, exact referent read/write; ends before owner reads; no allocations.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "array-indexed-rhs-match",
+      "source": "literals/array-indexed-rhs-match.zry",
+      "sha256": "c0dca781637a5e4b8d05530051f41fc047633b33d7fe275e5ffc27f7f27554cc",
+      "bytes": 457,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0,false": 17,
+        "1,false": 17,
+        "0,true": 17,
+        "1,true": 17
+      },
+      "reason_and_cleanup": "One indexed access before choose/match RHS. Exact same transient authority survives acyclic arms; no lexical edge borrow/end-reborrow/repeated bounds. False clones first, true clones second; then old selected drops/install. Final cleanup second,first,reverse current array; RHS failure same original old array remains until cleanup.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          "-1,false",
+          "2,true"
+        ]
+      }
+    },
+    {
+      "case": "array-shared-copy",
+      "source": "literals/array-shared-copy.zry",
+      "sha256": "ff07d0fd8de57c072f2c2564e861afb16eb838521be3e38b1015f47f95e5ccb5",
+      "bytes": 279,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 11,
+        "1": 19
+      },
+      "reason_and_cleanup": "Dynamic shared indexed loan; concrete i32 formal observation/forward; ends lexical block before return; no owned payload cleanup.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "chained-shared-copy",
+      "source": "literals/chained-shared-copy.zry",
+      "sha256": "583f53870fea708dc7d5bcc04ff0f053a512b8476f324f45d7573037f90ac736",
+      "bytes": 292,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0,0": 3,
+        "0,1": 5,
+        "1,0": 7,
+        "1,1": 11
+      },
+      "reason_and_cleanup": "Vec row bound then array column bound each once; exact parent/child indexed authority and referent; shared conflict region remains whole Vec; child-first ends before Vec storage release.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          "-1,0",
+          "2,0",
+          "0,-1",
+          "0,2"
+        ]
+      }
+    },
+    {
+      "case": "copy-read-control",
+      "source": "literals/copy-read-control.zry",
+      "sha256": "48848c9f2c022b0954fefe54e6502629aa30601d77896ea66d4918b1821e899c",
+      "bytes": 193,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 13,
+        "1": 22
+      },
+      "reason_and_cleanup": "Existing IndexCopy baseline, not new indexed-loan coverage; array bounds precedes Vec bounds; release Vec storage once on return/trap.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "dynamic-array-overlap",
+      "source": "literals/dynamic-array-overlap.zry",
+      "sha256": "d65777f0600c60a3e059d6d0221aad68a7bd3b6020ae25e3b3b99a6274e15877",
+      "bytes": 329,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "dynamic-array-overlap",
+        "sourceSha256": "d65777f0600c60a3e059d6d0221aad68a7bd3b6020ae25e3b3b99a6274e15877",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 201,
+          "end": 207
+        },
+        "primaryText": "borrow",
+        "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+        "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+        "anchor": "borrow(root[1])",
+        "reason": "Dynamic array exclusive loan covers whole array; distinct constant sibling cannot shared-borrow while it lives."
+      }
+    },
+    {
+      "case": "index-once-before-rhs",
+      "source": "literals/index-once-before-rhs.zry",
+      "sha256": "4701b03baee9b27da87f8b8a2afbe6bd0bd9c763edea7010d5ec8cf151026433",
+      "bytes": 335,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 1,
+        "1": 1
+      },
+      "reason_and_cleanup": "select increments separate scalar counter exactly once; inline counter loan ends before indexed container access; bounds before RHS clone; replacement/cleanup same as vec-indexed-replace. No repeated index evaluation/bounds or stale container address.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "indexed-rhs-moves-owner",
+      "source": "literals/indexed-rhs-moves-owner.zry",
+      "sha256": "da5cf994fc7522dddd46ad919355305cd356a75574a95e582e0856a4b0d4f910",
+      "bytes": 332,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "indexed-rhs-moves-owner",
+        "sourceSha256": "da5cf994fc7522dddd46ad919355305cd356a75574a95e582e0856a4b0d4f910",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 216,
+          "end": 220
+        },
+        "primaryText": "root",
+        "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+        "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+        "anchor": "take<T>(root, value)",
+        "reason": "Prepared indexed replacement retains whole-container exclusive authority during RHS; consuming root argument invalidates it."
+      }
+    },
+    {
+      "case": "opaque-indexed-consume",
+      "source": "literals/opaque-indexed-consume.zry",
+      "sha256": "ae94191a3e05b693f1490aa5d9058d6e4684602c4d6eb4663ccf5bff6ed315d6",
+      "bytes": 220,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "opaque-indexed-consume",
+        "sourceSha256": "ae94191a3e05b693f1490aa5d9058d6e4684602c4d6eb4663ccf5bff6ed315d6",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 89,
+          "end": 102
+        },
+        "primaryText": "values[index]",
+        "AST_role": "invalid indexed consuming operation",
+        "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+        "anchor": "values[index]",
+        "reason": "Opaque T:ZrynaValue has no Copy authority; dynamic element cannot be independently moved out of complete container."
+      }
+    },
+    {
+      "case": "owner-move-while-indexed",
+      "source": "literals/owner-move-while-indexed.zry",
+      "sha256": "3be93146799398b8ac146525f5a712ff3e36863c4b4ff507cc5c7ef1e8ce9ad1",
+      "bytes": 250,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "owner-move-while-indexed",
+        "sourceSha256": "3be93146799398b8ac146525f5a712ff3e36863c4b4ff507cc5c7ef1e8ce9ad1",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 143,
+          "end": 149
+        },
+        "primaryText": "values",
+        "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+        "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+        "anchor": "= values;",
+        "reason": "Move of complete Vec while shared indexed element loan is live."
+      }
+    },
+    {
+      "case": "shared-element-write",
+      "source": "literals/shared-element-write.zry",
+      "sha256": "a064dd28fb459730c9ba474503cd7db2fe2fed4d559903a8f510e79d1ac3d065",
+      "bytes": 247,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "shared-element-write",
+        "sourceSha256": "a064dd28fb459730c9ba474503cd7db2fe2fed4d559903a8f510e79d1ac3d065",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 131,
+          "end": 135
+        },
+        "primaryText": "slot",
+        "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+        "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+        "anchor": "slot = value",
+        "reason": "Shared indexed loan forbids replacement through its binding."
+      }
+    },
+    {
+      "case": "vec-exclusive-replace",
+      "source": "literals/vec-exclusive-replace.zry",
+      "sha256": "970e88245af983bbad70574d130d44b6e3d95983af8977b97e52350e82a363f8",
+      "bytes": 393,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 23,
+        "1": 23
+      },
+      "reason_and_cleanup": "Prepare new String then call put; old selected String drops before installing new; after lexical end consume root drops highest element first then storage. New allocation failure leaves original elements intact until trap cleanup.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "vec-indexed-replace",
+      "source": "literals/vec-indexed-replace.zry",
+      "sha256": "30cb737e3e91e46a9c23dba596610318feb52f2bb97565acfdec67794c577e67",
+      "bytes": 178,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 7,
+        "1": 7
+      },
+      "reason_and_cleanup": "Evaluate/check index once before RHS clone; RHS succeeds before old selected drop/install. After success drop rhs owner then reverse current root elements then storage. Bounds failure has no RHS clone. Clone failure ends transient authority and drops rhs,right,left,storage; old selected not dropped early.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "vec-shared-clone",
+      "source": "literals/vec-shared-clone.zry",
+      "sha256": "b5cbfcb4772f116e2c07bb49919567a970caf4e8274b1fbfc1b997f2bdd15ada",
+      "bytes": 351,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {
+        "0": 31,
+        "1": 31
+      },
+      "reason_and_cleanup": "Clone selected referent once; consume releases clone first; then EndLoan before reverse root cleanup right,left,Vec storage. Bounds/clone failure ends live authority first; no failed destination release.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          -1,
+          2
+        ]
+      }
+    },
+    {
+      "case": "vector-constant-overlap",
+      "source": "literals/vector-constant-overlap.zry",
+      "sha256": "22c628626a100807652044e328d7c52c62c126257d86d3ba7f8c17977a8f82b2",
+      "bytes": 266,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "vector-constant-overlap",
+        "sourceSha256": "22c628626a100807652044e328d7c52c62c126257d86d3ba7f8c17977a8f82b2",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 165,
+          "end": 171
+        },
+        "primaryText": "borrow",
+        "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+        "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+        "anchor": "borrow(root[1])",
+        "reason": "Vec elements conservatively cover entire container even constant distinct indexes."
+      }
+    },
+    {
+      "case": "zero-length-bounds",
+      "source": "literals/zero-length-bounds.zry",
+      "sha256": "868a9fc7d5111fd92cd61b37e1081635f9d0861e4709f2dbff7b086ee514170a",
+      "bytes": 364,
+      "expected_syntax": "accepted without diagnostics; both native and TypeScript fresh DTO/schema authentication required",
+      "expected_original": "accepted",
+      "expected_new_whole_seal": "accepted without old-seal casts/new syntax or cap changes",
+      "scalar_by_arguments": {},
+      "reason_and_cleanup": "Both zero-length fixed array and empty Vec must bounds-trap for every i32 index; empty Vec storage cleanup still a logical release; fixed empty array has no element drop.",
+      "bounds": {
+        "trap": "zryna.trap.bounds-v1",
+        "scalar_published": false,
+        "arguments": [
+          "0,false",
+          "0,true",
+          "-1,false",
+          "-1,true"
+        ]
+      }
+    }
+  ],
+  "source_author_correction": "Only two invalid invented trait bounds corrected to concrete i32/String helpers under sole accepted ZrynaValue bound contract. Same positive indexed permission/scalar/cleanup obligations; other14source and6diagnostic bytes unchanged."
+}

@@ -1,0 +1,22 @@
+{
+  "format": "zryna.current-M1-owner-binding.v1",
+  "historicalOracleSha256": "c6aaf06f22425fe08fa8ecc3b53f4278ea4b2f6928b5d559382bd14e07dcf8bc",
+  "owners": [
+    {
+      "path": "crates/zryna-ir/src/lib.rs",
+      "bytes": 42360,
+      "sha256": "59e4ce49d0b3c24b7c665e70bd9539eb63d81b59e5e345bc027979a400426116"
+    },
+    {
+      "path": "crates/zryna-ir/src/scalar_type.rs",
+      "bytes": 518,
+      "sha256": "ed2f0cecbdc8dc29da6a918f5a86c4649d6c620dbcef90e4f793cc8786c080d1"
+    },
+    {
+      "path": "crates/zryna-semantics/src/lib.rs",
+      "bytes": 17324,
+      "sha256": "98e70f3b9c0444792e93158376501cd79cfd5ad28848d100e01aa9c1af3486b2"
+    }
+  ],
+  "rationale": "Current source binding only: original M1 IR/semantic function bodies and diagnostic literals are unchanged. The IR adds a separate generic module and re-exports the verbatim original scalar Type enum from scalar_type.rs; semantics adds a separate bounded-generics module and revises lower() documentation. The frozen historical BUILD oracle, its original owner descriptors, source commit, captures and complete ordered diagnostics remain unchanged. This reviewed compatibility binding grants no runtime, execution or acceptance evidence; current supported-host qualification is still required."
+}

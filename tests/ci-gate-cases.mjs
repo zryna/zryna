@@ -1,3 +1,4 @@
+import { withoutM7Workflow } from './m7-workflow-legacy-cases.mjs';
 import { withoutM4Workflow } from './m4-workflow-cases.mjs';
 import { withoutInstalledEditorWorkflow, withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
 import assert from 'node:assert/strict';
@@ -455,7 +456,7 @@ test('M0 aggregate checks out the pinned verifier before execution', () => {
 
 test('routing preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
-  const original = withoutPlaygroundContracts(withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow)));
+  const original = withoutM7Workflow(withoutPlaygroundContracts(withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow))));
   const editorIndex = original.jobs.rust.steps.findIndex(step => step.name === "Verify and package editor client");
   const packageSteps = original.jobs['package-release-contract'].steps;
   const buildPlanIndex = packageSteps.findIndex(step => step.run === 'pnpm package:contract') + 1;

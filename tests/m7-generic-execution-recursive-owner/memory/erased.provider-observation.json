@@ -1,0 +1,14 @@
+{
+  "command": [
+    "node",
+    "src/worker-v5.mjs"
+  ],
+  "returncode": 0,
+  "stderr_bytes": 0,
+  "error": null,
+  "diagnostics": [],
+  "source_sha256": "245a9558deb2a770cc130b8f67a6a11f67f0d034e934d0297556f5ba39b94d86",
+  "expected_freeze_sha256": "e04d5f0e2f7fbc61c1522d73c4576a6653e953a61702c960eeffd2f679054c8b",
+  "packet_sha256": "9940e343e0031a3adf13a351bd10a0c5e832e2ae3c89c2d83e4590b617f63532",
+  "limits": "Actual fresh TS syntax only. Native/source/semantic/seal/memory/target observations not claimed."
+}

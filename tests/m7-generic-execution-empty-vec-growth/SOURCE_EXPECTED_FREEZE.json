@@ -1,0 +1,94 @@
+{
+  "status": "FROZEN authentic source and independent spec-derived oracle BEFORE provider authentication or target output; no execution claim",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "empty-vec-two-pushes",
+      "source": "literals/empty-vec-two-pushes.zry",
+      "bytes": 143,
+      "sha256": "a8beec5a1932d921c19c72f296aac7c521ab5d149813dc160d2e89630e3e40f8",
+      "expect": "whole-seal",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "arguments": [],
+      "pristine": {
+        "i32": 18,
+        "logical_values": [
+          7,
+          11
+        ],
+        "logical_lengths_after_push": [
+          1,
+          2
+        ],
+        "canonical_storage_capacities_after_push": [
+          4,
+          4
+        ],
+        "positive_backing_attempts": 1,
+        "successful_acquisitions": [
+          {
+            "id": 1,
+            "kind": "VecStorage",
+            "element": "i32",
+            "stride": 4,
+            "alignment": 4,
+            "bytes": 16
+          }
+        ],
+        "release_acquisition_ids": [
+          1
+        ],
+        "logical_runtime_entries": [
+          "VecAllocate(empty)",
+          "VecReserve(push7)",
+          "VecReserve(push11)",
+          "VecReleaseStorage(final)"
+        ],
+        "no_String_or_control_operations": true
+      },
+      "allocation_faults": [
+        {
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "successful_acquisitions": 0,
+          "release_acquisition_ids": [],
+          "cleanup": "Existing empty Vec still receives its logical storage-release operation; no positive allocation exists to free. Failed reserve output is not published.",
+          "pristine_retry": true
+        }
+      ],
+      "unreached_fault_control": {
+        "ordinal": 2,
+        "fault_must_fire": false,
+        "i32": 18,
+        "successful_acquisitions": 1,
+        "release_acquisition_ids": [
+          1
+        ]
+      },
+      "caller_zero": "Both VecAllocate and each VecReserve out record must be zero at ABI entry, independently of zero-at-frame-entry. Failed poisoned out must not become an owner.",
+      "canonical_observer": "Observe capacity and actual positive malloc/acquisition/release identities privately in the test harness. Capacity is not a source API. The oracle intentionally does not pin raw requiredLength arguments: a proved private argument normalization is permitted if it preserves the logical desired length and exact ABI storage result."
+    }
+  ],
+  "authority": [
+    {
+      "file": "spec/abi/OWNERSHIP_RUNTIME_V1.md",
+      "lines": "168-178",
+      "rule": "Growth from oldCapacity0 starts candidate4; deterministic logical capacity freezes fault order."
+    },
+    {
+      "file": "spec/language/DATA_OWNERSHIP_V1.md",
+      "lines": "220-229",
+      "rule": "Capacity is unavailable as a source observation; push prepares its value, grows if needed and commits only on success."
+    },
+    {
+      "file": "crates/zryna-ownership-runtime-abi/src/lib.rs",
+      "lines": "1581-1596",
+      "rule": "Pure reserve_capacity starts4 when old0 and doubles until sufficient. This source uses stride4 far from every bound."
+    }
+  ],
+  "derivation": "VecAllocate(requiredCapacity0) acquires no block. First push of7 requires logical length1 and allocates capacity4 /16bytes. Second push11 fits capacity4 and causes no positive backing acquisition. Final two Copy reads sum18, then the one backing block is released. First allocation failure occurs before append/publication and leaves only the empty vector to clean; ordinal2 is unreachable on the correct implementation.",
+  "boundaries": "One finite source; no general counter-boundary/runtime closure or target result claimed. Both fresh provider packets, explicit execution API/new whole seal, independent native object inventory, real canonical runtime observers and actual retry remain root-owned future gates."
+}

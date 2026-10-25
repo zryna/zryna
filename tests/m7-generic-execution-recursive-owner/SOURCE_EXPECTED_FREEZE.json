@@ -1,0 +1,41 @@
+{
+  "status": "Frozen before providers/execution; formulas describe source resource events, not an observed runtime pass",
+  "depths": [
+    0,
+    1,
+    8192,
+    65536
+  ],
+  "all_positive_i32": 7,
+  "drop-only": {
+    "acquisitions": "String1, then Vec2..D+1",
+    "release_ids": "[1,2,...,D+1]",
+    "acquisitions_count": "D+1",
+    "logical_status_calls": "2D+2"
+  },
+  "clone": {
+    "acquisitions": "original String1; original Vec2..D+1; cloned outer-to-inner Vec D+2..2D+1; cloned String2D+2",
+    "release_ids": "[2D+2,2D+1,...,D+2] then [1,2,...,D+1]",
+    "acquisitions_count": "2D+2",
+    "logical_status_calls": "4D+4",
+    "clone_ordinal1_failure": {
+      "trap": "ALLOCATION",
+      "release_ids": "[2D+1,2D,...,D+2] then [1,2,...,D+1]",
+      "no_result": true
+    }
+  },
+  "controlled-cleanup": {
+    "acquisitions": "original String1; original Vec2..D+1; markerStringD+2; clonedMarkerD+3",
+    "pristine_release_ids": "[D+3,D+2] then [1,2,...,D+1]",
+    "clone_ordinal1_failure": {
+      "trap": "ALLOCATION",
+      "release_ids": "[D+2] then [1,2,...,D+1]",
+      "acquisitions_count": "D+2",
+      "logical_status_calls": "2D+5",
+      "no_result": true
+    }
+  },
+  "retry": "Pristine fresh invocation repeats exact original acquisition/release formula; failed runtime never changes fixture/oracle",
+  "identity": "Every live allocation distinct; release invalidates matching allocation exactly once; no unowned payload or extra carrier allocation",
+  "note": "Each Vec length/capacity1, leafString UTF8 78; marker UTF8 6d. Early construction faults require source-root pending-prefix cleanup, not invented expected deep runtime success."
+}

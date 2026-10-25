@@ -1,0 +1,359 @@
+{
+  "schema": "m416-native-reserved-transport-test-expectation-before-output-v1",
+  "author_execution": false,
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "children_per_provider": 10,
+  "faults_per_provider": 5,
+  "pristine_process_retries_per_provider": 5,
+  "limits": {
+    "compile_seconds": 30,
+    "run_seconds": 5,
+    "stdout_bytes": 20,
+    "stderr_bytes": 65536,
+    "trace_bytes": 65536
+  },
+  "runtime": "same compiled-in df9 three-part source; verified element marker only; not product RuntimeSource with modified C",
+  "evidence_scope": "private canonical declared-status interposer and genuine source Bounds; no natural UTF8 rejection/u32MAX exhaustion claim; original source/oracles unchanged; actual20LE reserved entry after cleanup",
+  "source_map": [
+    {
+      "name": "allocation",
+      "family": "concat",
+      "case": "nested-temporaries",
+      "source_code": 2,
+      "canonical_status": 1,
+      "fault_role": 3,
+      "fault_ordinal": 2,
+      "arguments": [],
+      "retry_arguments": [],
+      "fault_allocations": 2,
+      "fault_releases": [
+        2,
+        1
+      ],
+      "retry_result": 23,
+      "retry_releases": [
+        4,
+        3,
+        5,
+        2,
+        6,
+        1
+      ],
+      "retry_acquisitions": [
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 1
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "21",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 1
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "2152",
+          "source": 3
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "522152",
+          "source": 2
+        }
+      ]
+    },
+    {
+      "name": "capacity",
+      "family": "concat",
+      "case": "nested-temporaries",
+      "source_code": 3,
+      "canonical_status": 2,
+      "fault_role": 3,
+      "fault_ordinal": 2,
+      "arguments": [],
+      "retry_arguments": [],
+      "fault_allocations": 2,
+      "fault_releases": [
+        2,
+        1
+      ],
+      "retry_result": 23,
+      "retry_releases": [
+        4,
+        3,
+        5,
+        2,
+        6,
+        1
+      ],
+      "retry_acquisitions": [
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 1
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "21",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 1
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "2152",
+          "source": 3
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "522152",
+          "source": 2
+        }
+      ]
+    },
+    {
+      "name": "utf8",
+      "family": "concat",
+      "case": "nested-temporaries",
+      "source_code": 5,
+      "canonical_status": 4,
+      "fault_role": 3,
+      "fault_ordinal": 2,
+      "arguments": [],
+      "retry_arguments": [],
+      "fault_allocations": 2,
+      "fault_releases": [
+        2,
+        1
+      ],
+      "retry_result": 23,
+      "retry_releases": [
+        4,
+        3,
+        5,
+        2,
+        6,
+        1
+      ],
+      "retry_acquisitions": [
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 1
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "21",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "52",
+          "source": 1
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "2152",
+          "source": 3
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "522152",
+          "source": 2
+        }
+      ]
+    },
+    {
+      "name": "refcount",
+      "family": "control",
+      "case": "shared-weak-count",
+      "source_code": 4,
+      "canonical_status": 3,
+      "fault_role": 12,
+      "fault_ordinal": 1,
+      "arguments": [],
+      "retry_arguments": [],
+      "fault_allocations": 2,
+      "fault_releases": [
+        1,
+        2
+      ],
+      "retry_result": 7,
+      "retry_releases": [
+        1,
+        2
+      ],
+      "retry_acquisitions": [
+        {
+          "kind": 1,
+          "utf8_hex": "4c",
+          "source": 0
+        },
+        {
+          "kind": 3,
+          "utf8_hex": "",
+          "source": 0
+        }
+      ]
+    },
+    {
+      "name": "bounds",
+      "family": "index",
+      "case": "vec-shared-clone",
+      "source_code": 1,
+      "canonical_status": null,
+      "fault_role": null,
+      "fault_ordinal": null,
+      "arguments": [
+        -1
+      ],
+      "retry_arguments": [
+        0
+      ],
+      "fault_allocations": 3,
+      "fault_releases": [
+        2,
+        1,
+        3
+      ],
+      "retry_result": 31,
+      "retry_releases": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "retry_acquisitions": [
+        {
+          "kind": 1,
+          "utf8_hex": "6c656674",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "7269676874",
+          "source": 0
+        },
+        {
+          "kind": 2,
+          "utf8_hex": "",
+          "source": 0
+        },
+        {
+          "kind": 1,
+          "utf8_hex": "6c656674",
+          "source": 1
+        }
+      ]
+    }
+  ],
+  "original_inputs": {
+    "crates/zryna-driver/tests/generic_execution_v1_native_concat_runtime/RUNTIME_EXPECTED.json": {
+      "sha256": "b5ed780695fcc8c923adf477009c8a0bd2d601ffa7ddf389e8b8421fd4ee7d02",
+      "bytes": 13630
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_containers/RUNTIME_EXPECTED.json": {
+      "sha256": "816c5d94d7dc20a8520c138f3dcaa9f16ac5d499d573f1fbe6bee0d25cdf6e8d",
+      "bytes": 12045
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_indexed_runtime/OBSERVED_EXPECTED_FREEZE.json": {
+      "sha256": "e4ffbd6b69f42d8d023fa9265b51a3bc1b08cebdc679caaa0cd3bb852032bad3",
+      "bytes": 151097
+    },
+    "tests/m7-generic-execution-string-concat/literals/nested-temporaries.zry": {
+      "sha256": "0c1b2550e658940cb91bf128b735d40f46776ca7951b6bbb21d355f80c0584c6",
+      "bytes": 140
+    },
+    "tests/m7-generic-execution-containers/literals/shared-weak-count.zry": {
+      "sha256": "e3426c8ef974e30d090ce09f6a70e9274a38b366be408c4dbb12c5e4bb610867",
+      "bytes": 232
+    },
+    "tests/m7-generic-execution-dynamic-index/literals/vec-shared-clone.zry": {
+      "sha256": "b5cbfcb4772f116e2c07bb49919567a970caf4e8274b1fbfc1b997f2bdd15ada",
+      "bytes": 351
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_concat_runtime/source.rs": {
+      "sha256": "93784c633030e55ccbe6f2afad27959ef51f520bef0c8071ee1c0e65e92f0604",
+      "bytes": 4862
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_containers/source.rs": {
+      "sha256": "24e9f7a4309994d9dd89dd5aea0ef1b42f057a9148b6191b257487b0c0371d02",
+      "bytes": 4944
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_dynamic_index_source_seal/source.rs": {
+      "sha256": "4ecbb8f5a4c1173e22b5b71f221f97ab8194d892412662c33ab9a8111aa21d1f",
+      "bytes": 5689
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_concat_runtime/metadata.rs": {
+      "sha256": "9c09774cbf13f879393ba6773a4753a491134b95731c60f0742e294bb952184f",
+      "bytes": 3147
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_runtime/source.rs": {
+      "sha256": "e94c9c1a48d557567f84d0aadb0dab1f4443991de253a2abe2a4bd3e4ed9bcc5",
+      "bytes": 1235
+    },
+    "crates/zryna-driver/tests/generic_struct_v4_nested/process.rs": {
+      "sha256": "395f3b9c09c161bd8c1fd3369f72a5ef708222957aca019635dc1431b8d77cc8",
+      "bytes": 2535
+    },
+    "crates/zryna-backend-native/src/generic_execution_v1/invocation.rs": {
+      "sha256": "6536e33195e2beac8efb6d5aa678abe0a785929d69548d5e254c1622040212bb",
+      "bytes": 4186
+    },
+    "crates/zryna-backend-native/src/generic_execution_v1/invocation/status.rs": {
+      "sha256": "b4835fc6220f5ee1d804bcdcc0a98fd8eb5e580c69f06b4af2945ed09dae1656",
+      "bytes": 2074
+    },
+    "crates/zryna-backend-native/src/generic_execution_v1/accounting/audit/tests/invocation.rs": {
+      "sha256": "89304dae279f9daaf88c18e91c34e0ff5252fa084dac61ecfa0e26908d254261",
+      "bytes": 4873
+    },
+    "crates/zryna-driver/src/native/generic_execution/tests.rs": {
+      "sha256": "be1dc97eb3998e8edea0eb90c1fdff1b2d43afc5924ded3c419f5618a274c056",
+      "bytes": 4799
+    },
+    "crates/zryna-driver/src/native/generic_execution/wire.rs": {
+      "sha256": "ceb377af37a05ef1f7a73dfdced5e57fab516ebae83b77f70a8fde62b13a5404",
+      "bytes": 3875
+    },
+    "apps/zryna/tests/generic_public.rs": {
+      "sha256": "8f42b6298931574e638483f385534f1866cb5bc574181eb630a6cfbb376fbe3c",
+      "bytes": 9842
+    },
+    "tests/m7-generic-execution-dynamic-index/literals/zero-length-bounds.zry": {
+      "sha256": "868a9fc7d5111fd92cd61b37e1081635f9d0861e4709f2dbff7b086ee514170a",
+      "bytes": 364
+    },
+    "spec/language/BOUNDED_GENERICS_DECISIONS_V1.md": {
+      "sha256": "7bf9e24f0505cbfcf0a766716fc3b491bfbbb3094afba41cb5989b2be4c28711",
+      "bytes": 16251
+    }
+  },
+  "baseline": "no executed status2/3/4/5 native reserved transport proof found; public status1 Bounds exists with empty containers; SSA/all-five decoder and old-wrapper fault ledgers stay separate valid proofs"
+}

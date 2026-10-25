@@ -1,0 +1,6 @@
+function bad<T extends ZrynaValue>(values: Vec<T>, index: i32, value: T): i32 {
+  const slot: Borrow<T> = borrow(values[index]);
+  slot = value;
+  return 0;
+}
+export function entry(index: i32): i32 { return bad<i32>(Vec<i32>([1, 2]), index, 3); }

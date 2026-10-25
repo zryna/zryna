@@ -23,7 +23,7 @@ impl InstalledCompiler {
         if self.is_native_provider() {
             return self
                 .build_with_provider(request, crate::CompilerProvider::Native, None)
-                .map(installed_result);
+                .and_then(installed_result);
         }
         match request.profile {
             InstalledProfile::I32 => crate::pipeline::execute_installed_scalar(self, request, None)
@@ -58,7 +58,7 @@ impl InstalledCompiler {
                     crate::CompilerProvider::Native,
                     None,
                 )
-                .map(installed_result);
+                .and_then(installed_result);
         }
         match request.profile {
             InstalledProfile::I32 => {
@@ -79,12 +79,17 @@ impl InstalledCompiler {
     }
 }
 
-fn installed_result(result: crate::ProviderCommandSuccess) -> InstalledCommandSuccess {
+fn installed_result(
+    result: crate::ProviderCommandSuccess,
+) -> Result<InstalledCommandSuccess, CommandFailure> {
     match result {
-        crate::ProviderCommandSuccess::Scalar(value) => InstalledCommandSuccess::Scalar(value),
+        crate::ProviderCommandSuccess::Scalar(value) => Ok(InstalledCommandSuccess::Scalar(value)),
         crate::ProviderCommandSuccess::Ownership(value) => {
-            InstalledCommandSuccess::Ownership(value)
+            Ok(InstalledCommandSuccess::Ownership(value))
         }
+        crate::ProviderCommandSuccess::Generic(_) => Err(crate::provider_api::request_failure(
+            "bounded-generics-v1 requires source-checkout admission",
+        )),
     }
 }
 

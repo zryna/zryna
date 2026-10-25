@@ -1,0 +1,54 @@
+{
+  "SOURCE_EXPECTED_FREEZE.json": {
+    "bytes": 3422,
+    "sha256": "2d2144150554e2bd348d332c41fa1c1225e0ad7ffea5fc59e48e486cbae44bb5"
+  },
+  "local-observation-native.json": {
+    "bytes": 12203,
+    "sha256": "24c088803aaa02342a4ff2946950efc7886a69b1e77e205332742bc6a8d5d77b"
+  },
+  "local-observation-typescript.json": {
+    "bytes": 12203,
+    "sha256": "f451b7f9e5974662f02b371b5871b2996b939c1a4f5bc29477c0502f7771b7b1"
+  },
+  "same-source-native.json": {
+    "bytes": 7883,
+    "sha256": "7f3d9f5582e4ae0eed6340d9c5ee33cc46a7071dfdbb2f1b472314165ca5b24c"
+  },
+  "same-source-typescript.json": {
+    "bytes": 7883,
+    "sha256": "c77793b1854fb089a479f7f639edba11e8a25671553696ed1dff09d76f7cb1ef"
+  },
+  "nested-temporaries-native.json": {
+    "bytes": 10591,
+    "sha256": "685d49d2f0fd9da970284d45167bb07303678c6c9b03f07e2459cd54355f0ad8"
+  },
+  "nested-temporaries-typescript.json": {
+    "bytes": 10591,
+    "sha256": "6772b0cffd0bcc822dfc78b10059659c5290c50c34ccfc5e65434efa7f093e15"
+  },
+  "formal-observation-native.json": {
+    "bytes": 16054,
+    "sha256": "4dcc9a8a50cfe3909b1f10f54657e68ffa65c311e4a1843516bc5a2759a62518"
+  },
+  "formal-observation-typescript.json": {
+    "bytes": 16054,
+    "sha256": "63ad7bbadeea05e83c3d9093bd25d73572ad2cfcbee945b8da658efef894926b"
+  },
+  "moved-first-native.json": {
+    "bytes": 12255,
+    "sha256": "e8d97349027ed69a59f29017291261974b6b6380a8d2ac77e4cffbd6f43a4cf9"
+  },
+  "moved-first-typescript.json": {
+    "bytes": 12255,
+    "sha256": "a057a7ef6105c1a77b47c478fe10ca964f4a83755407258a77951995aa59c50f"
+  },
+  "mutated-first-native.json": {
+    "bytes": 17305,
+    "sha256": "5631ed03c90cc153ab3949fd1cf85a11ac373ade63c7526c922a17eaf743cfb3"
+  },
+  "mutated-first-typescript.json": {
+    "bytes": 17305,
+    "sha256": "f916f992a620328cdd8f7f11c30eaa9c25a3e0f3b489e93a0c5ccfb2e8e9f99f"
+  }
+}

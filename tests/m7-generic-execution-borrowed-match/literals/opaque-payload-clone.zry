@@ -1,0 +1,6 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function discard<T extends ZrynaValue>(value: T): i32 { return 1; }
+function inspect<T extends ZrynaValue>(value: Borrow<Packet<T>>): i32 {
+  return match(value, { "Packet.none": () => 0, "Packet.item": (payload) => discard<T>(clone(payload)) });
+}
+export function entry(): i32 { return 0; }

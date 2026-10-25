@@ -1,0 +1,10 @@
+{
+  "SOURCE_EXPECTED_FREEZE.json": {
+    "bytes": 7562,
+    "sha256": "7046a87a0d7c976913ffaf387cbec53297d5bdf8ce627b0ea20372e51a5dbbb5"
+  },
+  "packet-identities.json": {
+    "bytes": 12488,
+    "sha256": "c0c95cd0094b529643864b138c332f102350e6b1ca02b332b304349b37efc418"
+  }
+}

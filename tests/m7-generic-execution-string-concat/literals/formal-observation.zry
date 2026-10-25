@@ -1,0 +1,2 @@
+function join(loan: Borrow<String>): String { return concat(loan, loan); }
+export function entry(): i32 { const root: String = "Q"; const loan: Borrow<String> = borrow(root); const joined: String = join(loan); return 29; }

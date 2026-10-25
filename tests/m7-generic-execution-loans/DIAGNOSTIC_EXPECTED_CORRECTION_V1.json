@@ -1,0 +1,148 @@
+{
+  "status": "Explicit oracle-error correction proposal after observed mismatch; derived from normative rule and retained actual native/TypeScript AST; original447a preserved unchanged",
+  "basis": "spec/language/BOUNDED_GENERICS_DECISIONS_V1.md \u00a7149",
+  "sourceOracleSha256": "db93f5e30d2d020ec4e7d278416ab285a3f81b6462dca0eb5f9bca7b3d2da7e8",
+  "cases": [
+    {
+      "case": "parent-frozen",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "push",
+      "occurrence": 1,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 168,
+        "end": 172
+      },
+      "reason": "exclusive-parent mutation while child is live",
+      "sourceSha256": "6e892740f12e97b1ade0ec69a26c363024b755fb2ca733d3e6e3e49a89864a66"
+    },
+    {
+      "case": "overlap-exclusive",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "borrow",
+      "occurrence": 1,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 123,
+        "end": 129
+      },
+      "reason": "new overlapping borrow operation",
+      "sourceSha256": "09ce1c268add0531437e14aa7229db515efe20ad011add890c9080244bb661b6"
+    },
+    {
+      "case": "root-moved",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "root",
+      "occurrence": 3,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 125,
+        "end": 129
+      },
+      "reason": "invalid consuming root reference",
+      "sourceSha256": "55d62c2a27bd1843fab857afb18c571ecb1bd6ad798b36047c2b58efaa99cadb"
+    },
+    {
+      "case": "affine-read",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "loan",
+      "occurrence": 2,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 53,
+        "end": 57
+      },
+      "reason": "invalid implicit affine consuming read",
+      "sourceSha256": "064a8979aa13327a43a6afba81dee6960183e00d67d32f0ed5661f9ba5502be1"
+    },
+    {
+      "case": "shared-write",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "loan",
+      "occurrence": 2,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 59,
+        "end": 63
+      },
+      "reason": "assignment through shared loan target",
+      "sourceSha256": "3fa9c9259a41af48d0f220907538cbfa53f7fda47b1fc9bcc1eea88f1e51db63"
+    },
+    {
+      "case": "wrong-access",
+      "code": "ZRYNA-M7006",
+      "primaryToken": "loan",
+      "occurrence": 4,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 162,
+        "end": 166
+      },
+      "reason": "offending call argument has wrong access",
+      "sourceSha256": "237ca80510dcb066357de2f1d68fab448f363395770e6e7ff0d7abfbaa0b842a"
+    },
+    {
+      "case": "wrong-referent",
+      "code": "ZRYNA-M7006",
+      "primaryToken": "loan",
+      "occurrence": 4,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 175,
+        "end": 179
+      },
+      "reason": "offending call argument has wrong referent",
+      "sourceSha256": "951c97f1cfd31f2d103417b7b587208f98bc07679ce53357416593ca43052d32"
+    },
+    {
+      "case": "opaque-clone",
+      "code": "ZRYNA-M7002",
+      "primaryToken": "clone",
+      "occurrence": 1,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 65,
+        "end": 70
+      },
+      "reason": "operation lacks universally available original Clone",
+      "sourceSha256": "e01055d514cb8fa4be16f329e2d7a5465328f548185dfe0018252e0c116ab1a9"
+    },
+    {
+      "case": "borrow-escape",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "loan",
+      "occurrence": 2,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 57,
+        "end": 61
+      },
+      "reason": "invalid escaping loan result operation",
+      "sourceSha256": "9c20fa295ed8ebc7f87d36245414aaeb7d6daf730f78c73f403a7c9db28b00cc"
+    },
+    {
+      "case": "exclusive-call-alias",
+      "code": "ZRYNA-M7007",
+      "primaryToken": "use",
+      "occurrence": 2,
+      "occurrenceCounting": "one-based exact identifier/keyword token; UTF-8 half-open byte range",
+      "primary": {
+        "path": "main.zry",
+        "start": 191,
+        "end": 194
+      },
+      "reason": "call duplicates exclusive referent permission",
+      "sourceSha256": "1ac72be8c0f16682e9f7f59c805d6c034ea079144fc3132e8de1b5a714206e0c"
+    }
+  ],
+  "correctionOfSha256": "447a03c4509cd6063bf0f908140e81ff450196a89350427d83f82ed5bd7bfdcb"
+}

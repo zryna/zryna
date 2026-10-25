@@ -1,6 +1,8 @@
 //! Independently encoded ELF records, not serializer-generated parser mirrors or approvals.
 use super::*;
+#[path = "tests/bounded_versions.rs"]
 mod bounded_versions;
+#[path = "tests/hostile_symbols.rs"]
 mod hostile_symbols;
 
 fn write(bytes: &mut [u8], offset: usize, value: u64, width: usize) {

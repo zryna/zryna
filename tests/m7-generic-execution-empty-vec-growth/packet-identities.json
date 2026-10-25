@@ -1,0 +1,23 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "empty-vec-two-pushes",
+      "provider": "native",
+      "packet": "empty-vec-two-pushes-native.json",
+      "packetSha256": "c6bcbb0901101c3a39236e1c9ad6dfca53f55cdc609362cd41775cba2d275d48",
+      "packetBytes": 14135,
+      "exactSourceSha256": "a8beec5a1932d921c19c72f296aac7c521ab5d149813dc160d2e89630e3e40f8",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "empty-vec-two-pushes",
+      "provider": "typescript",
+      "packet": "empty-vec-two-pushes-typescript.json",
+      "packetSha256": "8005d232b4962badd0fbf674e1fc0015d66cb7940583b164da8568470573d476",
+      "packetBytes": 14135,
+      "exactSourceSha256": "a8beec5a1932d921c19c72f296aac7c521ab5d149813dc160d2e89630e3e40f8",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

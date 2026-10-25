@@ -1,0 +1,175 @@
+{
+  "status": "frozen requirements; no provider, semantic, IR or runtime execution claimed",
+  "contract": "zryna.bounded-generics-option-result.v1",
+  "first_verticals": [
+    "scalar Clone (bool and i32)",
+    "arbitrary nominal and Option root Clone",
+    "generic FixedArray Copy transport"
+  ],
+  "cases": [
+    {
+      "name": "scalar-i32-clone",
+      "source": "literals/scalar-i32-clone.zry",
+      "source_sha256": "81336e343ddb166fbeea0fb3fa3d882b4ed93766fb50b540504a3840ca999c81",
+      "semantic": "accept",
+      "observation": "i32:14",
+      "string_utf8_hex": [],
+      "string_acquisitions": [],
+      "string_releases": [],
+      "allocations": 0,
+      "clone_calls": 0,
+      "faults": []
+    },
+    {
+      "name": "scalar-bool-clone",
+      "source": "literals/scalar-bool-clone.zry",
+      "source_sha256": "f2d63a2563090c11f5cf21931c79202ca444bca0b04bd05e2d6ed4505230a3b5",
+      "semantic": "accept",
+      "observation": "i32:7",
+      "string_utf8_hex": [],
+      "string_acquisitions": [],
+      "string_releases": [],
+      "allocations": 0,
+      "clone_calls": 0,
+      "faults": []
+    },
+    {
+      "name": "nominal-enum-clone",
+      "source": "literals/nominal-enum-clone.zry",
+      "source_sha256": "62a3b9c1449505af09f255d89b2613ccebcc8d995f21b2c203011aa27d47344f",
+      "semantic": "accept",
+      "observation": "i32:7",
+      "string_utf8_hex": [
+        "4c",
+        "4c"
+      ],
+      "string_acquisitions": [
+        "source=1",
+        "clone=2"
+      ],
+      "string_releases": [
+        2,
+        1
+      ],
+      "allocations": 2,
+      "clone_calls": 1,
+      "enum_wrapper_allocations": 0,
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": []
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ]
+        },
+        {
+          "kind": "clone",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "option-nominal-enum-clone",
+      "source": "literals/option-nominal-enum-clone.zry",
+      "source_sha256": "f7edf1fe9963b1b4199111b53f206df638ca143397e1bf4a221785d4e54c3826",
+      "semantic": "accept",
+      "observation": "i32:7",
+      "string_utf8_hex": [
+        "4c",
+        "4c"
+      ],
+      "string_acquisitions": [
+        "source=1",
+        "clone=2"
+      ],
+      "string_releases": [
+        2,
+        1
+      ],
+      "allocations": 2,
+      "clone_calls": 1,
+      "enum_wrapper_allocations": 0,
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": []
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ]
+        },
+        {
+          "kind": "clone",
+          "ordinal": 1,
+          "trap": "zryna.trap.allocation-v1",
+          "releases": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fixed-array-identity",
+      "source": "literals/fixed-array-identity.zry",
+      "source_sha256": "fa47f3706d91da29e6a8007cbb4a1551a0d399b2eba869efeb039499d30e2442",
+      "semantic": "accept",
+      "observation": "i32:18",
+      "string_utf8_hex": [],
+      "string_acquisitions": [],
+      "string_releases": [],
+      "allocations": 0,
+      "clone_calls": 0,
+      "faults": []
+    },
+    {
+      "name": "opaque-clone-unused",
+      "source": "literals/opaque-clone-unused.zry",
+      "source_sha256": "be745749a61e30106c0b3b1949be693e71849970d65f305dd5265aa2d0888352",
+      "semantic": "reject",
+      "diagnostic": {
+        "code": "ZRYNA-M7002",
+        "file": "main.zry",
+        "start": 65,
+        "end": 70
+      },
+      "phase": "opaque original bodies before closed discovery",
+      "no_partial_program": true
+    }
+  ],
+  "fixed_array": {
+    "type_key_hex": "20020000000100000001",
+    "identity_instance_key_hex": "400000000000000000010000000a00000020020000000100000001",
+    "size": 8,
+    "alignment": 4,
+    "length": 2,
+    "stride": 4,
+    "targets": [
+      "Linear32V1",
+      "LinuxX8664V1"
+    ],
+    "expected_generic_function_instances": 1,
+    "source_copy_after_call": true
+  },
+  "representation": {
+    "aggregate_wrapper_source_allocations": 0,
+    "native_and_wasm_fixed_records": "compiler-owned bounded frame storage; no runtime allocation helper",
+    "logical_string_ids": "test-only successful ownership acquisition ordinals; no address/record-box IDs"
+  }
+}

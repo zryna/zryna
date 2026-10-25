@@ -1,0 +1,9 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function consume(value: String): i32 { return 5; }
+export function entry(flag: bool): i32 {
+  const root: Packet<String> = Packet.item<String>("branch"); let seen: i32 = 0;
+  if (flag) { seen = match(borrow(root), { "Packet.none": () => 0, "Packet.item": (payload) => consume(clone(payload)) }); }
+  else { seen = match(borrow(root), { "Packet.none": () => 0, "Packet.item": (payload) => consume(clone(payload)) }); }
+  const tail: String = "tail";
+  return seen;
+}

@@ -1,0 +1,9 @@
+function write(value: BorrowMut<i32>): i32 { value = 9; return value; }
+function observe(value: BorrowMut<String>): i32 { return 4; }
+export function entry(): i32 {
+  let root: Option<Result<String, i32>> = Option.some<Result<String, i32>>(Result.err<String, i32>(7));
+  const seen: i32 = match(borrowMut(root), { "Option.none": () => 0, "Option.some": (payload) => match(payload, { "Result.ok": (child) => observe(child), "Result.err": (child) => write(child) }) });
+  const copied: Option<Result<String, i32>> = clone(root);
+  const moved: Option<Result<String, i32>> = root;
+  return seen;
+}

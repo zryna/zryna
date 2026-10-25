@@ -1,0 +1,205 @@
+{
+  "status": "Frozen native-specific projection BEFORE native push/upgrade runtime harness implementation or execution; original source oracle unchanged",
+  "original_source_expected_sha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+  "canonical_runtime_source_sha256": "94ce0a5f0d40458a7dcc234b93f98a2d18c985ff1f60e285c238516bea3d0e26",
+  "cases": [
+    {
+      "case": "vec-push",
+      "observation": 18,
+      "acquisitions": [
+        "source Vec buffer",
+        "replacement Vec buffer"
+      ],
+      "releases": [
+        1,
+        2
+      ],
+      "string_acquisition_utf8_hex": {},
+      "string_clone_calls": 0,
+      "reserve_calls": 1,
+      "count_events": [],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "releases": [],
+          "successful_acquisitions": 0,
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "scope": "injected before canonical reserve growth; original buffer retained",
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        },
+        {
+          "kind": "reserve-capacity-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "injected_status": 2,
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        }
+      ],
+      "native_observations": 7
+    },
+    {
+      "case": "weak-live",
+      "observation": 31,
+      "acquisitions": [
+        "Shared control"
+      ],
+      "releases": [
+        1
+      ],
+      "string_acquisition_utf8_hex": {},
+      "string_clone_calls": 0,
+      "reserve_calls": 0,
+      "count_events": [
+        "weakDowngrade",
+        "weakUpgrade:live",
+        "strongReleaseBegin:notLast",
+        "weakRelease",
+        "strongReleaseBegin:last",
+        "strongReleaseFinish:deallocated"
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "releases": [],
+          "successful_acquisitions": 0,
+          "count_events": [],
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        },
+        {
+          "kind": "weak-downgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "injected_status": 3,
+          "count_events": [
+            "weakDowngrade:failure",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:deallocated"
+          ],
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        },
+        {
+          "kind": "weak-upgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "injected_status": 3,
+          "count_events": [
+            "weakDowngrade",
+            "weakUpgrade:failure",
+            "weakRelease",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:deallocated"
+          ],
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        }
+      ],
+      "native_observations": 7
+    },
+    {
+      "case": "weak-expired",
+      "observation": 37,
+      "acquisitions": [
+        "Shared control"
+      ],
+      "releases": [
+        1
+      ],
+      "string_acquisition_utf8_hex": {},
+      "string_clone_calls": 0,
+      "reserve_calls": 0,
+      "count_events": [
+        "weakDowngrade",
+        "strongReleaseBegin:last",
+        "strongReleaseFinish:retained",
+        "weakUpgrade:expired",
+        "weakRelease"
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "releases": [],
+          "successful_acquisitions": 0,
+          "count_events": [],
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        },
+        {
+          "kind": "weak-downgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "injected_status": 3,
+          "count_events": [
+            "weakDowngrade:failure",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:deallocated"
+          ],
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        },
+        {
+          "kind": "weak-upgrade-status",
+          "ordinal": 1,
+          "releases": [
+            1
+          ],
+          "successful_acquisitions": 1,
+          "injected_status": 3,
+          "count_events": [
+            "weakDowngrade",
+            "strongReleaseBegin:last",
+            "strongReleaseFinish:retained",
+            "weakUpgrade:failure",
+            "weakRelease"
+          ],
+          "trap": "SIGILL after exact unchanged prior-owner cleanup",
+          "retry": "pristine success immediately after fault",
+          "no_result_publication": true
+        }
+      ],
+      "native_observations": 7
+    }
+  ],
+  "native_observations": 21,
+  "native_SIGILL_fault_processes": 9,
+  "allocation_identity_scope": "Actual distinct live pointers; native canonical VecAllocate required1 capacity1 and reserve2 replace buffer via inherited grow, with exact old pointer released once. No language-level capacity/allocator-strategy claim.",
+  "reserve_failure_scope": "Caller-zero output asserted BEFORE observer poisoning/provider. Injected failure leaves poisoned output to test nonpublication; original vector pointer/len/cap and prepared operands remain unchanged until cleanup.",
+  "count_scope": "Actual live upgrade0 increments strong once; genuine expired5 leaves both counts unchanged and publishes no binding. Injected declared status3 proves failure-route cleanup/unchanged counts, not actual u32MAX overflow.",
+  "payload_scope": "Weak fixtures contain i32 payload; no String/payload runtime-drop event is invented. Last-strong cleanup is source/plan-checked and count-finish ordering observed.",
+  "affine_RHS_scope": "Existing vec-push i32 cannot prove affine prepared-RHS release. New separate source/oracle frozen in affine-source-proposal/ before auth; original3 runtime projection does not claim that coverage."
+}

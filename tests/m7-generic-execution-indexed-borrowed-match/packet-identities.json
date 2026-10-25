@@ -1,0 +1,95 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "indexed-nominal-shared-join",
+      "provider": "native",
+      "packet": "indexed-nominal-shared-join-native.json",
+      "packetSha256": "b7b46e0603c61c46aef48fba980e2c48dc4badbb24b95e06712ffabbcb8991af",
+      "packetBytes": 27508,
+      "exactSourceSha256": "28d6e3635e81fda91f6da9f95e1b63469257e9488db536bee009ac107e756d2e",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-nominal-shared-join",
+      "provider": "typescript",
+      "packet": "indexed-nominal-shared-join-typescript.json",
+      "packetSha256": "c70fd131c782b760420af92f887abbc8388539718b02e0598afc46bbb06f8d0f",
+      "packetBytes": 27508,
+      "exactSourceSha256": "28d6e3635e81fda91f6da9f95e1b63469257e9488db536bee009ac107e756d2e",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-option-exclusive-join",
+      "provider": "native",
+      "packet": "indexed-option-exclusive-join-native.json",
+      "packetSha256": "194d7fcd90d4ad662c0a812290ab1898a2b42696af9b439ec316b8cf696bfee6",
+      "packetBytes": 31246,
+      "exactSourceSha256": "0b0f1d8236559f71dcc71a7c4c48ff661528df859142ad998a1ac1886c0352b0",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-option-exclusive-join",
+      "provider": "typescript",
+      "packet": "indexed-option-exclusive-join-typescript.json",
+      "packetSha256": "2d7053fc844d6dd76aac6234072736234937a8c72508754aec2c8fa3ca0b49ab",
+      "packetBytes": 31246,
+      "exactSourceSha256": "0b0f1d8236559f71dcc71a7c4c48ff661528df859142ad998a1ac1886c0352b0",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-chain-nominal-shared-join",
+      "provider": "native",
+      "packet": "indexed-chain-nominal-shared-join-native.json",
+      "packetSha256": "5ad1cafbfa20b2495e792db81282c508ebe3e62b2af7dc457af9d8b67b744382",
+      "packetBytes": 31301,
+      "exactSourceSha256": "d94021e3e36f7ded9fe97ae0bfe8a28c3dfcd6cde654f23b81b6cfbbc025b1e9",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-chain-nominal-shared-join",
+      "provider": "typescript",
+      "packet": "indexed-chain-nominal-shared-join-typescript.json",
+      "packetSha256": "91ceda33f962c802bafa3fa035978c78066642e998009ac3a96be14282cea238",
+      "packetBytes": 31301,
+      "exactSourceSha256": "d94021e3e36f7ded9fe97ae0bfe8a28c3dfcd6cde654f23b81b6cfbbc025b1e9",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-selected-arm-escape",
+      "provider": "native",
+      "packet": "indexed-selected-arm-escape-native.json",
+      "packetSha256": "a4e845236efed7d6a621742cd55c713c91b813436c64d4812096e445e3cb6982",
+      "packetBytes": 19246,
+      "exactSourceSha256": "a28b766f47b8c2266e067de9a918d9c6d439358a933e97477a8fa610c4c147f0",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-selected-arm-escape",
+      "provider": "typescript",
+      "packet": "indexed-selected-arm-escape-typescript.json",
+      "packetSha256": "d8c512a8831b4f77b94521e67d9a965247a2ccd7044fe6bd7119ca7377d33faf",
+      "packetBytes": 19246,
+      "exactSourceSha256": "a28b766f47b8c2266e067de9a918d9c6d439358a933e97477a8fa610c4c147f0",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-match-loan-loop-edge",
+      "provider": "native",
+      "packet": "indexed-match-loan-loop-edge-native.json",
+      "packetSha256": "660e3c54351384208de907e9343dffc31fb7e9282c4e20955433e0fd41168e38",
+      "packetBytes": 28883,
+      "exactSourceSha256": "d4846ea0b2399c8b55a23ca8060147443392f6a3efec0967103b96fb8a8120ae",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "indexed-match-loan-loop-edge",
+      "provider": "typescript",
+      "packet": "indexed-match-loan-loop-edge-typescript.json",
+      "packetSha256": "1f4e4e20c8cda47f63a3e792644a229f08bd76c5057cb3734588f1665204d76c",
+      "packetBytes": 28883,
+      "exactSourceSha256": "d4846ea0b2399c8b55a23ca8060147443392f6a3efec0967103b96fb8a8120ae",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

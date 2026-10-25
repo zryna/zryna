@@ -1,0 +1,33 @@
+{
+  "format": "m416.native-control8-source-oracle.v1",
+  "timing": "source permissions expected before fresh providers or target output",
+  "cases": [
+    {
+      "case": "control-birth-call-loop",
+      "file": "literals/control-birth-call-loop.zry",
+      "bytes": 261,
+      "sha256": "9c0343747b1740d75792d5dc9497da4342fee63f93afb3626e8b1a6918cfc622",
+      "original_expectation": "accepted original function permissions and genuine whole execution source authority",
+      "result": "i32",
+      "source_spelling_authority": "existing accepted Shared/clone/downgrade/upgradeWeak spelling and qualified While source forms, no new grammar"
+    },
+    {
+      "case": "control-live-count-call-loop",
+      "file": "literals/control-live-count-call-loop.zry",
+      "bytes": 527,
+      "sha256": "ff7b7ad9de9b82975912dc1801306f23a9f7edddba3cd57e370afc9d1cc8e6ec",
+      "original_expectation": "accepted original function permissions and genuine whole execution source authority",
+      "result": "i32",
+      "source_spelling_authority": "existing accepted Shared/clone/downgrade/upgradeWeak spelling and qualified While source forms, no new grammar"
+    },
+    {
+      "case": "control-expired-call-loop",
+      "file": "literals/control-expired-call-loop.zry",
+      "bytes": 417,
+      "sha256": "bd59155d3aa751749a7ac30958ad46528edc652a952925572d540073c0736b35",
+      "original_expectation": "accepted original function permissions and genuine whole execution source authority",
+      "result": "i32",
+      "source_spelling_authority": "existing accepted Shared/clone/downgrade/upgradeWeak spelling and qualified While source forms, no new grammar"
+    }
+  ]
+}

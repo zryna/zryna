@@ -1,0 +1,5 @@
+interface Signal extends ZrynaEnum { off: ZrynaNone; on: i32; }
+export function entry(row: i32, column: i32): i32 {
+  const root: Vec<FixedArray<Signal, 2>> = Vec<FixedArray<Signal, 2>>([FixedArray<Signal, 2>([Signal.off(), Signal.on(7)]), FixedArray<Signal, 2>([Signal.on(11), Signal.off()])]);
+  return match(borrow(root[row][column]), { "Signal.off": () => 3, "Signal.on": (payload) => payload });
+}

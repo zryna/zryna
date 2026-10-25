@@ -1,5 +1,5 @@
 //! ELF64 little-endian section/load mapping; unsupported stripped/extended forms reject.
-use super::*;
+use super::{Diagnostic, rejected};
 
 pub(super) const MAX_ROWS: usize = 8192;
 pub(super) const MAX_SYMBOLS: usize = 16_384;

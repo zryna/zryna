@@ -16,6 +16,7 @@ target-lexicon.workspace = true
 zryna-abi = { path = "../zryna-abi" }
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-ir = { path = "../zryna-ir" }
+zryna-layout = { path = "../zryna-layout" }
 zryna-native-mir = { path = "../zryna-native-mir" }
 zryna-ownership-runtime-abi = { path = "../zryna-ownership-runtime-abi" }
 

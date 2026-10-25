@@ -1,0 +1,1 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function score(): i32 { const box: Box<i32> = Box<i32>({ value: 7 }); return box.value; }

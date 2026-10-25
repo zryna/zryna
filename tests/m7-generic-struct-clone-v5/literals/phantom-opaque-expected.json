@@ -1,0 +1,11 @@
+{
+  "status": "Frozen independent proposed runtime oracle; unexecuted.",
+  "case": "phantom-opaque",
+  "accept": true,
+  "result": 7,
+  "allocationAttempts": [],
+  "successReleaseAttemptIds": [],
+  "faults": [],
+  "identityRule": "Each successful clone String leaf has a fresh allocation identity even when bytes equal its source. Only successful attempts may be released; every such owner releases exactly once.",
+  "structCarrierAllocations": 0
+}

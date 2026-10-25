@@ -1,0 +1,293 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "nominal-shared-copy",
+      "provider": "native",
+      "packet": "nominal-shared-copy-native.json",
+      "packetSha256": "04598c2f79290efb0072228773621461bf10efe6f2e234ee81c4d69b80c66e89",
+      "packetBytes": 27200,
+      "exactSourceSha256": "73339bf9809102794700a9ffb752dded5cba69864f8fb85af802b6b155d3209a",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-shared-copy",
+      "provider": "typescript",
+      "packet": "nominal-shared-copy-typescript.json",
+      "packetSha256": "a4e12ebdbc5d9ce422d007489fc9b6e75afd0db7b765d90317b348c15e58abb0",
+      "packetBytes": 27200,
+      "exactSourceSha256": "73339bf9809102794700a9ffb752dded5cba69864f8fb85af802b6b155d3209a",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-shared-clone",
+      "provider": "native",
+      "packet": "nominal-shared-clone-native.json",
+      "packetSha256": "acf943ce1dcc25968e5ebc81dea6bbfa99b229a297d9552bdb3f66eff4ab585f",
+      "packetBytes": 31325,
+      "exactSourceSha256": "f3892005f8561c175f025286ee1dfb73b6acc63db144b676e12a9d81ac696662",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-shared-clone",
+      "provider": "typescript",
+      "packet": "nominal-shared-clone-typescript.json",
+      "packetSha256": "9bc28b7cc660db70fc3c20eff3c0133bc7db779a8e46f386a6a88f6f9ca066ac",
+      "packetBytes": 31325,
+      "exactSourceSha256": "f3892005f8561c175f025286ee1dfb73b6acc63db144b676e12a9d81ac696662",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-exclusive-copy",
+      "provider": "native",
+      "packet": "nominal-exclusive-copy-native.json",
+      "packetSha256": "54378a12703c44ce0f23233c593efa96877c8a2a488b6330f121add1a6ffd740",
+      "packetBytes": 32808,
+      "exactSourceSha256": "918f6e8464bbe61dbe71341b9c6401a5a583523ddf81d170d064da64f9f55a2b",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-exclusive-copy",
+      "provider": "typescript",
+      "packet": "nominal-exclusive-copy-typescript.json",
+      "packetSha256": "7e5367f79a15905a06677513fa2572f3a38c3c84db7a664968c94aef8c88673c",
+      "packetBytes": 32808,
+      "exactSourceSha256": "918f6e8464bbe61dbe71341b9c6401a5a583523ddf81d170d064da64f9f55a2b",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-exclusive-replace",
+      "provider": "native",
+      "packet": "nominal-exclusive-replace-native.json",
+      "packetSha256": "495650afef6ed1dc26bba07250d854b2315b9e9dc7c29458728637cbfdbd80c9",
+      "packetBytes": 43794,
+      "exactSourceSha256": "f4a181075b503c55abcdfad93dd06e52762bc8f7c04bd5eca29ec7bdd2213f07",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nominal-exclusive-replace",
+      "provider": "typescript",
+      "packet": "nominal-exclusive-replace-typescript.json",
+      "packetSha256": "b41afc7f26691c2a96f157e6c374ee6fab47bf375aabac6134812dc20d286d88",
+      "packetBytes": 43794,
+      "exactSourceSha256": "f4a181075b503c55abcdfad93dd06e52762bc8f7c04bd5eca29ec7bdd2213f07",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "option-shared-both",
+      "provider": "native",
+      "packet": "option-shared-both-native.json",
+      "packetSha256": "e772854e3bf018154a6b8ea586db94437e08fb36db09f840c22fd265d1160254",
+      "packetBytes": 38023,
+      "exactSourceSha256": "361f5296a92b19b175229bc66f49b9a7f71b01cc158c97e1406ba2acbfd90bb4",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "option-shared-both",
+      "provider": "typescript",
+      "packet": "option-shared-both-typescript.json",
+      "packetSha256": "b77d0b4af34db9786ef46c2fe27dcb14d934d720f5a9db703d900342f43ba1d7",
+      "packetBytes": 38023,
+      "exactSourceSha256": "361f5296a92b19b175229bc66f49b9a7f71b01cc158c97e1406ba2acbfd90bb4",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "result-shared-opaque-bound",
+      "provider": "native",
+      "packet": "result-shared-opaque-bound-native.json",
+      "packetSha256": "198eedc55ebaeb6eb5204130e736a541d626d01b29d2a3e11fc03dd0b683eeb2",
+      "packetBytes": 51804,
+      "exactSourceSha256": "1ae313d428bac6dc15c98098f0e0f389fd123a94d137fe4fcb44a21a6201c814",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "result-shared-opaque-bound",
+      "provider": "typescript",
+      "packet": "result-shared-opaque-bound-typescript.json",
+      "packetSha256": "b1acc3e19b1e1ba995452ce32d5bb974ef97309e298767a7c8f5f272cd436f37",
+      "packetBytes": 51804,
+      "exactSourceSha256": "1ae313d428bac6dc15c98098f0e0f389fd123a94d137fe4fcb44a21a6201c814",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "result-exclusive-both",
+      "provider": "native",
+      "packet": "result-exclusive-both-native.json",
+      "packetSha256": "956097badb0b166505a3a3e06e7c7b106345f92a7e61ab34087c1dc4e2625a77",
+      "packetBytes": 47518,
+      "exactSourceSha256": "fbbe204192a13d0fbce590f9c90e282bcbaf59ea1bc665687d63f91fee733026",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "result-exclusive-both",
+      "provider": "typescript",
+      "packet": "result-exclusive-both-typescript.json",
+      "packetSha256": "93a9a4f545e83491f8acfda4465bf696839fb9c96d71bb6fadb60ed12d9ba0b8",
+      "packetBytes": 47518,
+      "exactSourceSha256": "fbbe204192a13d0fbce590f9c90e282bcbaf59ea1bc665687d63f91fee733026",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-payload-forward",
+      "provider": "native",
+      "packet": "opaque-payload-forward-native.json",
+      "packetSha256": "1dfea6c0053413dcde22e44ed9180c54ea53532f09d0ac434c330f5daa55a3d8",
+      "packetBytes": 36106,
+      "exactSourceSha256": "2f1177a38f710756056d5940e31b7bfe8d94a6504e701ae7dbbafd56757083b1",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-payload-forward",
+      "provider": "typescript",
+      "packet": "opaque-payload-forward-typescript.json",
+      "packetSha256": "c485c43e2e3a48d13b885dbd163c35c3c83224b0ae723b7364c9b126f9a2f42b",
+      "packetBytes": 36106,
+      "exactSourceSha256": "2f1177a38f710756056d5940e31b7bfe8d94a6504e701ae7dbbafd56757083b1",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nested-exclusive-result",
+      "provider": "native",
+      "packet": "nested-exclusive-result-native.json",
+      "packetSha256": "3c02dd5d2842d914c4fc2440a207774ff05b543a498fb78b758645f3289a0270",
+      "packetBytes": 46357,
+      "exactSourceSha256": "bab91322a3a7c7e56a5f93583ebe01827625156fa5439d31f0d7e2f30d9cbd28",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nested-exclusive-result",
+      "provider": "typescript",
+      "packet": "nested-exclusive-result-typescript.json",
+      "packetSha256": "a4397358df9a7a7ba1275df312d8b53a9963210b34126a4c5c9e90849f1b93ba",
+      "packetBytes": 46357,
+      "exactSourceSha256": "bab91322a3a7c7e56a5f93583ebe01827625156fa5439d31f0d7e2f30d9cbd28",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "branch-arm-cleanup",
+      "provider": "native",
+      "packet": "branch-arm-cleanup-native.json",
+      "packetSha256": "1e4e0d7e1c743db0a8b22c81b6c18d06092f411b1b0ffc63701e544c2fc5715b",
+      "packetBytes": 39314,
+      "exactSourceSha256": "8f83f60797464ecadb36e4ff07794307284610f764c0125d806e7ed38d87154b",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "branch-arm-cleanup",
+      "provider": "typescript",
+      "packet": "branch-arm-cleanup-typescript.json",
+      "packetSha256": "f916d747a66f54bc1ef7af519e7efd6562c905393624817fcc765d731181d9fa",
+      "packetBytes": 39314,
+      "exactSourceSha256": "8f83f60797464ecadb36e4ff07794307284610f764c0125d806e7ed38d87154b",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-reborrow-from-exclusive",
+      "provider": "native",
+      "packet": "shared-reborrow-from-exclusive-native.json",
+      "packetSha256": "8f09dacedfc00adf5d8c82fbf3d36560154c112efbbe0a2cf993295caee64125",
+      "packetBytes": 42476,
+      "exactSourceSha256": "32983791871b6f2a7511abb50f170b555277caef627a973f8274e10fc3c58076",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-reborrow-from-exclusive",
+      "provider": "typescript",
+      "packet": "shared-reborrow-from-exclusive-typescript.json",
+      "packetSha256": "59b2b083aa58d4ba12c48237fc97426ee3006b02426963169b74e3d20a29f126",
+      "packetBytes": 42476,
+      "exactSourceSha256": "32983791871b6f2a7511abb50f170b555277caef627a973f8274e10fc3c58076",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-payload-move",
+      "provider": "native",
+      "packet": "shared-payload-move-native.json",
+      "packetSha256": "87feeb1db24ce7352acf51dbdb9c9faae98149c9d5fa78866758853ff1ad85ea",
+      "packetBytes": 21668,
+      "exactSourceSha256": "855ae69190c176911a9b2c4028418020d24b45c6e6877c2b0d3b89eecc0fd6a5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-payload-move",
+      "provider": "typescript",
+      "packet": "shared-payload-move-typescript.json",
+      "packetSha256": "d43b15e2f8cc77d5c233d7b4baf36afe17655bbe200a6b5582d6a0fa9ece03b1",
+      "packetBytes": 21668,
+      "exactSourceSha256": "855ae69190c176911a9b2c4028418020d24b45c6e6877c2b0d3b89eecc0fd6a5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-to-exclusive-call",
+      "provider": "native",
+      "packet": "shared-to-exclusive-call-native.json",
+      "packetSha256": "28cda9bf2b135badf857f7499c1968e649951ba95a263c9523dd926baa52878a",
+      "packetBytes": 26055,
+      "exactSourceSha256": "763c5288dad1dc1c37e9ac091e35f65c79a4c1b3f233cce26554a72c3a2f32a0",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-to-exclusive-call",
+      "provider": "typescript",
+      "packet": "shared-to-exclusive-call-typescript.json",
+      "packetSha256": "b4bde673270e52cee480f26617348f95ab277a9b40a18e8fa8221daddaa2ca33",
+      "packetBytes": 26055,
+      "exactSourceSha256": "763c5288dad1dc1c37e9ac091e35f65c79a4c1b3f233cce26554a72c3a2f32a0",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "exclusive-parent-frozen",
+      "provider": "native",
+      "packet": "exclusive-parent-frozen-native.json",
+      "packetSha256": "e18d7c2ba39f0226d5694a8d64df830e01792f3d6a4b764b777c00e631bc7507",
+      "packetBytes": 26591,
+      "exactSourceSha256": "cf0e529cceffa1acf024051cb61f27d958290736bfe820ad5f4ff990d9fcd2b5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "exclusive-parent-frozen",
+      "provider": "typescript",
+      "packet": "exclusive-parent-frozen-typescript.json",
+      "packetSha256": "1ac979f0f932701aa6d5a252a68f69579b1111b4b4ed975a86d7e85a17b91548",
+      "packetBytes": 26591,
+      "exactSourceSha256": "cf0e529cceffa1acf024051cb61f27d958290736bfe820ad5f4ff990d9fcd2b5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-payload-clone",
+      "provider": "native",
+      "packet": "opaque-payload-clone-native.json",
+      "packetSha256": "5da5522a685367d6d7111de311ad098e08d298503328fec8c48577395bc892ff",
+      "packetBytes": 25222,
+      "exactSourceSha256": "b25096c3a916db3f0092688ae64d10a9270b66d2e771144abc92d8ee073bd535",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-payload-clone",
+      "provider": "typescript",
+      "packet": "opaque-payload-clone-typescript.json",
+      "packetSha256": "15330cf05f6a5a07b82f53731bd69e63a8818bff26b5724bebcae5dc8ba8ff95",
+      "packetBytes": 25222,
+      "exactSourceSha256": "b25096c3a916db3f0092688ae64d10a9270b66d2e771144abc92d8ee073bd535",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "arm-loan-result-escape",
+      "provider": "native",
+      "packet": "arm-loan-result-escape-native.json",
+      "packetSha256": "9e7c9cbc5b8b6ac16144274bff060351d749e387f8e8ecac0692ec6cc0e757b3",
+      "packetBytes": 15722,
+      "exactSourceSha256": "61b4d663d5e50c6238f899eb5ebfa57f6b12d900e22268ca78511d747d9c9873",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "arm-loan-result-escape",
+      "provider": "typescript",
+      "packet": "arm-loan-result-escape-typescript.json",
+      "packetSha256": "5e11af619ffa45204d000c436a97cb97224efe81f82431f67870f05fd57eae17",
+      "packetBytes": 15722,
+      "exactSourceSha256": "61b4d663d5e50c6238f899eb5ebfa57f6b12d900e22268ca78511d747d9c9873",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

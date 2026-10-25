@@ -1,0 +1,256 @@
+{
+  "format": "m416.wasm-control-private-source-frontiers.v1",
+  "scope": "Constant-event seeded private source reason ABI, no native physical threshold or Wasm canonical-status/source-reason equivalence claim",
+  "shared_rules_sha256": "73434459175ba1f261b9d3bb3ecde2f915293b62ac08a951eca0deb7f5c07cea",
+  "source_freeze_sha256": "b446238d4019917fd3df2195ef23c33e8f9c59bee8d4783e66942c626e977369",
+  "cases": [
+    {
+      "id": "birth-small",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 0,
+        "out": 7,
+        "post": [
+          1,
+          0,
+          3,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": false,
+        "public_retry_argument": 3,
+        "public_retry_value": 21,
+        "public_retry_post": [
+          3,
+          0,
+          9,
+          0
+        ]
+      }
+    },
+    {
+      "id": "birth-exact-total",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        4194301,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 0,
+        "out": 7,
+        "post": [
+          1,
+          0,
+          4194304,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": false,
+        "public_retry_argument": 3,
+        "public_retry_value": 21,
+        "public_retry_post": [
+          3,
+          0,
+          9,
+          0
+        ]
+      }
+    },
+    {
+      "id": "birth-global-denial-before-raw-allocation",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        4194302,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 3,
+        "out": 0,
+        "post": [
+          0,
+          0,
+          4194302,
+          0
+        ],
+        "attempts": 0,
+        "cursor_unchanged": true,
+        "public_retry_argument": 3,
+        "public_retry_value": 21,
+        "public_retry_post": [
+          3,
+          0,
+          9,
+          0
+        ]
+      }
+    },
+    {
+      "id": "birth-physical-arena-allocation-failure",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cursor": "MEMORY_BYTES-8",
+      "expected": {
+        "source_reason": 2,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": true,
+        "public_retry_argument": 3,
+        "public_retry_value": 21,
+        "public_retry_post": [
+          3,
+          0,
+          9,
+          0
+        ]
+      }
+    },
+    {
+      "id": "live-exact-total",
+      "case": "control-live-count-call-loop",
+      "pre": [
+        0,
+        0,
+        4194293,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 0,
+        "out": 31,
+        "post": [
+          1,
+          0,
+          4194304,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": false,
+        "public_retry_argument": 3,
+        "public_retry_value": 93,
+        "public_retry_post": [
+          3,
+          0,
+          33,
+          0
+        ]
+      }
+    },
+    {
+      "id": "live-denied-clone-parent-cleanup",
+      "case": "control-live-count-call-loop",
+      "pre": [
+        0,
+        0,
+        4194300,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 3,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          4194303,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": false,
+        "public_retry_argument": 3,
+        "public_retry_value": 93,
+        "public_retry_post": [
+          3,
+          0,
+          33,
+          0
+        ]
+      }
+    },
+    {
+      "id": "expired-known-branch-at-held-frontier",
+      "case": "control-expired-call-loop",
+      "pre": [
+        0,
+        0,
+        4194298,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 0,
+        "out": 37,
+        "post": [
+          1,
+          0,
+          4194304,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": false,
+        "public_retry_argument": 3,
+        "public_retry_value": 111,
+        "public_retry_post": [
+          3,
+          0,
+          18,
+          0
+        ]
+      }
+    },
+    {
+      "id": "expired-denied-downgrade-parent-cleanup",
+      "case": "control-expired-call-loop",
+      "pre": [
+        0,
+        0,
+        4194300,
+        0
+      ],
+      "cursor": "heap_start",
+      "expected": {
+        "source_reason": 3,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          4194303,
+          0
+        ],
+        "attempts": 1,
+        "cursor_unchanged": false,
+        "public_retry_argument": 3,
+        "public_retry_value": 111,
+        "public_retry_post": [
+          3,
+          0,
+          18,
+          0
+        ]
+      }
+    }
+  ]
+}

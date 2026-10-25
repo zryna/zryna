@@ -86,10 +86,28 @@ The complete frozen IR integration target requires the explicit
 `native-provider-qualification` feature and the actual absolute
 `ZRYNA_NATIVE_CLI`; ordinary library suites require no hidden CLI fixture.
 
-The separate current M1 BUILD oracle binds actual explicit-bootstrap full
-diagnostics and unchanged original IR/semantic owner files. The original M1
+The separate frozen M1 BUILD oracle binds its original explicit-bootstrap full
+diagnostics and historical IR/semantic owner descriptors. The v2 current owner
+binding below retains that exact oracle while authenticating the current files. The original M1
 registry specifies diagnostic-code presence, so it never established a count
 of one for the gated Boolean source. The original IR owner emits three ordered
 `I1006` diagnostics: the Boolean parameter, Boolean result, and Boolean reference
 expression at bytes 53–58. All three full diagnostics are now frozen and checked;
 the original M1/M2/M3 registries and M2/M3 BUILD oracles remain unchanged.
+
+
+The current registry uses `zryna.native-provider-public-registry.v2`. Its new
+`currentM1OwnerBinding` pins the current IR and semantic owner files plus the
+separately extracted scalar type definition. Independent source review confirms
+that all original M1 function bodies and diagnostic literals remain unchanged;
+only isolated generic declarations, documentation and the verbatim scalar type
+extraction differ. The validator checks the complete current owner inventory
+against this independently pinned binding before running a compiler.
+
+The frozen M1 BUILD oracle remains byte-for-byte unchanged, including its original
+source commit, historical owner descriptors, bootstrap captures and all ordered
+diagnostics. The new current source binding references that exact oracle hash;
+it neither refreshes historical evidence nor establishes current runtime
+qualification. All 114 syntax inputs, 88 BUILD roots, acceptance lanes, supported
+hosts, M3 oracles and historical H4 exclusions remain unchanged. Fresh actual
+supported-host checks are still required.

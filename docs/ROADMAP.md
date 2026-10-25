@@ -590,6 +590,15 @@ Completion gate: editor and playground behavior is driven by compiler contracts 
 
 ## M7 — Independent Frontend and Stabilization
 
+The #416 source-checkout candidate now has an explicit `bounded-generics-v1` route,
+protocol v5 and separate generic manifest. The [beginner guide](M7_GETTING_STARTED.md),
+[public profile reference](M7_PUBLIC_PROFILE.md), [candidate support matrix](M7_SUPPORT.md)
+and [current acceptance obligations](M7_GENERIC_CONFORMANCE.md#current-416-candidate-evidence)
+describe that implementation without changing the normally integrated #415 contract below.
+Finite local source/target gates do not complete supported-platform acceptance: hosted Windows
+qualification and final same-tested-revision/tree evidence remain pending. No release, website
+publication, installed-profile activation or issue closure follows from this candidate.
+
 - native Zryna lexer, parser, resolver, and snapshot provider;
 - provider conformance against the bootstrap TypeScript adapter;
 - bounded generics and monomorphization, `Option`, and `Result` after the

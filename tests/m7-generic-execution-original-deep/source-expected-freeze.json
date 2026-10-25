@@ -1,0 +1,18 @@
+{
+  "status": "Source and expected frozen before genuine native/TypeScript provider auth; no sources will change to succeed",
+  "cases": [
+    {
+      "id": "deep-indirect-original",
+      "expected": "expected.json",
+      "expectedSha256": "8ff1a93b49747eb8138410e41db8425b71dce3c927e552b85e79e5b258e7a04e",
+      "files": [
+        {
+          "file": "main.zry",
+          "path": "main.zry",
+          "bytes": 10461,
+          "sha256": "fc5c21551bf5bc1c76e39d7574fbbdbebe4e51bc168ef986429a14dbcf809782"
+        }
+      ]
+    }
+  ]
+}

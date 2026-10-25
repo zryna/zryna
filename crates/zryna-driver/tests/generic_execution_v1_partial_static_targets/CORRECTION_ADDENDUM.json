@@ -1,0 +1,88 @@
+{
+  "status": "pre-output normative correction; no source, provider packet, original freeze, cap or production change",
+  "original_source_oracle_sha256": "7046a87a0d7c976913ffaf387cbec53297d5bdf8ce627b0ea20372e51a5dbbb5",
+  "original_runtime_oracle_sha256": "068b5d831fe475f51a01e6e027e6a4e7fb344cff3f4ddbefba398743c6602fca",
+  "corrections": [
+    {
+      "case": "struct-refill-whole",
+      "arguments": [],
+      "field_declaration": [
+        "first",
+        "second"
+      ],
+      "restored_field_contents": [
+        "c",
+        "b"
+      ],
+      "prior_logical_releases": [
+        "a",
+        "c",
+        "b"
+      ],
+      "correct_logical_releases": [
+        "a",
+        "b",
+        "c"
+      ],
+      "prior_release_acquisition_ids": [
+        1,
+        3,
+        2
+      ],
+      "correct_release_acquisition_ids": [
+        1,
+        2,
+        3
+      ],
+      "faults": "unchanged; no completed restored aggregate exists before the failing acquisition"
+    },
+    {
+      "case": "opaque-child",
+      "arguments": [],
+      "field_declaration": [
+        "first",
+        "second"
+      ],
+      "restored_field_contents": [
+        "c",
+        "b"
+      ],
+      "prior_logical_releases": [
+        "a",
+        "c",
+        "b"
+      ],
+      "correct_logical_releases": [
+        "a",
+        "b",
+        "c"
+      ],
+      "prior_release_acquisition_ids": [
+        1,
+        3,
+        2
+      ],
+      "correct_release_acquisition_ids": [
+        1,
+        2,
+        3
+      ],
+      "faults": "unchanged; no completed restored aggregate exists before the failing acquisition"
+    }
+  ],
+  "authority": [
+    {
+      "file": "spec/language/DATA_OWNERSHIP_V1.md",
+      "lines": "189-203",
+      "rule": "reverse pending completion order between roots; reverse declaration order within Struct; moving transfers obligation"
+    },
+    {
+      "file": "docs/M3_OWNED_DATA_SEMANTICS.md",
+      "lines": "242-249,493-504",
+      "rule": "root moves rename existing pending slots; recursive Struct drop reverse declaration, static partial frontier retains exact initialized siblings"
+    }
+  ],
+  "corrected_runtime_file": "/tmp/m416-execution-partial-drop-oracle-addendum/RUNTIME_EXPECTED_CORRECTED.json",
+  "corrected_runtime_sha256": "0026706c04fd0241247333f77e19083ece1407f3eee4fd10f66389779d48bc23",
+  "author_execution": "NONE; root reports corrected cases stopped before target runtime; no runtime output consulted"
+}

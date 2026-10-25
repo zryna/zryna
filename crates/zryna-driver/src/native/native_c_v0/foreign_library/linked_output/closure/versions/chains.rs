@@ -1,5 +1,8 @@
 //! Checked GNU chain traversal with separate definition and need record validation.
-use super::*;
+use super::{
+    Diagnostic, Dynamic, MAX_STRINGS, Version, Versions, rejected, string, string_bytes, symbols,
+    u16_word, u32_word, word,
+};
 
 pub(super) fn read(
     bytes: &[u8],

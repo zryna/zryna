@@ -286,7 +286,24 @@ jobs:
         run: |
           pnpm editor:check
           pnpm editor:package
-      - run: node scripts/run-m0-conformance.mjs
+      - name: Verify M7 acceptance evidence controls
+        run: node --test tests/m7-generic-acceptance.test.mjs
+      - id: m0-complete
+        run: node scripts/run-m0-conformance.mjs
+      - name: Verify public bounded-generics acceptance packet
+        id: m7-generic
+        env:
+          ZRYNA_M7_UPSTREAM_M0_RESULT: ${{ steps.m0-complete.outcome }}
+          ZRYNA_M7_PR_HEAD: ${{ github.event.pull_request.head.sha || '' }}
+        run: node scripts/run-m7-generic-acceptance.mjs --evidence "${{ runner.temp }}/m7-generic-acceptance" --expected-source-revision "${{ github.sha }}"
+      - name: Retain M7 generic acceptance commands and actual counts
+        if: ${{ !cancelled() && steps.m7-generic.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: m7-generic-${{ matrix.os }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m7-generic-acceptance
+          if-no-files-found: error
+          retention-days: 90
 
   adapter-platform:
     name: adapter (${{ matrix.os }})

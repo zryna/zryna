@@ -1,0 +1,25 @@
+{
+  "status": "Original static source/oracle copied byte-for-byte before fresh provider execution; no pass claimed",
+  "files": [
+    {
+      "path": "SOURCE_EXPECTED_FREEZE.json",
+      "bytes": 1664,
+      "sha256": "eb01f8297eb221c683d264fa35ab4f046f1a3ca3f7b561637090d77fd9b6ee24"
+    },
+    {
+      "path": "literals/clone.zry",
+      "bytes": 463,
+      "sha256": "30b5f845909ccac7e6f9276a078594570b50cb1fc8ae7533658e9a568bb87f21"
+    },
+    {
+      "path": "literals/controlled-cleanup.zry",
+      "bytes": 489,
+      "sha256": "236b36609cc05fe40965a5b784ce191a9e406d6bb1f4217286bde5c30e645b33"
+    },
+    {
+      "path": "literals/drop-only.zry",
+      "bytes": 419,
+      "sha256": "3d097ad3baedcc0f192bac0f5681bd2b0f92ec94d7091d9d30dcd260d96de8dd"
+    }
+  ]
+}

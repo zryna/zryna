@@ -1,0 +1,1 @@
+export function entry(): i32 { let items: FixedArray<String, 2> = FixedArray<String, 2>(["a", "b"]); const taken: String = items[1]; items[1] = "c"; const whole: FixedArray<String, 2> = items; return 29; }

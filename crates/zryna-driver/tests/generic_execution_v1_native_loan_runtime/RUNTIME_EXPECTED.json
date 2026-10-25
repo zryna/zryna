@@ -1,0 +1,180 @@
+{
+  "status": "FROZEN runtime expectations BEFORE any new native loan runtime output; semantic source oracle unchanged",
+  "domain": "generic.execution.v1",
+  "canonical_runtime": {
+    "path": "runtime/native/ownership_runtime_v1.c",
+    "sha256": "94ce0a5f0d40458a7dcc234b93f98a2d18c985ff1f60e285c238516bea3d0e26",
+    "abi": "unchanged canonical ownership17; real existing Linux runtime; same NEWseal metadata only"
+  },
+  "existing_source_oracle_sha256": "db93f5e30d2d020ec4e7d278416ab285a3f81b6462dca0eb5f9bca7b3d2da7e8",
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "cases": [
+    {
+      "case": "generic-replace",
+      "source_sha256": "64db2cc9fcda613bbdf335d9b43cafc64611886bb832cf3c13c90c925939ef59",
+      "provider_packets": {
+        "native": "7358d87b2c562ab2cbc2f121872f23edeb7f67a132781bfeb25ff1905db2fce7",
+        "typescript": "6a256b7fbbf02dface7ffbc8c3b04c6566746af4aea2727cba26bd8f473d758f"
+      },
+      "pristine": {
+        "scalar_result": 43,
+        "language_string_allocations": 3,
+        "string_clone_calls": 1,
+        "release_acquisition_ids": [
+          1,
+          2,
+          3
+        ]
+      },
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 3,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            1,
+            2
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "stringClone",
+          "ordinal": 1,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        }
+      ]
+    },
+    {
+      "case": "static-disjoint",
+      "source_sha256": "ce59b0e187b4f8f6b1dc67e1cd6cd9559189966f42f2cc7dfd28e9777533349b",
+      "provider_packets": {
+        "native": "7bd8d584aa149fc3bfb28be74f74e674b204cc32ec086a75e83ff966f7ad2ecf",
+        "typescript": "a9eddc95fcedb63499b74a328e2adac94ea554b855d08922e8bafa9d726973aa"
+      },
+      "pristine": {
+        "scalar_result": 44,
+        "language_string_allocations": 0,
+        "string_clone_calls": 0,
+        "release_acquisition_ids": []
+      },
+      "faults": []
+    },
+    {
+      "case": "fallible-cleanup",
+      "source_sha256": "d4fdb1adb00b857fa3271ae87668cec2e707af57563779aa0efa6c9951fe4c7a",
+      "provider_packets": {
+        "native": "c4e4e9a2b0058702cd8b7d891372659d8663539f14cd4ff124fad18f79e45012",
+        "typescript": "a51459e26a22f12b3507b21a5ae445ca3d05cc689fea8afe0b8cac7bfc58ddc9"
+      },
+      "pristine": {
+        "scalar_result": 59,
+        "language_string_allocations": 4,
+        "string_clone_calls": 2,
+        "release_acquisition_ids": [
+          3,
+          4,
+          2,
+          1
+        ]
+      },
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 3,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 4,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            3,
+            2,
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "stringClone",
+          "ordinal": 1,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        },
+        {
+          "kind": "stringClone",
+          "ordinal": 2,
+          "result": "controlled_native_SIGILL",
+          "release_acquisition_ids": [
+            3,
+            2,
+            1
+          ],
+          "then": "pristine same-input rerun must match original pristine oracle"
+        }
+      ]
+    }
+  ],
+  "replacement_observations": [
+    "At release of acquisition1 the borrowed caller root handle still names1 while prepared RHS2 remains live; canonical release completes before root handle can name2.",
+    "Before third String allocation and at its failure seam the same borrowed caller root still names2; on success replacement releases2 before later final release3.",
+    "On preparation failure before either replacement commits, existing caller referent remains the prior live String handle and exact cleanup releases that owner once.",
+    "static-disjoint has no language allocator/runtime calls; actual scalar44 demonstrates independent field/array writes through formal and lexical exact referents.",
+    "fallible-cleanup callee clone failure unwinds retained parameter3 before caller outer2/root1; no failed result owner is published or released."
+  ],
+  "observation_contract": {
+    "acquisition_ids": "Assign only after actual successful canonical allocation; unchanged pointer/UTF8 bound to IDs; no synthetic success IDs.",
+    "allocation_fault": "Prefer real canonical malloc-failure seam at the numbered actual String payload allocation; distinguish host observer allocations from canonical runtime payloads.",
+    "clone_fault": "Injected declared failure route before canonical clone/allocation; assert caller-zero output first, then poison failed out; not a claim of native allocator failure.",
+    "release": "Observe canonical release argument before helper mutates it and actual libc free base; verify live source/root pointer before release, no duplicates.",
+    "outputs": "All used String outputs zero at ABI entry, status checked before result publication; failed poisoned result never released/read.",
+    "qualification": "Compile/object nine-case controls are separate; actual C/runtime observations not claimed by this frozen proposal."
+  }
+}

@@ -1,0 +1,9 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function relay<T extends ZrynaValue>(value: Borrow<T>): i32 { return 3; }
+function scan<T extends ZrynaValue>(value: Borrow<Packet<T>>): i32 {
+  return match(value, { "Packet.none": () => 0, "Packet.item": (payload) => relay<T>(payload) });
+}
+export function entry(): i32 {
+  const root: Packet<String> = Packet.item<String>("opaque"); const loan: Borrow<Packet<String>> = borrow(root);
+  return scan<String>(loan);
+}

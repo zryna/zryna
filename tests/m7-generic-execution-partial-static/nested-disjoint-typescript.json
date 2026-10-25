@@ -1,0 +1,992 @@
+{
+  "schema_version": 5,
+  "files": [
+    {
+      "id": 0,
+      "path": "main.zry",
+      "imports": [],
+      "type_syntax": [
+        {
+          "span": {
+            "file": 0,
+            "start": 65,
+            "end": 66
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 65,
+                "end": 66
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 76,
+            "end": 77
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 76,
+                "end": 77
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 129,
+            "end": 135
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 129,
+              "end": 135
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 125,
+            "end": 136
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Duo",
+              "span": {
+                "file": 0,
+                "start": 125,
+                "end": 128
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 128,
+                "end": 136
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 128,
+                "end": 129
+              },
+              "arguments": [
+                2
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 135,
+                "end": 136
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 147,
+            "end": 153
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 147,
+              "end": 153
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 182,
+            "end": 185
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 182,
+                "end": 185
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 201,
+            "end": 205
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "Nest",
+              "span": {
+                "file": 0,
+                "start": 201,
+                "end": 205
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 226,
+            "end": 232
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 226,
+              "end": 232
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 294,
+            "end": 300
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 294,
+              "end": 300
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 334,
+            "end": 340
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 334,
+              "end": 340
+            }
+          }
+        }
+      ],
+      "data_declarations": [
+        {
+          "span": {
+            "file": 0,
+            "start": 0,
+            "end": 80
+          },
+          "export_span": null,
+          "type_parameters": {
+            "span": {
+              "file": 0,
+              "start": 13,
+              "end": 35
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 13,
+              "end": 14
+            },
+            "parameters": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 14,
+                  "end": 34
+                },
+                "name": {
+                  "text": "T",
+                  "span": {
+                    "file": 0,
+                    "start": 14,
+                    "end": 15
+                  }
+                },
+                "extends_span": {
+                  "file": 0,
+                  "start": 16,
+                  "end": 23
+                },
+                "bound": {
+                  "text": "ZrynaValue",
+                  "span": {
+                    "file": 0,
+                    "start": 24,
+                    "end": 34
+                  }
+                }
+              }
+            ],
+            "comma_spans": [],
+            "greater_than_span": {
+              "file": 0,
+              "start": 34,
+              "end": 35
+            }
+          },
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 0,
+              "end": 9
+            },
+            "name": {
+              "text": "Duo",
+              "span": {
+                "file": 0,
+                "start": 10,
+                "end": 13
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 36,
+              "end": 43
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 44,
+              "end": 55
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 56,
+              "end": 57
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 79,
+              "end": 80
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 58,
+                  "end": 67
+                },
+                "name": {
+                  "text": "first",
+                  "span": {
+                    "file": 0,
+                    "start": 58,
+                    "end": 63
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 63,
+                  "end": 64
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 66,
+                  "end": 67
+                },
+                "type_syntax": 0
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 68,
+                  "end": 78
+                },
+                "name": {
+                  "text": "second",
+                  "span": {
+                    "file": 0,
+                    "start": 68,
+                    "end": 74
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 74,
+                  "end": 75
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 77,
+                  "end": 78
+                },
+                "type_syntax": 1
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 81,
+            "end": 156
+          },
+          "export_span": null,
+          "type_parameters": null,
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 81,
+              "end": 90
+            },
+            "name": {
+              "text": "Nest",
+              "span": {
+                "file": 0,
+                "start": 91,
+                "end": 95
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 96,
+              "end": 103
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 104,
+              "end": 115
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 116,
+              "end": 117
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 155,
+              "end": 156
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 118,
+                  "end": 137
+                },
+                "name": {
+                  "text": "inner",
+                  "span": {
+                    "file": 0,
+                    "start": 118,
+                    "end": 123
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 123,
+                  "end": 124
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 136,
+                  "end": 137
+                },
+                "type_syntax": 3
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 138,
+                  "end": 154
+                },
+                "name": {
+                  "text": "sibling",
+                  "span": {
+                    "file": 0,
+                    "start": 138,
+                    "end": 145
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 145,
+                  "end": 146
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 153,
+                  "end": 154
+                },
+                "type_syntax": 4
+              }
+            ]
+          }
+        }
+      ],
+      "functions": [
+        {
+          "span": {
+            "file": 0,
+            "start": 157,
+            "end": 370
+          },
+          "export_span": {
+            "file": 0,
+            "start": 157,
+            "end": 163
+          },
+          "function_span": {
+            "file": 0,
+            "start": 164,
+            "end": 172
+          },
+          "name": {
+            "text": "entry",
+            "span": {
+              "file": 0,
+              "start": 173,
+              "end": 178
+            }
+          },
+          "type_parameters": null,
+          "parameters": [],
+          "result_type": 5,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 186,
+              "end": 370
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 186,
+                  "end": 370
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 186,
+                  "end": 187
+                },
+                "statements": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 369,
+                  "end": 370
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 188,
+                  "end": 280
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 188,
+                    "end": 193
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "owner",
+                    "span": {
+                      "file": 0,
+                      "start": 194,
+                      "end": 199
+                    }
+                  },
+                  "type_syntax": 6,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 206,
+                    "end": 207
+                  },
+                  "initializer": 4,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 279,
+                    "end": 280
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 281,
+                  "end": 321
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 281,
+                    "end": 286
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "first",
+                    "span": {
+                      "file": 0,
+                      "start": 287,
+                      "end": 292
+                    }
+                  },
+                  "type_syntax": 8,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 301,
+                    "end": 302
+                  },
+                  "initializer": 7,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 320,
+                    "end": 321
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 322,
+                  "end": 357
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 322,
+                    "end": 327
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "last",
+                    "span": {
+                      "file": 0,
+                      "start": 328,
+                      "end": 332
+                    }
+                  },
+                  "type_syntax": 9,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 341,
+                    "end": 342
+                  },
+                  "initializer": 9,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 356,
+                    "end": 357
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 358,
+                  "end": 368
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 358,
+                    "end": 364
+                  },
+                  "value": 10,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 367,
+                    "end": 368
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 243,
+                  "end": 246
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"a\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 256,
+                  "end": 259
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"b\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 222,
+                  "end": 262
+                },
+                "kind": {
+                  "kind": "struct-construction",
+                  "type_name": {
+                    "text": "Duo",
+                    "span": {
+                      "file": 0,
+                      "start": 222,
+                      "end": 225
+                    }
+                  },
+                  "type_arguments": {
+                    "span": {
+                      "file": 0,
+                      "start": 225,
+                      "end": 233
+                    },
+                    "less_than_span": {
+                      "file": 0,
+                      "start": 225,
+                      "end": 226
+                    },
+                    "arguments": [
+                      7
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "file": 0,
+                      "start": 232,
+                      "end": 233
+                    }
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 233,
+                    "end": 234
+                  },
+                  "open_brace_span": {
+                    "file": 0,
+                    "start": 234,
+                    "end": 235
+                  },
+                  "fields": [
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 236,
+                        "end": 246
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "first",
+                          "span": {
+                            "file": 0,
+                            "start": 236,
+                            "end": 241
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 241,
+                          "end": 242
+                        },
+                        "value": 0
+                      }
+                    },
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 248,
+                        "end": 259
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "second",
+                          "span": {
+                            "file": 0,
+                            "start": 248,
+                            "end": 254
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 254,
+                          "end": 255
+                        },
+                        "value": 1
+                      }
+                    }
+                  ],
+                  "close_brace_span": {
+                    "file": 0,
+                    "start": 260,
+                    "end": 261
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 261,
+                    "end": 262
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 273,
+                  "end": 276
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"c\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 208,
+                  "end": 279
+                },
+                "kind": {
+                  "kind": "struct-construction",
+                  "type_name": {
+                    "text": "Nest",
+                    "span": {
+                      "file": 0,
+                      "start": 208,
+                      "end": 212
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 212,
+                    "end": 213
+                  },
+                  "open_brace_span": {
+                    "file": 0,
+                    "start": 213,
+                    "end": 214
+                  },
+                  "fields": [
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 215,
+                        "end": 262
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "inner",
+                          "span": {
+                            "file": 0,
+                            "start": 215,
+                            "end": 220
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 220,
+                          "end": 221
+                        },
+                        "value": 2
+                      }
+                    },
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 264,
+                        "end": 276
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "sibling",
+                          "span": {
+                            "file": 0,
+                            "start": 264,
+                            "end": 271
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 271,
+                          "end": 272
+                        },
+                        "value": 3
+                      }
+                    }
+                  ],
+                  "close_brace_span": {
+                    "file": 0,
+                    "start": 277,
+                    "end": 278
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 278,
+                    "end": 279
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 303,
+                  "end": 308
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "owner",
+                    "span": {
+                      "file": 0,
+                      "start": 303,
+                      "end": 308
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 303,
+                  "end": 314
+                },
+                "kind": {
+                  "kind": "field-access",
+                  "base": 5,
+                  "dot_span": {
+                    "file": 0,
+                    "start": 308,
+                    "end": 309
+                  },
+                  "field": {
+                    "text": "inner",
+                    "span": {
+                      "file": 0,
+                      "start": 309,
+                      "end": 314
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 303,
+                  "end": 320
+                },
+                "kind": {
+                  "kind": "field-access",
+                  "base": 6,
+                  "dot_span": {
+                    "file": 0,
+                    "start": 314,
+                    "end": 315
+                  },
+                  "field": {
+                    "text": "first",
+                    "span": {
+                      "file": 0,
+                      "start": 315,
+                      "end": 320
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 343,
+                  "end": 348
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "owner",
+                    "span": {
+                      "file": 0,
+                      "start": 343,
+                      "end": 348
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 343,
+                  "end": 356
+                },
+                "kind": {
+                  "kind": "field-access",
+                  "base": 8,
+                  "dot_span": {
+                    "file": 0,
+                    "start": 348,
+                    "end": 349
+                  },
+                  "field": {
+                    "text": "sibling",
+                    "span": {
+                      "file": 0,
+                      "start": 349,
+                      "end": 356
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 365,
+                  "end": 367
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "19"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

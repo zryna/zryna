@@ -1,0 +1,14 @@
+{
+  "SOURCE_EXPECTED_FREEZE.json": {
+    "bytes": 17055,
+    "sha256": "c754bbdb04ef3f4e113966b812214a55afc869f7a7163dbfeb8bca9d55034868"
+  },
+  "DIAGNOSTIC_EXPECTED_FREEZE.json": {
+    "bytes": 4173,
+    "sha256": "5a487a445e3f84772adcdce45eaf1ef37bccf5aeedea75c8216eed9606f7c34b"
+  },
+  "packet-identities.json": {
+    "bytes": 12776,
+    "sha256": "08c2c7ce0ebd09f219ee605b0844b64f18618f5e9264ea6497625ce883c0c506"
+  }
+}

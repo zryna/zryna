@@ -1,0 +1,6 @@
+function add(value: BorrowMut<i32>): i32 { value = value + 5; return value; }
+export function entry(index: i32): i32 {
+  let root: FixedArray<i32, 2> = FixedArray<i32, 2>([11, 19]);
+  { const slot: BorrowMut<i32> = borrowMut(root[index]); const changed: i32 = add(slot); }
+  return root[0] + root[0] + root[1];
+}

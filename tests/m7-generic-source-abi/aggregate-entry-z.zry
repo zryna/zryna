@@ -1,0 +1,2 @@
+import { helper } from "./a.zry";
+export function value(input:String):String{return input;}

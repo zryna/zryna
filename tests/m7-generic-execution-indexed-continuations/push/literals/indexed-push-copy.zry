@@ -1,0 +1,5 @@
+export function entry(index: i32): i32 {
+  let root: Vec<Vec<i32>> = Vec<Vec<i32>>([Vec<i32>([11]), Vec<i32>([19])]);
+  push(root[index], 7);
+  return root[index][0] + root[index][1];
+}

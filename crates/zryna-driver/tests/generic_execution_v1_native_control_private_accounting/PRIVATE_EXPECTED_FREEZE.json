@@ -1,0 +1,352 @@
+{
+  "format": "m416.native-control-private-source-probes.v1",
+  "scope": "Eight constant-event genuine source-step probes per provider with seeded invocation counters; ordinary object unchanged; not million-event execution or natural count overflow",
+  "source_freeze_sha256": "b446238d4019917fd3df2195ef23c33e8f9c59bee8d4783e66942c626e977369",
+  "law_sha256": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "cases": [
+    {
+      "id": "birth-small",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "malloc_fault_ordinal": 0,
+      "expected": {
+        "status": 0,
+        "out": 7,
+        "post": [
+          1,
+          0,
+          3,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 0
+        },
+        "attempts": 1,
+        "allocations": 1,
+        "frees": 1,
+        "peak_live": 1,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 3,
+        "zero_outputs": 2,
+        "expired": 0,
+        "allocation_failures": 0,
+        "fault_pending": 0
+      }
+    },
+    {
+      "id": "birth-exact-total",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        4194301,
+        0
+      ],
+      "malloc_fault_ordinal": 0,
+      "expected": {
+        "status": 0,
+        "out": 7,
+        "post": [
+          1,
+          0,
+          4194304,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 0
+        },
+        "attempts": 1,
+        "allocations": 1,
+        "frees": 1,
+        "peak_live": 1,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 3,
+        "zero_outputs": 2,
+        "expired": 0,
+        "allocation_failures": 0,
+        "fault_pending": 0
+      }
+    },
+    {
+      "id": "birth-global-denial-preempts-armed-fault",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        4194302,
+        0
+      ],
+      "malloc_fault_ordinal": 1,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          0,
+          0,
+          4194302,
+          0
+        ],
+        "entries": {
+          "allocate": 0,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 0,
+          "strongReleaseFinish": 0,
+          "weakRelease": 0
+        },
+        "attempts": 0,
+        "allocations": 0,
+        "frees": 0,
+        "peak_live": 0,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 0,
+        "zero_outputs": 0,
+        "expired": 0,
+        "allocation_failures": 0,
+        "fault_pending": 1
+      }
+    },
+    {
+      "id": "birth-canonical-allocation-fault",
+      "case": "control-birth-call-loop",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "malloc_fault_ordinal": 1,
+      "expected": {
+        "status": 1,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 0,
+          "strongReleaseFinish": 0,
+          "weakRelease": 0
+        },
+        "attempts": 1,
+        "allocations": 0,
+        "frees": 0,
+        "peak_live": 0,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 1,
+        "zero_outputs": 1,
+        "expired": 0,
+        "allocation_failures": 1,
+        "fault_pending": 0
+      }
+    },
+    {
+      "id": "live-exact-total",
+      "case": "control-live-count-call-loop",
+      "pre": [
+        0,
+        0,
+        4194293,
+        0
+      ],
+      "malloc_fault_ordinal": 0,
+      "expected": {
+        "status": 0,
+        "out": 31,
+        "post": [
+          1,
+          0,
+          4194304,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 1,
+          "weakDowngrade": 1,
+          "weakClone": 1,
+          "weakUpgrade": 1,
+          "strongReleaseBegin": 3,
+          "strongReleaseFinish": 1,
+          "weakRelease": 2
+        },
+        "attempts": 1,
+        "allocations": 1,
+        "frees": 1,
+        "peak_live": 1,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 11,
+        "zero_outputs": 6,
+        "expired": 0,
+        "allocation_failures": 0,
+        "fault_pending": 0
+      }
+    },
+    {
+      "id": "live-denied-clone-parent-cleanup",
+      "case": "control-live-count-call-loop",
+      "pre": [
+        0,
+        0,
+        4194300,
+        0
+      ],
+      "malloc_fault_ordinal": 0,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          4194303,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 0
+        },
+        "attempts": 1,
+        "allocations": 1,
+        "frees": 1,
+        "peak_live": 1,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 3,
+        "zero_outputs": 2,
+        "expired": 0,
+        "allocation_failures": 0,
+        "fault_pending": 0
+      }
+    },
+    {
+      "id": "expired-known-failure-at-held-frontier",
+      "case": "control-expired-call-loop",
+      "pre": [
+        0,
+        0,
+        4194298,
+        0
+      ],
+      "malloc_fault_ordinal": 0,
+      "expected": {
+        "status": 0,
+        "out": 37,
+        "post": [
+          1,
+          0,
+          4194304,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 1,
+          "weakClone": 0,
+          "weakUpgrade": 1,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 1
+        },
+        "attempts": 1,
+        "allocations": 1,
+        "frees": 1,
+        "peak_live": 1,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 6,
+        "zero_outputs": 3,
+        "expired": 1,
+        "allocation_failures": 0,
+        "fault_pending": 0
+      }
+    },
+    {
+      "id": "expired-denied-downgrade-parent-cleanup",
+      "case": "control-expired-call-loop",
+      "pre": [
+        0,
+        0,
+        4194300,
+        0
+      ],
+      "malloc_fault_ordinal": 0,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          4194303,
+          0
+        ],
+        "entries": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 0
+        },
+        "attempts": 1,
+        "allocations": 1,
+        "frees": 1,
+        "peak_live": 1,
+        "live": 0,
+        "strong": 0,
+        "explicit_weak": 0,
+        "canonical_status_entries": 3,
+        "zero_outputs": 2,
+        "expired": 0,
+        "allocation_failures": 0,
+        "fault_pending": 0
+      }
+    }
+  ]
+}

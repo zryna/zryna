@@ -1,0 +1,62 @@
+{
+  "status": "Subset of newly recorded syntax-only provider receipts",
+  "originalReceiptsSha256": "17f2ec76171371e3422124d305236011852e461e935088e9d760cbab57ca8760",
+  "records": [
+    {
+      "case": "imported-alias-decoy",
+      "provider": "native",
+      "packet": "imported-alias-decoy-native.json",
+      "packetBytes": 44144,
+      "packetSha256": "d0cb3cab1e43e8b957e7c9625f841158670d25d0091b9b13c8030069fdcabf1f"
+    },
+    {
+      "case": "imported-alias-decoy",
+      "provider": "typescript",
+      "packet": "imported-alias-decoy-typescript.json",
+      "packetBytes": 44144,
+      "packetSha256": "a8b0a191bceb565e12387104189c56cf78535509ba2bda7b1945d0af0618f316"
+    },
+    {
+      "case": "member-height-256",
+      "provider": "native",
+      "packet": "member-height-256-native.json",
+      "packetBytes": 570320,
+      "packetSha256": "e598f0e1970237cf7b9e9e312e81d16e59476da3eee1d36619519655cc9c620e"
+    },
+    {
+      "case": "member-height-256",
+      "provider": "typescript",
+      "packet": "member-height-256-typescript.json",
+      "packetBytes": 570320,
+      "packetSha256": "6a71c424a9e03de55fe5a8a14bfa92ffffbf4e1d0f3c6e50df0249884ef62fa5"
+    },
+    {
+      "case": "member-height-257",
+      "provider": "native",
+      "packet": "member-height-257-native.json",
+      "packetBytes": 572567,
+      "packetSha256": "5d3bd954e5e6b764c0a917a0650a13e94e3f8c9f71a8192878ac94752871cd56"
+    },
+    {
+      "case": "member-height-257",
+      "provider": "typescript",
+      "packet": "member-height-257-typescript.json",
+      "packetBytes": 572567,
+      "packetSha256": "ec4ef55fe83bbb5d2dbd926213767353d7350e82f86b125adf4fa6992aca6f81"
+    },
+    {
+      "case": "member-height-shared-prefix",
+      "provider": "native",
+      "packet": "member-height-shared-prefix-native.json",
+      "packetBytes": 577058,
+      "packetSha256": "a4e72a9e1d9ef2f11b0ddb3614fa90efa208b3e5c14360702799042d6ce12237"
+    },
+    {
+      "case": "member-height-shared-prefix",
+      "provider": "typescript",
+      "packet": "member-height-shared-prefix-typescript.json",
+      "packetBytes": 577058,
+      "packetSha256": "fd8af04af8898856bcfd512dd8fe417d8582929eb0c483285a4014fac244c3a4"
+    }
+  ]
+}

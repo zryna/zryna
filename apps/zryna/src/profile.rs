@@ -13,6 +13,8 @@ pub(super) enum CliProfile {
     ControlFlowV1,
     #[value(name = "data-ownership-v1")]
     DataOwnershipV1,
+    #[value(name = "bounded-generics-v1")]
+    BoundedGenericsV1,
     #[value(name = "command-h1-v1")]
     CommandH1V1,
 }
@@ -43,7 +45,7 @@ impl CliTarget {
 }
 
 pub(super) fn selects_typed_scalars(arguments: &[OsString]) -> bool {
-    ["control-flow-v1", "data-ownership-v1"].iter().any(|profile| {
+    ["control-flow-v1", "data-ownership-v1", "bounded-generics-v1"].iter().any(|profile| {
         arguments.windows(2).any(|pair| pair[0] == "--profile" && pair[1] == *profile)
             || arguments.iter().any(|argument| argument == format!("--profile={profile}").as_str())
     })

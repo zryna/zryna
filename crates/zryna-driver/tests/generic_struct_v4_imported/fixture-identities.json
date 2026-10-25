@@ -1,0 +1,85 @@
+{
+  "status": "Frozen complete source and provider input identities",
+  "files": {
+    "imported-alias-decoy/main.zry": {
+      "bytes": 555,
+      "sha256": "eb0f6960f171de7d8708067e2a5c0c84e57fe900ea659a7fcc6071e42a8bf449"
+    },
+    "imported-alias-decoy/values.zry": {
+      "bytes": 234,
+      "sha256": "4cfb6aee7d66fdc42b8368e56cb1f2d08c592521e97ae32019b67bcf7f387272"
+    },
+    "imported-alias-decoy/z-leaf.zry": {
+      "bytes": 61,
+      "sha256": "8de1e93e516bf88b85dd732902c12a8a63fbca144ca15c80d974eb6cf13256ec"
+    },
+    "imported-alias-decoy-expected.json": {
+      "bytes": 1472,
+      "sha256": "d342e4407c43929255198934de3053ecb9f57fa975920236bc3ee4af29517df8"
+    },
+    "imported-alias-decoy-native.json": {
+      "bytes": 44144,
+      "sha256": "d0cb3cab1e43e8b957e7c9625f841158670d25d0091b9b13c8030069fdcabf1f"
+    },
+    "imported-alias-decoy-typescript.json": {
+      "bytes": 44144,
+      "sha256": "a8b0a191bceb565e12387104189c56cf78535509ba2bda7b1945d0af0618f316"
+    },
+    "member-height-256/main.zry": {
+      "bytes": 13302,
+      "sha256": "0f49ca9f07d1e61b918d5da047f877b9468d9f1c77dc57a5d200112f4c39f230"
+    },
+    "member-height-256-expected.json": {
+      "bytes": 489,
+      "sha256": "74bef4b41498647a494258d61de7a4352616d75b91519542862b0faf423da335"
+    },
+    "member-height-256-native.json": {
+      "bytes": 570320,
+      "sha256": "e598f0e1970237cf7b9e9e312e81d16e59476da3eee1d36619519655cc9c620e"
+    },
+    "member-height-256-typescript.json": {
+      "bytes": 570320,
+      "sha256": "6a71c424a9e03de55fe5a8a14bfa92ffffbf4e1d0f3c6e50df0249884ef62fa5"
+    },
+    "member-height-257/main.zry": {
+      "bytes": 13354,
+      "sha256": "3b0f64f3cac228716790bfd05de542e41ea3fb3ca1b5c787b8291b2330c0b179"
+    },
+    "member-height-257-expected.json": {
+      "bytes": 551,
+      "sha256": "487ab3310fdbaeaedf97fe265b17a74954c01a099b1e2da10d2c54bf6c22338b"
+    },
+    "member-height-257-native.json": {
+      "bytes": 572567,
+      "sha256": "5d3bd954e5e6b764c0a917a0650a13e94e3f8c9f71a8192878ac94752871cd56"
+    },
+    "member-height-257-typescript.json": {
+      "bytes": 572567,
+      "sha256": "ec4ef55fe83bbb5d2dbd926213767353d7350e82f86b125adf4fa6992aca6f81"
+    },
+    "member-height-shared-prefix/main.zry": {
+      "bytes": 13448,
+      "sha256": "cd18a50b015a2781b301ede340b09db6b754188f8c9d9de203f6e5c027baf73d"
+    },
+    "member-height-shared-prefix-expected.json": {
+      "bytes": 1080,
+      "sha256": "fb0f51e9316fa9e56a71d1a8070f0d8bcc2ea7562678390142a014fc692c81ac"
+    },
+    "member-height-shared-prefix-native.json": {
+      "bytes": 577058,
+      "sha256": "a4e72a9e1d9ef2f11b0ddb3614fa90efa208b3e5c14360702799042d6ce12237"
+    },
+    "member-height-shared-prefix-typescript.json": {
+      "bytes": 577058,
+      "sha256": "fd8af04af8898856bcfd512dd8fe417d8582929eb0c483285a4014fac244c3a4"
+    },
+    "packet-identities.json": {
+      "bytes": 2214,
+      "sha256": "94caf8960c643dacb271390e0e3a68816088aa67d16271be73d7b595a2f983bc"
+    },
+    "source-expected-freeze.json": {
+      "bytes": 2399,
+      "sha256": "e660c9bc441c32964d4173f2e86765194a2a91242ec95660eb534a1e73dcfd17"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+function bad<T extends ZrynaValue>(values: Vec<T>): i32 {
+  let root: Vec<T> = values;
+  { const first: BorrowMut<T> = borrowMut(root[0]); const second: Borrow<T> = borrow(root[1]); }
+  return 0;
+}
+export function entry(): i32 { return bad<i32>(Vec<i32>([1, 2])); }

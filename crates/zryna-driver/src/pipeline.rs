@@ -35,8 +35,15 @@ use crate::{
 };
 
 mod artifacts;
+mod transaction_files;
+pub(crate) use transaction_files::ensure_absent;
+use transaction_files::{
+    create_owned_directory, create_private_directory, is_executable_file, prepare_executable_file,
+    read_directory_names, rename_create_only, sync_directory, write_complete_file,
+};
 mod command_h1;
 mod control_flow;
+mod generic;
 pub(crate) mod preparation;
 mod project;
 pub(crate) mod providers;
@@ -1647,14 +1654,44 @@ impl Transaction {
         before_final_audit: impl FnOnce(),
         after_final_audit: impl FnOnce(),
     ) -> Result<(), CommandFailure> {
+        self.commit_with_fallible_rename_hooks(
+            output_root,
+            final_bundle,
+            || {
+                before_final_audit();
+                Ok(())
+            },
+            || {
+                after_final_audit();
+                Ok(())
+            },
+        )
+    }
+
+    pub(crate) fn commit_guarded(
+        &mut self,
+        output_root: &ArtifactOutputRoot,
+        final_bundle: &Path,
+        checkpoint: &dyn Fn() -> Result<(), CommandFailure>,
+    ) -> Result<(), CommandFailure> {
+        self.commit_with_fallible_rename_hooks(output_root, final_bundle, || Ok(()), checkpoint)
+    }
+
+    fn commit_with_fallible_rename_hooks(
+        &mut self,
+        output_root: &ArtifactOutputRoot,
+        final_bundle: &Path,
+        before_final_audit: impl FnOnce() -> Result<(), CommandFailure>,
+        after_final_audit: impl FnOnce() -> Result<(), CommandFailure>,
+    ) -> Result<(), CommandFailure> {
         output_root.revalidate().map_err(preparation_failure)?;
         self.revalidate_stage()?;
         self.audit_inventory(true)?;
         ensure_absent(final_bundle)?;
-        before_final_audit();
+        before_final_audit()?;
         self.revalidate_stage()?;
         self.audit_inventory(true)?;
-        after_final_audit();
+        after_final_audit()?;
         let final_name = final_bundle
             .file_name()
             .and_then(|value| value.to_str())
@@ -1808,130 +1845,6 @@ impl Transaction {
             }
         }
         Ok(())
-    }
-}
-
-fn read_directory_names(path: &Path) -> Result<BTreeSet<String>, CommandFailure> {
-    fs::read_dir(path)
-        .map_err(|_| transaction_error("private stage directory could not be enumerated"))?
-        .map(|entry| {
-            entry
-                .map_err(|_| transaction_error("private stage entry could not be inspected"))?
-                .file_name()
-                .into_string()
-                .map_err(|_| transaction_error("private stage entry name is not portable UTF-8"))
-        })
-        .collect()
-}
-
-#[cfg(unix)]
-fn is_executable_file(metadata: &fs::Metadata) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-    metadata.permissions().mode() & 0o111 == 0o111
-}
-
-#[cfg(not(unix))]
-fn is_executable_file(_metadata: &fs::Metadata) -> bool {
-    true
-}
-
-fn create_owned_directory(path: &Path) -> Result<(), CommandFailure> {
-    create_private_directory(path)
-        .map_err(|_| transaction_error("could not create secure target stage directory"))
-}
-
-#[cfg(unix)]
-fn create_private_directory(path: &Path) -> io::Result<()> {
-    use std::os::unix::fs::DirBuilderExt;
-
-    let mut builder = fs::DirBuilder::new();
-    builder.mode(0o700).create(path)
-}
-
-#[cfg(not(unix))]
-fn create_private_directory(path: &Path) -> io::Result<()> {
-    fs::create_dir(path)
-}
-
-fn write_complete_file(path: &Path, bytes: &[u8]) -> Result<(), CommandFailure> {
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .map_err(|_| transaction_error("could not create staged file"))?;
-    file.write_all(bytes)
-        .and_then(|()| file.flush())
-        .and_then(|()| file.sync_all())
-        .map_err(|_| transaction_error("could not write and synchronize staged file"))
-}
-
-#[cfg(unix)]
-fn prepare_executable_file(path: &Path) -> Result<(), CommandFailure> {
-    use std::os::unix::fs::PermissionsExt;
-
-    fs::set_permissions(path, fs::Permissions::from_mode(0o755))
-        .and_then(|()| fs::File::open(path)?.sync_all())
-        .map_err(|_| transaction_error("could not apply and synchronize executable mode"))
-}
-
-#[cfg(not(unix))]
-fn prepare_executable_file(path: &Path) -> Result<(), CommandFailure> {
-    let metadata = fs::symlink_metadata(path)
-        .map_err(|_| transaction_error("could not revalidate executable artifact"))?;
-    if metadata.is_file() && !metadata_is_link_or_reparse(&metadata) {
-        Ok(())
-    } else {
-        Err(transaction_error("executable artifact is not a real regular file"))
-    }
-}
-
-#[cfg(unix)]
-fn sync_directory(path: &Path) -> Result<(), CommandFailure> {
-    fs::File::open(path)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|_| transaction_error("could not synchronize transaction directory"))
-}
-
-#[cfg(not(unix))]
-fn sync_directory(path: &Path) -> Result<(), CommandFailure> {
-    let metadata = fs::symlink_metadata(path)
-        .map_err(|_| transaction_error("could not revalidate transaction directory"))?;
-    if metadata.is_dir() && !metadata_is_link_or_reparse(&metadata) {
-        Ok(())
-    } else {
-        Err(transaction_error("transaction path is not a real directory"))
-    }
-}
-
-#[cfg(target_os = "linux")]
-fn rename_create_only(root: &Dir, source: &str, destination: &str) -> Result<(), CommandFailure> {
-    use nix::fcntl::{RenameFlags, renameat2};
-    use std::os::fd::AsFd;
-
-    renameat2(root.as_fd(), source, root.as_fd(), destination, RenameFlags::RENAME_NOREPLACE)
-        .map_err(|_| transaction_error("create-only bundle commit failed"))
-}
-
-#[cfg(windows)]
-fn rename_create_only(root: &Dir, source: &str, destination: &str) -> Result<(), CommandFailure> {
-    root.rename(source, root, destination)
-        .map_err(|_| transaction_error("create-only bundle commit failed"))
-}
-
-#[cfg(not(any(target_os = "linux", windows)))]
-fn rename_create_only(
-    _root: &Dir,
-    _source: &str,
-    _destination: &str,
-) -> Result<(), CommandFailure> {
-    Err(transaction_error("create-only bundle commit is unsupported on this platform"))
-}
-
-fn ensure_absent(path: &Path) -> Result<(), CommandFailure> {
-    match fs::symlink_metadata(path) {
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
-        Ok(_) => Err(transaction_error("create-only output bundle already exists")),
-        Err(_) => Err(transaction_error("output bundle destination could not be inspected")),
     }
 }
 
@@ -2149,6 +2062,83 @@ mod tests {
             self.calls.fetch_add(1, Ordering::Relaxed);
             self.inner.analyze_verified_v3_with_timeout(sources, timeout)
         }
+    }
+
+    #[test]
+    fn generic_commit_guard_rejection_prevents_publication_and_preserves_cleanup() {
+        let root = TemporaryRoot::new("generic-guard-reject");
+        let output = root.output();
+        let mut transaction = Transaction::create(&output).expect("private transaction");
+        let stage = transaction.path().to_path_buf();
+        let artifact = transaction
+            .write_generic_artifact(
+                crate::generic_manifest::GenericTarget::JavaScript,
+                "artifact",
+                b"export {};\n",
+            )
+            .expect("ordinary artifact");
+        assert_eq!(artifact.path, "javascript/artifact.mjs");
+        transaction
+            .write_manifest(crate::generic_manifest::MANIFEST_NAME, b"{}\n")
+            .expect("closed generic manifest name");
+        let final_bundle = output.path().join("artifact.build");
+        let calls = std::cell::Cell::new(0);
+        let failure = transaction
+            .commit_guarded(&output, &final_bundle, &|| {
+                calls.set(calls.get() + 1);
+                Err(super::transaction_error("retained source changed before commit"))
+            })
+            .expect_err("source checkpoint must prevent final rename");
+        assert_eq!(failure.kind(), CommandFailureKind::Preparation);
+        assert_eq!(calls.get(), 1);
+        assert!(!final_bundle.exists());
+        assert!(stage.exists());
+        transaction.cleanup(&output).expect("rejected stage cleaned normally");
+        assert!(!stage.exists());
+    }
+
+    #[test]
+    fn generic_commit_guard_success_publishes_once_and_invalid_stem_writes_nothing() {
+        let root = TemporaryRoot::new("generic-guard-success");
+        let output = root.output();
+        let mut transaction = Transaction::create(&output).expect("private transaction");
+        for invalid in ["../escape", "/escape", "nested/name", "nested\\name"] {
+            assert!(
+                transaction
+                    .write_generic_artifact(
+                        crate::generic_manifest::GenericTarget::JavaScript,
+                        invalid,
+                        b"bad",
+                    )
+                    .is_err()
+            );
+        }
+        assert!(fs::read_dir(transaction.path()).expect("stage inventory").next().is_none());
+        transaction
+            .write_generic_artifact(
+                crate::generic_manifest::GenericTarget::JavaScript,
+                "artifact",
+                b"export {};\n",
+            )
+            .expect("ordinary artifact");
+        transaction
+            .write_manifest(crate::generic_manifest::MANIFEST_NAME, b"{}\n")
+            .expect("closed generic manifest name");
+        let final_bundle = output.path().join("artifact.build");
+        let calls = std::cell::Cell::new(0);
+        transaction
+            .commit_guarded(&output, &final_bundle, &|| {
+                calls.set(calls.get() + 1);
+                Ok(())
+            })
+            .expect("terminal commit");
+        assert_eq!(calls.get(), 1);
+        assert_eq!(
+            fs::read(final_bundle.join("javascript/artifact.mjs"))
+                .expect("committed ordinary bytes"),
+            b"export {};\n"
+        );
+        assert!(final_bundle.join(crate::generic_manifest::MANIFEST_NAME).is_file());
     }
 
     #[test]

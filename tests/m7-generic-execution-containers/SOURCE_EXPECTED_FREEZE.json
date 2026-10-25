@@ -1,0 +1,180 @@
+{
+  "provenance": "Source/expectations frozen before providers or production changes; no provider/Cargo/runtime observations; same execution_v1 accepted-profile continuation",
+  "cases": [
+    {
+      "case": "opaque-count-unused",
+      "source": "/tmp/m416-execution-container-proposal/literals/opaque-count-unused.zry",
+      "sha256": "f463f16e0ac0eec0d313c2bc63e3a52532cec0cbf531b7e49c5ab77e0a6bf39e",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 7,
+        "allocations": 0,
+        "releases": 0
+      }
+    },
+    {
+      "case": "opaque-downgrade-unused",
+      "source": "/tmp/m416-execution-container-proposal/literals/opaque-downgrade-unused.zry",
+      "sha256": "ef871a14d299a3b2a0079b0fe9165059a34ed57a5a1b4b46b3c287504738795a",
+      "expected": {
+        "original": "ZRYNA-M7002",
+        "span_utf8": [
+          71,
+          80
+        ],
+        "closed_replay": "not entered"
+      }
+    },
+    {
+      "case": "opaque-vec-clone-unused",
+      "source": "/tmp/m416-execution-container-proposal/literals/opaque-vec-clone-unused.zry",
+      "sha256": "6d75c5749f65a5530354250bfc760019383fd23ab09c08dbff87382269c9c90f",
+      "expected": {
+        "original": "ZRYNA-M7002",
+        "span_utf8": [
+          75,
+          80
+        ],
+        "closed_replay": "not entered"
+      }
+    },
+    {
+      "case": "shared-weak-count",
+      "source": "/tmp/m416-execution-container-proposal/literals/shared-weak-count.zry",
+      "sha256": "e3426c8ef974e30d090ce09f6a70e9274a38b366be408c4dbb12c5e4bb610867",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 7,
+        "allocation_order": [
+          "String L",
+          "Shared control"
+        ],
+        "count_actions": [
+          "strong clone +1",
+          "downgrade weak +1",
+          "weak clone +1",
+          "reverse weak decrements",
+          "cloned strong decrement",
+          "final strong drops String L",
+          "control freed after final strong/weak conditions"
+        ],
+        "payload_clone_count": 0
+      }
+    },
+    {
+      "case": "vec-copy",
+      "source": "/tmp/m416-execution-container-proposal/literals/vec-copy.zry",
+      "sha256": "9cef08565d23a4a03968bb483e0981b915b0f4be2b34f438e98d281cb12ffff7",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 14,
+        "allocation_order": [
+          "source Vec buffer",
+          "destination Vec buffer"
+        ],
+        "release_order": [
+          "destination Vec buffer",
+          "source Vec buffer"
+        ]
+      }
+    },
+    {
+      "case": "vec-owned-prepare",
+      "source": "/tmp/m416-execution-container-proposal/literals/vec-owned-prepare.zry",
+      "sha256": "9c59e547d071e178768bb729553d92e96c3a3cb5615ef4dab66de8413dfc6fa9",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 7,
+        "allocation_order": [
+          "String A",
+          "String B",
+          "source Vec buffer",
+          "destination Vec buffer",
+          "cloned String A",
+          "cloned String B"
+        ],
+        "release_order": [
+          "cloned String B",
+          "cloned String A",
+          "destination Vec buffer",
+          "String B",
+          "String A",
+          "source Vec buffer"
+        ],
+        "fault_rules": [
+          "second String failure: release first prepared String; no Vec buffer acquisition yet",
+          "source buffer failure: release prepared String B then A",
+          "second clone child failure: rollback partial child, completed clone A, destination buffer, then source B,A,buffer"
+        ]
+      }
+    },
+    {
+      "case": "vec-push",
+      "source": "/tmp/m416-execution-container-proposal/literals/vec-push.zry",
+      "sha256": "a63e8b3d75c19f4f84908f2d4a02bd7d34507b02bef8e850fd6929f670c56395",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 18,
+        "ordering": [
+          "prepare RHS11",
+          "grow if necessary while source Vec and RHS retained",
+          "append commit"
+        ],
+        "capacity_strategy": "inherited target-private; no new source-observable capacity or assumed growth trace"
+      }
+    },
+    {
+      "case": "weak-expired",
+      "source": "/tmp/m416-execution-container-proposal/literals/weak-expired.zry",
+      "sha256": "7019b30bf1e5454ef1b6e84246a2b5acba44b83a925dd49c7ae5c27d463a99f6",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 37,
+        "ordering": [
+          "create Shared control",
+          "downgrade weak acquisition",
+          "last strong released in callee before return",
+          "expiry no strong acquisition/binding",
+          "final Weak releases control"
+        ]
+      }
+    },
+    {
+      "case": "weak-live",
+      "source": "/tmp/m416-execution-container-proposal/literals/weak-live.zry",
+      "sha256": "9b61432da4fefa674cd1c572c62fcb61baad9ef104f641f3f711bee67ddf7936",
+      "expected": {
+        "original": "PASS",
+        "new_source_claim": "PASS after this continuation",
+        "seal": "requires independent typed/state container rows",
+        "runtime": "requires checked backend container views/kernels",
+        "result": 31,
+        "ordering": [
+          "create Shared control",
+          "downgrade weak acquisition",
+          "atomic live strong acquisition",
+          "success binding only",
+          "success binding release before outer weak/strong cleanup"
+        ]
+      }
+    }
+  ]
+}

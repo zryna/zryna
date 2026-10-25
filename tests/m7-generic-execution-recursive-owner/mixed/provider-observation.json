@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-25T15:19:08.041913+00:00",
+  "exit_code": 0,
+  "stderr_bytes": 0,
+  "elapsed_seconds": 0.5917018149921205,
+  "source_sha256": "5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6",
+  "stdout_sha256": "6f32dde9b92c554614511374f3c0c60d6731fcbaeab5a5d145a9676812852c5f",
+  "limits": "Actual TypeScript provider only; native DTO parity, syntax/semantics/NEW execution seal, emission and runtime remain pending.",
+  "packet_sha256": "918cd89ca415c91acbf589cb6a52aacbd113facdb2e24febd48a4ffe2fbea9b5",
+  "diagnostics": []
+}

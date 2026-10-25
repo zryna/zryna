@@ -1,0 +1,4 @@
+function identity<T extends ZrynaValue>(value: T): T { return value; }
+function probe(): i32 {
+identity<i32, bool>(7);
+return 0; }

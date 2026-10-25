@@ -143,8 +143,12 @@ def read(path, maximum):
         return parent.read(path.name, maximum)
 
 
-def write_json(parent, name, value):
-    data = (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
+def write_json(parent, name, value, *, compact=False):
+    # Complete source censuses need no formatting whitespace; all report bounds still apply.
+    if compact:
+        data = (json.dumps(value, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
+    else:
+        data = (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
     assert len(data) <= REPORT_LIMIT
     parent.write(name, data)
     return {'path': name, 'bytes': len(data), 'sha256': sha(data)}

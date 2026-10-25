@@ -1,0 +1,7 @@
+export function entry(index: i32, again: bool): i32 {
+  const root: Vec<Option<i32>> = Vec<Option<i32>>([Option.none<i32>(), Option.some<i32>(7)]);
+  const loan: Borrow<Option<i32>> = borrow(root[index]);
+  const result: i32 = match(loan, { "Option.none": () => 3, "Option.some": (payload) => payload });
+  while (again) { }
+  return result;
+}

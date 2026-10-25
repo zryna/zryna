@@ -1,0 +1,1 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function unused(input: Box<Box<String>>): Box<String> { return input.value; } export function entry(): i32 { return 7; }

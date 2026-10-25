@@ -1,0 +1,96 @@
+{
+  "format": "m416.execution-dynamic-index-diagnostics.v1",
+  "basis": "BOUNDED_GENERICS_DECISIONS_V1 diagnostic code/primary span law; source-only reasoning before output",
+  "cases": [
+    {
+      "case": "dynamic-array-overlap",
+      "sourceSha256": "d65777f0600c60a3e059d6d0221aad68a7bd3b6020ae25e3b3b99a6274e15877",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 201,
+        "end": 207
+      },
+      "primaryText": "borrow",
+      "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+      "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+      "anchor": "borrow(root[1])",
+      "reason": "Dynamic array exclusive loan covers whole array; distinct constant sibling cannot shared-borrow while it lives."
+    },
+    {
+      "case": "indexed-rhs-moves-owner",
+      "sourceSha256": "da5cf994fc7522dddd46ad919355305cd356a75574a95e582e0856a4b0d4f910",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 216,
+        "end": 220
+      },
+      "primaryText": "root",
+      "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+      "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+      "anchor": "take<T>(root, value)",
+      "reason": "Prepared indexed replacement retains whole-container exclusive authority during RHS; consuming root argument invalidates it."
+    },
+    {
+      "case": "opaque-indexed-consume",
+      "sourceSha256": "ae94191a3e05b693f1490aa5d9058d6e4684602c4d6eb4663ccf5bff6ed315d6",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 89,
+        "end": 102
+      },
+      "primaryText": "values[index]",
+      "AST_role": "invalid indexed consuming operation",
+      "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+      "anchor": "values[index]",
+      "reason": "Opaque T:ZrynaValue has no Copy authority; dynamic element cannot be independently moved out of complete container."
+    },
+    {
+      "case": "owner-move-while-indexed",
+      "sourceSha256": "3be93146799398b8ac146525f5a712ff3e36863c4b4ff507cc5c7ef1e8ce9ad1",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 143,
+        "end": 149
+      },
+      "primaryText": "values",
+      "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+      "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+      "anchor": "= values;",
+      "reason": "Move of complete Vec while shared indexed element loan is live."
+    },
+    {
+      "case": "shared-element-write",
+      "sourceSha256": "a064dd28fb459730c9ba474503cd7db2fe2fed4d559903a8f510e79d1ac3d065",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 131,
+        "end": 135
+      },
+      "primaryText": "slot",
+      "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+      "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+      "anchor": "slot = value",
+      "reason": "Shared indexed loan forbids replacement through its binding."
+    },
+    {
+      "case": "vector-constant-overlap",
+      "sourceSha256": "22c628626a100807652044e328d7c52c62c126257d86d3ba7f8c17977a8f82b2",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 165,
+        "end": 171
+      },
+      "primaryText": "borrow",
+      "AST_role": "invalid borrow keyword / assignment target / consuming reference as identified by primaryText",
+      "selection": "Exact source anchor, not substring occurrence counting across type/string/identifier text",
+      "anchor": "borrow(root[1])",
+      "reason": "Vec elements conservatively cover entire container even constant distinct indexes."
+    }
+  ]
+}

@@ -1,0 +1,1190 @@
+{
+  "schema_version": 5,
+  "files": [
+    {
+      "id": 0,
+      "path": "main.zry",
+      "imports": [],
+      "type_syntax": [
+        {
+          "span": {
+            "file": 0,
+            "start": 65,
+            "end": 66
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "T",
+              "span": {
+                "file": 0,
+                "start": 65,
+                "end": 66
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 104,
+            "end": 110
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 104,
+              "end": 110
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 100,
+            "end": 111
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 100,
+                "end": 103
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 103,
+                "end": 111
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 103,
+                "end": 104
+              },
+              "arguments": [
+                1
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 110,
+                "end": 111
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 96,
+            "end": 112
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 96,
+                "end": 99
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 99,
+                "end": 112
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 99,
+                "end": 100
+              },
+              "arguments": [
+                2
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 111,
+                "end": 112
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 123,
+            "end": 129
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 123,
+              "end": 129
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 119,
+            "end": 130
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 119,
+                "end": 122
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 122,
+                "end": 130
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 122,
+                "end": 123
+              },
+              "arguments": [
+                4
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 129,
+                "end": 130
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 115,
+            "end": 131
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 115,
+                "end": 118
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 118,
+                "end": 131
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 118,
+                "end": 119
+              },
+              "arguments": [
+                5
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 130,
+                "end": 131
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 175,
+            "end": 178
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 175,
+                "end": 178
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 200,
+            "end": 206
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 200,
+              "end": 206
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 235,
+            "end": 241
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 235,
+              "end": 241
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 231,
+            "end": 242
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 231,
+                "end": 234
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 234,
+                "end": 242
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 234,
+                "end": 235
+              },
+              "arguments": [
+                9
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 241,
+                "end": 242
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 227,
+            "end": 243
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 227,
+                "end": 230
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 230,
+                "end": 243
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 230,
+                "end": 231
+              },
+              "arguments": [
+                10
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 242,
+                "end": 243
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 254,
+            "end": 260
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 254,
+              "end": 260
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 250,
+            "end": 261
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 250,
+                "end": 253
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 253,
+                "end": 261
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 253,
+                "end": 254
+              },
+              "arguments": [
+                12
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 260,
+                "end": 261
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 276,
+            "end": 282
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 276,
+              "end": 282
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 325,
+            "end": 331
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 325,
+              "end": 331
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 321,
+            "end": 332
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 321,
+                "end": 324
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 324,
+                "end": 332
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 324,
+                "end": 325
+              },
+              "arguments": [
+                15
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 331,
+                "end": 332
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 317,
+            "end": 333
+          },
+          "kind": {
+            "kind": "application",
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 317,
+                "end": 320
+              }
+            },
+            "type_arguments": {
+              "span": {
+                "file": 0,
+                "start": 320,
+                "end": 333
+              },
+              "less_than_span": {
+                "file": 0,
+                "start": 320,
+                "end": 321
+              },
+              "arguments": [
+                16
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "file": 0,
+                "start": 332,
+                "end": 333
+              }
+            }
+          }
+        }
+      ],
+      "data_declarations": [
+        {
+          "span": {
+            "file": 0,
+            "start": 0,
+            "end": 69
+          },
+          "export_span": null,
+          "type_parameters": {
+            "span": {
+              "file": 0,
+              "start": 13,
+              "end": 35
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 13,
+              "end": 14
+            },
+            "parameters": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 14,
+                  "end": 34
+                },
+                "name": {
+                  "text": "T",
+                  "span": {
+                    "file": 0,
+                    "start": 14,
+                    "end": 15
+                  }
+                },
+                "extends_span": {
+                  "file": 0,
+                  "start": 16,
+                  "end": 23
+                },
+                "bound": {
+                  "text": "ZrynaValue",
+                  "span": {
+                    "file": 0,
+                    "start": 24,
+                    "end": 34
+                  }
+                }
+              }
+            ],
+            "comma_spans": [],
+            "greater_than_span": {
+              "file": 0,
+              "start": 34,
+              "end": 35
+            }
+          },
+          "kind": {
+            "kind": "struct",
+            "interface_span": {
+              "file": 0,
+              "start": 0,
+              "end": 9
+            },
+            "name": {
+              "text": "Box",
+              "span": {
+                "file": 0,
+                "start": 10,
+                "end": 13
+              }
+            },
+            "extends_span": {
+              "file": 0,
+              "start": 36,
+              "end": 43
+            },
+            "marker_span": {
+              "file": 0,
+              "start": 44,
+              "end": 55
+            },
+            "open_brace_span": {
+              "file": 0,
+              "start": 56,
+              "end": 57
+            },
+            "close_brace_span": {
+              "file": 0,
+              "start": 68,
+              "end": 69
+            },
+            "fields": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 58,
+                  "end": 67
+                },
+                "name": {
+                  "text": "value",
+                  "span": {
+                    "file": 0,
+                    "start": 58,
+                    "end": 63
+                  }
+                },
+                "colon_span": {
+                  "file": 0,
+                  "start": 63,
+                  "end": 64
+                },
+                "semicolon_span": {
+                  "file": 0,
+                  "start": 66,
+                  "end": 67
+                },
+                "type_syntax": 0
+              }
+            ]
+          }
+        }
+      ],
+      "functions": [
+        {
+          "span": {
+            "file": 0,
+            "start": 70,
+            "end": 149
+          },
+          "export_span": null,
+          "function_span": {
+            "file": 0,
+            "start": 70,
+            "end": 78
+          },
+          "name": {
+            "text": "transport",
+            "span": {
+              "file": 0,
+              "start": 79,
+              "end": 88
+            }
+          },
+          "type_parameters": null,
+          "parameters": [
+            {
+              "span": {
+                "file": 0,
+                "start": 89,
+                "end": 112
+              },
+              "name": {
+                "text": "input",
+                "span": {
+                  "file": 0,
+                  "start": 89,
+                  "end": 94
+                }
+              },
+              "type_syntax": 3
+            }
+          ],
+          "result_type": 6,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 132,
+              "end": 149
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 132,
+                  "end": 149
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 132,
+                  "end": 133
+                },
+                "statements": [
+                  0
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 148,
+                  "end": 149
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 134,
+                  "end": 147
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 134,
+                    "end": 140
+                  },
+                  "value": 0,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 146,
+                    "end": 147
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 141,
+                  "end": 146
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "input",
+                    "span": {
+                      "file": 0,
+                      "start": 141,
+                      "end": 146
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 150,
+            "end": 365
+          },
+          "export_span": {
+            "file": 0,
+            "start": 150,
+            "end": 156
+          },
+          "function_span": {
+            "file": 0,
+            "start": 157,
+            "end": 165
+          },
+          "name": {
+            "text": "entry",
+            "span": {
+              "file": 0,
+              "start": 166,
+              "end": 171
+            }
+          },
+          "type_parameters": null,
+          "parameters": [],
+          "result_type": 7,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 179,
+              "end": 365
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 179,
+                  "end": 365
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 179,
+                  "end": 180
+                },
+                "statements": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 364,
+                  "end": 365
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 181,
+                  "end": 213
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 181,
+                    "end": 186
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "earlierRoot",
+                    "span": {
+                      "file": 0,
+                      "start": 187,
+                      "end": 198
+                    }
+                  },
+                  "type_syntax": 8,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 207,
+                    "end": 208
+                  },
+                  "initializer": 0,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 212,
+                    "end": 213
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 214,
+                  "end": 303
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 214,
+                    "end": 219
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "outer",
+                    "span": {
+                      "file": 0,
+                      "start": 220,
+                      "end": 225
+                    }
+                  },
+                  "type_syntax": 11,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 244,
+                    "end": 245
+                  },
+                  "initializer": 3,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 302,
+                    "end": 303
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 304,
+                  "end": 353
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 304,
+                    "end": 309
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "moved",
+                    "span": {
+                      "file": 0,
+                      "start": 310,
+                      "end": 315
+                    }
+                  },
+                  "type_syntax": 17,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 334,
+                    "end": 335
+                  },
+                  "initializer": 5,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 352,
+                    "end": 353
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 354,
+                  "end": 363
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 354,
+                    "end": 360
+                  },
+                  "value": 6,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 362,
+                    "end": 363
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 209,
+                  "end": 212
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"E\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 293,
+                  "end": 296
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"L\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 272,
+                  "end": 299
+                },
+                "kind": {
+                  "kind": "struct-construction",
+                  "type_name": {
+                    "text": "Box",
+                    "span": {
+                      "file": 0,
+                      "start": 272,
+                      "end": 275
+                    }
+                  },
+                  "type_arguments": {
+                    "span": {
+                      "file": 0,
+                      "start": 275,
+                      "end": 283
+                    },
+                    "less_than_span": {
+                      "file": 0,
+                      "start": 275,
+                      "end": 276
+                    },
+                    "arguments": [
+                      14
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "file": 0,
+                      "start": 282,
+                      "end": 283
+                    }
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 283,
+                    "end": 284
+                  },
+                  "open_brace_span": {
+                    "file": 0,
+                    "start": 284,
+                    "end": 285
+                  },
+                  "fields": [
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 286,
+                        "end": 296
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "value",
+                          "span": {
+                            "file": 0,
+                            "start": 286,
+                            "end": 291
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 291,
+                          "end": 292
+                        },
+                        "value": 1
+                      }
+                    }
+                  ],
+                  "close_brace_span": {
+                    "file": 0,
+                    "start": 297,
+                    "end": 298
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 298,
+                    "end": 299
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 246,
+                  "end": 302
+                },
+                "kind": {
+                  "kind": "struct-construction",
+                  "type_name": {
+                    "text": "Box",
+                    "span": {
+                      "file": 0,
+                      "start": 246,
+                      "end": 249
+                    }
+                  },
+                  "type_arguments": {
+                    "span": {
+                      "file": 0,
+                      "start": 249,
+                      "end": 262
+                    },
+                    "less_than_span": {
+                      "file": 0,
+                      "start": 249,
+                      "end": 250
+                    },
+                    "arguments": [
+                      13
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "file": 0,
+                      "start": 261,
+                      "end": 262
+                    }
+                  },
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 262,
+                    "end": 263
+                  },
+                  "open_brace_span": {
+                    "file": 0,
+                    "start": 263,
+                    "end": 264
+                  },
+                  "fields": [
+                    {
+                      "span": {
+                        "file": 0,
+                        "start": 265,
+                        "end": 299
+                      },
+                      "kind": {
+                        "kind": "explicit",
+                        "name": {
+                          "text": "value",
+                          "span": {
+                            "file": 0,
+                            "start": 265,
+                            "end": 270
+                          }
+                        },
+                        "colon_span": {
+                          "file": 0,
+                          "start": 270,
+                          "end": 271
+                        },
+                        "value": 2
+                      }
+                    }
+                  ],
+                  "close_brace_span": {
+                    "file": 0,
+                    "start": 300,
+                    "end": 301
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 301,
+                    "end": 302
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 346,
+                  "end": 351
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "outer",
+                    "span": {
+                      "file": 0,
+                      "start": 346,
+                      "end": 351
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 336,
+                  "end": 352
+                },
+                "kind": {
+                  "kind": "call",
+                  "callee": {
+                    "text": "transport",
+                    "span": {
+                      "file": 0,
+                      "start": 336,
+                      "end": 345
+                    }
+                  },
+                  "type_arguments": null,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 345,
+                    "end": 346
+                  },
+                  "arguments": [
+                    4
+                  ],
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 351,
+                    "end": 352
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 361,
+                  "end": 362
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

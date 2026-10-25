@@ -1,0 +1,3 @@
+function probe(): i32 {
+Option.none<unit>();
+return 0; }

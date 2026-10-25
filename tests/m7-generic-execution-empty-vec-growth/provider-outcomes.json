@@ -1,0 +1,12 @@
+{
+  "freshProviderProcesses": 2,
+  "cases": [
+    {
+      "case": "empty-vec-two-pushes",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

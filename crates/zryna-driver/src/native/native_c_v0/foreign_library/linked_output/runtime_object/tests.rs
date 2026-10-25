@@ -218,6 +218,27 @@ fn runtime_object_rejects_before_client_compile_or_link_and_preserves_denial_fla
     .expect_err("runtime audit precedes client compilation");
     assert_eq!(failure.diagnostics[0].code(), "ZRYNA-C4104");
     assert!(failure.invocations.is_empty());
+    assert_eq!(failure.comparator_stage, Some("private-runtime-object-inventory"));
+    let retained = failure
+        .artifacts
+        .iter()
+        .find(|(name, _)| *name == "private-runtime.o")
+        .expect("actual submitted runtime retained after structural rejection");
+    assert_eq!(retained.1, runtime.bytes);
+    let retained = failure
+        .artifacts
+        .iter()
+        .find(|(name, _)| *name == "private-runtime.c")
+        .expect("exact previously authenticated source retained");
+    assert_eq!(retained.1, runtime.source);
+    let record = failure
+        .artifacts
+        .iter()
+        .find(|(name, _)| *name == "runtime-inventory-inputs.json")
+        .expect("previous compiler inputs remain distinct from new process attempts");
+    let record: serde_json::Value = serde_json::from_slice(&record.1).expect("actual input record");
+    assert_eq!(record["execution_authorized"], false);
+    assert_eq!(record["target_executed"], false);
     fixture.empty();
     runtime = fixture.runtime.clone();
     runtime.source[0] ^= 1;

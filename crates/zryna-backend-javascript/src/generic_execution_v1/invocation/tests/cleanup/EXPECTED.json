@@ -1,0 +1,123 @@
+{
+  "format": "zryna.js-invocation-nonempty-cleanup-witness.v1",
+  "scope": "Explicit test-only authentic identities at genuine StringClone preflight; not five canonical/source cause reachability claims",
+  "source_case": "nominal-enum-clone",
+  "source_sha256": "62a3b9c1449505af09f255d89b2613ccebcc8d995f21b2c203011aa27d47344f",
+  "source_oracle_sha256": "99570cb50f7c75af51c88339584817f65069495e5f25eb6c04b78a724ffde16d",
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "calls_per_provider": 15,
+  "schedule": "pristine/fault/pristine for statuses 1,2,3,4,5 in one same module instance",
+  "wire": {
+    "magic": 826885978,
+    "scalar_type": 1,
+    "end": 826560069,
+    "bytes": 20
+  },
+  "pristine": {
+    "status": 0,
+    "scalar": 7,
+    "acquired": [
+      {
+        "id": 1,
+        "bytes": 1,
+        "alignment": 1
+      },
+      {
+        "id": 2,
+        "bytes": 1,
+        "alignment": 1
+      }
+    ],
+    "released": [
+      {
+        "id": 2,
+        "bytes": [
+          76
+        ],
+        "status": 0
+      },
+      {
+        "id": 1,
+        "bytes": [
+          76
+        ],
+        "status": 0
+      }
+    ],
+    "clone_preflights": 1,
+    "kernel_exit": {
+      "live": 0,
+      "attempts": 2,
+      "steps": 4
+    },
+    "account_exit": {
+      "A": 2,
+      "L": 0,
+      "S": 4,
+      "H": 0
+    }
+  },
+  "fault_common": {
+    "scalar": 0,
+    "acquired": [
+      {
+        "id": 1,
+        "bytes": 1,
+        "alignment": 1
+      }
+    ],
+    "released": [
+      {
+        "id": 1,
+        "bytes": [
+          76
+        ],
+        "status": 0
+      }
+    ],
+    "clone_preflights": 1,
+    "kernel_exit": {
+      "live": 0,
+      "attempts": 1,
+      "steps": 2
+    },
+    "account_exit": {
+      "A": 1,
+      "L": 0,
+      "S": 2,
+      "H": 0
+    }
+  },
+  "identities": [
+    {
+      "status": 1,
+      "trap": "zryna.trap.bounds-v1"
+    },
+    {
+      "status": 2,
+      "trap": "zryna.trap.allocation-v1"
+    },
+    {
+      "status": 3,
+      "trap": "zryna.trap.capacity-v1"
+    },
+    {
+      "status": 4,
+      "trap": "zryna.trap.refcount-v1"
+    },
+    {
+      "status": 5,
+      "trap": "zryna.trap.utf8-v1"
+    }
+  ],
+  "derivation": [
+    "Original Signal.yes owns one nonempty String byte 0x4c; its Clone acquires a distinct String and returns7.",
+    "Successful active copied payload drops before original: logical release2 then1, two acquisitions plus two releases give S4, final L/H0.",
+    "Private hook throws authentic identity before Clone admission/canonical call; original remains owned and must release once: one acquisition plus one release give S2, final L/H0.",
+    "Kernel resets actual IDs/attempts/steps before each source entry; all observations are checked after actual runtime/account exit and busy reset."
+  ],
+  "qualification": "Frozen before any witness execution; actual outcomes pending root"
+}

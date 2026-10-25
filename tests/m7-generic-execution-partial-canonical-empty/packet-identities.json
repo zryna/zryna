@@ -1,0 +1,23 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "whole-vs-fields",
+      "provider": "native",
+      "packet": "whole-vs-fields-native.json",
+      "packetSha256": "fc909e85e4d2779c44ca80f24872739117e5ac6470608a0b5a07cadd6c0e7d7c",
+      "packetBytes": 25314,
+      "exactSourceSha256": "508a3020470166451fc0c7fd4b5e895f25b2ce49bfba460cf25dcbf6f78e637b",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "whole-vs-fields",
+      "provider": "typescript",
+      "packet": "whole-vs-fields-typescript.json",
+      "packetSha256": "9b0c4d3def9ce405bfc82adc825dd0c0b0ae8d70d094c7effbe9aac7f3696202",
+      "packetBytes": 25314,
+      "exactSourceSha256": "508a3020470166451fc0c7fd4b5e895f25b2ce49bfba460cf25dcbf6f78e637b",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+export function entry(index: i32): i32 {
+  const array: FixedArray<i32, 2> = FixedArray<i32, 2>([2, 3]);
+  const vector: Vec<i32> = Vec<i32>([11, 19]);
+  return array[index] + vector[index];
+}

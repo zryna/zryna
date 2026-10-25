@@ -20,7 +20,10 @@ use zryna_frontend::{
 use crate::runtime::{open_runtime_identity, same_file_state, stable_invocation_path};
 
 mod comparison;
+mod comparison_v5;
+mod v5;
 pub use comparison::{ComparisonFrontendV2, ComparisonFrontendV3, ComparisonFrontendV4};
+pub(crate) use comparison_v5::ComparisonFrontendV5;
 
 const MAX_COMPILER_BYTES: u64 = 512 * 1024 * 1024;
 

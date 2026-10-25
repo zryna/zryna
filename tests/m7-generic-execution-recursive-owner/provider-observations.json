@@ -1,0 +1,35 @@
+{
+  "records": [
+    {
+      "case": "clone",
+      "returncode": 0,
+      "stderr_bytes": 0,
+      "analysis_error": null,
+      "source_sha256": "30b5f845909ccac7e6f9276a078594570b50cb1fc8ae7533658e9a568bb87f21",
+      "packet": "typescript/clone.json",
+      "packet_sha256": "e65cd5fcc52a1b2f4591785f5846d16d89ffe013d85db8b742f79d933f27c546",
+      "diagnostics": []
+    },
+    {
+      "case": "controlled-cleanup",
+      "returncode": 0,
+      "stderr_bytes": 0,
+      "analysis_error": null,
+      "source_sha256": "236b36609cc05fe40965a5b784ce191a9e406d6bb1f4217286bde5c30e645b33",
+      "packet": "typescript/controlled-cleanup.json",
+      "packet_sha256": "050452f68b1ad438d21c116927be4fc891515395c5978346b5542ab2e7894788",
+      "diagnostics": []
+    },
+    {
+      "case": "drop-only",
+      "returncode": 0,
+      "stderr_bytes": 0,
+      "analysis_error": null,
+      "source_sha256": "3d097ad3baedcc0f192bac0f5681bd2b0f92ec94d7091d9d30dcd260d96de8dd",
+      "packet": "typescript/drop-only.json",
+      "packet_sha256": "7727781a1fc16115e9da0b89a13bbda777e80cfac362587ccc6b3da47ac9f0e6",
+      "diagnostics": []
+    }
+  ],
+  "limits": "Actual TypeScript syntax only; native parser, semantic/execution seal and runtime not claimed."
+}

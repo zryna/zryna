@@ -1,0 +1,6 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function touch(value: BorrowMut<Packet<String>>): i32 { return 1; }
+export function entry(): i32 {
+  let root: Packet<String> = Packet.item<String>("owned"); const loan: BorrowMut<Packet<String>> = borrowMut(root);
+  return match(loan, { "Packet.none": () => 0, "Packet.item": (payload) => touch(loan) });
+}

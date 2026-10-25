@@ -70,23 +70,47 @@ public static class M6OwnerJob {
   public static bool Contains(IntPtr job, IntPtr process) {
     bool member; if (!IsProcessInJob(process, job, out member)) throw new Win32Exception(); return member;
   }
-  public static uint[] Members(IntPtr job) {
+  public static M6JobInventorySnapshot DecodeMembers(int assigned, uint[] ids) {
+    const int maximum = 257; // Original256 target identities plus this owner.
+    if (assigned < 1 || assigned > maximum || ids == null || ids.Length < 1 ||
+        ids.Length > assigned) throw new InvalidOperationException("Bounded private job inventory counts invalid.");
+    var unique = new System.Collections.Generic.HashSet<uint>();
+    foreach (uint pid in ids) {
+      if (pid == 0 || pid > Int32.MaxValue || !unique.Add(pid)) throw new InvalidOperationException("Private job PID identity invalid.");
+    }
+    return new M6JobInventorySnapshot(assigned, ids);
+  }
+  public static M6JobInventorySnapshot Snapshot(IntPtr job) {
     const int maximum = 257; // Original256 target identities plus this owner.
     int bytes = 8 + maximum * IntPtr.Size; var memory = Marshal.AllocHGlobal(bytes);
     try {
       uint returned;
       if (!QueryInformationJobObject(job, 3, memory, (uint)bytes, out returned)) throw new Win32Exception();
       int assigned = Marshal.ReadInt32(memory), count = Marshal.ReadInt32(memory, 4);
-      if (count < 1 || count > maximum || assigned != count) throw new InvalidOperationException("Bounded complete private job inventory required.");
-      var result = new uint[count]; var unique = new System.Collections.Generic.HashSet<uint>();
+      if (count < 1 || count > maximum) throw new InvalidOperationException("Bounded private job listed count invalid.");
+      var result = new uint[count];
       for (int i=0;i<count;i++) {
         ulong pid = (ulong)Marshal.ReadIntPtr(memory, 8+i*IntPtr.Size).ToInt64();
-        if (pid == 0 || pid > Int32.MaxValue || !unique.Add((uint)pid)) throw new InvalidOperationException("Private job PID identity invalid.");
+        if (pid == 0 || pid > Int32.MaxValue) throw new InvalidOperationException("Private job PID identity invalid.");
         result[i] = (uint)pid;
       }
-      return result;
+      return DecodeMembers(assigned, result);
     } finally { Marshal.FreeHGlobal(memory); }
   }
+  public static uint[] Members(IntPtr job) { return Snapshot(job).RequireComplete(); }
+}
+public sealed class M6JobInventorySnapshot {
+  public readonly int Assigned;
+  public int Listed { get { return ProcessIds.Length; } }
+  public readonly uint[] ProcessIds;
+  public bool Complete { get { return Assigned == Listed; } }
+  internal M6JobInventorySnapshot(int assigned, uint[] ids) { Assigned=assigned; ProcessIds=ids; }
+  public uint[] RequireComplete() {
+    if (!Complete) throw new InvalidOperationException(
+      String.Format("Private job inventory changed during enumeration: assigned={0}, listed={1}.", Assigned, Listed));
+    return ProcessIds;
+  }
+
 }
 public sealed class M6RetainedHandle : SafeHandle {
   public M6RetainedHandle(IntPtr value) : base(IntPtr.Zero, true) { SetHandle(value); }

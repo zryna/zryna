@@ -1,5 +1,47 @@
 # M7 bounded generic conformance requirements
 
+## Current #416 candidate evidence
+
+The explicit source-checkout `bounded-generics-v1` implementation is described by the
+[complete programs](M7_GETTING_STARTED.md) and [public reference](M7_PUBLIC_PROFILE.md).
+The [M7 candidate matrix](M7_SUPPORT.md) separates implemented host admission from execution
+qualification. The earlier #415 reference packet below remains specification evidence, with
+its original states, fixtures and digests preserved. Neither that packet nor a private
+checkpoint substitutes for the following current implementation gates.
+
+| Owning gate | Current acceptance evidence required |
+| --- | --- |
+| Source/provider scope | Actual native/bootstrap/compare observations under v5; retained module/source identities; source/provider drift rejection through terminal commit |
+| Original semantics and instances | All original bodies including unused templates; exact closed keys/substitutions and instance/edge/resource boundaries; original diagnostic codes and UTF-8 spans |
+| Layout/runtime/IR | Independent both-target layout/runtime declarations and hostile wire/typed/state checks; source-bound match regions, loan lifetimes, ownership order and cleanup; exact/first-extra/overflow/pristine-retry controls |
+| Three target consumers | Same new execution seal; ordinary and observed outputs remain separate; fixed scalar/trap/cleanup/fault oracles; native SSA/ELF and core-Wasm byte audits; bounded deep Drop/Clone witnesses |
+| Public build/run | Native frontend all-target build without Node/linker, zero-export library build, typed scalar invocation, module entry identity, provider replay, separate strict manifest, collision/cleanup and negative admission checks |
+| Integration/platform | Unchanged canonical M0 workspace suite and Linux preflight; nonzero exact public packet on both hosts; additional Windows portable-deep and shared ignored ABI controls; every branch-required hosted check |
+
+The reviewed finite public packet is registered in
+[`tests/m7-generic-acceptance-v1.json`](../tests/m7-generic-acceptance-v1.json) and run by
+[`scripts/run-m7-generic-acceptance.mjs`](../scripts/run-m7-generic-acceptance.mjs) after the
+existing canonical M0 step in each Rust platform job. Its required names total **11 on Linux**
+and **18 on Windows**: 12 public CLI, 3 portable-deep and 3 shared ignored ABI tests on Windows. These are
+required packet counts, not recorded passing results. Workspace/preflight totals are separate;
+the packet does not rerun or relabel them. Linux preflight already includes the shared ABI
+ignored controls. The Windows command must execute those three controls, not accept a
+zero-test or ignored result. Historical ignored tests remain reported as ignored.
+
+Each receipt retains actual host/tool versions, commands, status, signal/error, elapsed time,
+exact executed names, passed/failed/ignored/filtered counts and bounded log lengths/hashes.
+It binds actual clean HEAD and tree before/after to the tested workflow `github.sha`. A PR
+head is recorded separately: GitHub merge-checkout evidence is not called exact-PR-head
+evidence. Closure additionally requires corroborating both platform receipts, canonical M0
+logs, Linux preflight and final required hosted checks, and comparing the tested merge tree
+with the current PR-head tree before merge.
+
+Finite local Linux suites have been exercised during integration; this page is not their
+revision-bound receipt. Hosted Windows acceptance for this candidate is **pending**. No
+all-platform pass, website publication, release or #416 closure is asserted here.
+
+## Historical #415 specification evidence
+
 State: **specified-only** evidence map for [Issue #415](https://github.com/zryna/zryna/issues/415).
 Normal integration records the complete reviewed contract and reference packet.
 The [language contract](../spec/language/BOUNDED_GENERICS_OPTION_RESULT_V1.md),

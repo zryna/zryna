@@ -149,7 +149,11 @@ fn observe_inner(
         return Err(rejected().into());
     }
     if let Some(runtime) = runtime {
-        runtime_object::check(requirements, &runtime.bytes)?;
+        runtime_object::check(requirements, &runtime.bytes).map_err(|diagnostic| {
+            let mut failure: Failure = diagnostic.into();
+            failure.retain_runtime_rejection(requirements, foreign, runtime);
+            failure
+        })?;
     }
     // Match the existing fixture client policy; oracle helpers need not all be referenced.
     // Foreign and private-runtime compilation retain their strict warning policy.

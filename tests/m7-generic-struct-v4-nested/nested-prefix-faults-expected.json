@@ -1,0 +1,41 @@
+{
+  "decision": "admit",
+  "result": 7,
+  "success": [
+    "alloc:1:E",
+    "alloc:2:L",
+    "alloc:3:R",
+    "alloc:4:E",
+    "drop:4:E",
+    "drop:3:R",
+    "drop:2:L",
+    "drop:1:E"
+  ],
+  "allocationFailures": {
+    "1": [
+      "fail:1"
+    ],
+    "2": [
+      "alloc:1:E",
+      "fail:2",
+      "drop:1:E"
+    ],
+    "3": [
+      "alloc:1:E",
+      "alloc:2:L",
+      "fail:3",
+      "drop:2:L",
+      "drop:1:E"
+    ],
+    "4": [
+      "alloc:1:E",
+      "alloc:2:L",
+      "alloc:3:R",
+      "fail:4",
+      "drop:3:R",
+      "drop:2:L",
+      "drop:1:E"
+    ]
+  },
+  "retryAfterEveryFailure": true
+}

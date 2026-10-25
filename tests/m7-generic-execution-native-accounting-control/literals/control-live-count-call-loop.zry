@@ -1,0 +1,17 @@
+function consume(value: Shared<i32>): i32 { return 31; }
+function step(): i32 {
+  const owner: Shared<i32> = shared(7);
+  const copied: Shared<i32> = clone(owner);
+  const weak: Weak<i32> = downgrade(owner);
+  const copiedWeak: Weak<i32> = clone(weak);
+  upgradeWeak(copiedWeak, (value) => { return consume(value); }, () => { return 37; });
+}
+export function entry(trips: i32): i32 {
+  let count: i32 = 0;
+  let total: i32 = 0;
+  while (count < trips) {
+    total = total + step();
+    count = count + 1;
+  }
+  return total;
+}

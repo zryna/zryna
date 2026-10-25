@@ -1,0 +1,581 @@
+{
+  "status": "Actual fresh syntax-only processes; complete local stdin/stdout/stderr retained, every failure preserved. No compiler source/semantic/seal/runtime claim.",
+  "records": [
+    {
+      "case": "wrapping-neg",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "b377b38ee9a90a52de8970c430cb3bcd012fbdbc252ab520a47674e4410b9ee7",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "557193577573064cdadaced52bacf5ccae887e6d492e78462ec8cc225a5fe6df",
+      "stdoutSha256": "ae8a3fb739a01c711d96e70edd029dc3a21235bc63e6e50686f2ef99b9ca432f",
+      "stderrBytes": 0,
+      "packet": "wrapping-neg-native.json",
+      "packetSha256": "07bae7535b03fce9b43d26aa22847726ed2a2f9d5e8d941c7ebd18028d14d85e",
+      "packetBytes": 4296,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrapping-neg",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "b377b38ee9a90a52de8970c430cb3bcd012fbdbc252ab520a47674e4410b9ee7",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "557193577573064cdadaced52bacf5ccae887e6d492e78462ec8cc225a5fe6df",
+      "stdoutSha256": "e919ae036618d8850ecff367bde1a5018a5aa2f7f853e2149432978aa1071f0c",
+      "stderrBytes": 0,
+      "packet": "wrapping-neg-typescript.json",
+      "packetSha256": "285b3a50fc67b835a020fad6726c90774edb93d8e1b39ad443e4e947f97cfde4",
+      "packetBytes": 4296,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrapping-sub",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "f6c8157c72b3072df85602ff4a828bf29a8a171f79d10e5cc753e8f0feb66abb",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "254e5217e69d9f82b19d752bd0b4f23543240febf98dd136768dcae3162c2415",
+      "stdoutSha256": "999a94e519d5c608ab2c3db247f7112375625b4c4b8eaf406acd8809975f5bf9",
+      "stderrBytes": 0,
+      "packet": "wrapping-sub-native.json",
+      "packetSha256": "564339a54ee16eaa755baae98e95e81aa4f8967c6db7b246da6906ee0e42d819",
+      "packetBytes": 5568,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrapping-sub",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "f6c8157c72b3072df85602ff4a828bf29a8a171f79d10e5cc753e8f0feb66abb",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "254e5217e69d9f82b19d752bd0b4f23543240febf98dd136768dcae3162c2415",
+      "stdoutSha256": "8f0a81420df5245a8604207111c0a3872eb53cf5ba9d08b8b6bb906086a66b6b",
+      "stderrBytes": 0,
+      "packet": "wrapping-sub-typescript.json",
+      "packetSha256": "dbc67c913eebe5d96ea4c82c08f4d868ebb435ea00921e5f3ef78e71ab5f5eeb",
+      "packetBytes": 5568,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrapping-mul",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "a655806135204f2fd0d88c83314938d36ea2372483c0c94fe0e08f09d25562e7",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "848f8f729be7497e1c49c7a33cda6b751e77fd907c96c7dd1477d96dd3b439b5",
+      "stdoutSha256": "5dcac3161108ae7d376eeaeba2ed7250bbc109021eebf21c72966fdbde8079f1",
+      "stderrBytes": 0,
+      "packet": "wrapping-mul-native.json",
+      "packetSha256": "022633f604aedc09c7a8126ed99d39fc1335d74048e8f4892e4f5e87f312e56c",
+      "packetBytes": 5571,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrapping-mul",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "a655806135204f2fd0d88c83314938d36ea2372483c0c94fe0e08f09d25562e7",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "848f8f729be7497e1c49c7a33cda6b751e77fd907c96c7dd1477d96dd3b439b5",
+      "stdoutSha256": "5d40c4cf26cfd1a5f3448db8c0cff1d8f35bb53c129b5488e74a36b8de0c579a",
+      "stderrBytes": 0,
+      "packet": "wrapping-mul-typescript.json",
+      "packetSha256": "3e08ea8d7584d3f735f59f3c88767b04c87f07eb387f85984a6cc77cf9b3b95b",
+      "packetBytes": 5571,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "signed-relations",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "3401d387f7032b7fb89aa96c2c1951a641886abc67e8522bf997c8be41a45cba",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "dfde00a9556819910d7b501451951f318ef0f48021ef6453cc635efc118dc7e0",
+      "stdoutSha256": "a8a1e82799d2dc0466dea2d140b1c4777e1566a331e1ddfce25249191a6948a4",
+      "stderrBytes": 0,
+      "packet": "signed-relations-native.json",
+      "packetSha256": "8f1a2bcb88e17184336b2610ef1d9c8c221681fb61d7882f8d690b1a685cab88",
+      "packetBytes": 32147,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "signed-relations",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "3401d387f7032b7fb89aa96c2c1951a641886abc67e8522bf997c8be41a45cba",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "dfde00a9556819910d7b501451951f318ef0f48021ef6453cc635efc118dc7e0",
+      "stdoutSha256": "85b2f497a632033eb5714f8c46a86b9aa95d02a2b51ff5d60219d9962d790db4",
+      "stderrBytes": 0,
+      "packet": "signed-relations-typescript.json",
+      "packetSha256": "2787732ffa0ab4f15febee501d5b6002b662eb6c4d1bad6be9e159fdd31e5b67",
+      "packetBytes": 32147,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "bool-equality",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "80d8f47b876190cb7cf334ebb133711c8fc22b3502443257dcd13fc0aedc640b",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "a1c43dc0e7f616929dccfaacca118c2d759456c3515bd0c75aa0bffb29900b0d",
+      "stdoutSha256": "0d4fe1089346e943fbd20c81bdb6258904f1f8f94d4b72b72dccc2194c9d1dd2",
+      "stderrBytes": 0,
+      "packet": "bool-equality-native.json",
+      "packetSha256": "a5ee4e8cc6dd6ca39849188ed693636812fd529ade8edd5dc8fe4b0d6dc8b2be",
+      "packetBytes": 15448,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "bool-equality",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "80d8f47b876190cb7cf334ebb133711c8fc22b3502443257dcd13fc0aedc640b",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "a1c43dc0e7f616929dccfaacca118c2d759456c3515bd0c75aa0bffb29900b0d",
+      "stdoutSha256": "53ec20b41f9aaf58da68a462806691daec876f3fc2d149247918cff0cd686247",
+      "stderrBytes": 0,
+      "packet": "bool-equality-typescript.json",
+      "packetSha256": "2fb2c05e296036e8afebc2ad3406a51e4e719689186550ffcd92ab24957ffde4",
+      "packetBytes": 15448,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "generic-concrete-scalars",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "8940f9b28d2c13a396e752883cf5dfaecbaac26b0e372932d97ebd94a2116c36",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "27b15564b2b791e47f991cf0ce5f0641647139bc978502f822466f1c761386c2",
+      "stdoutSha256": "025899ec82f05b3b628aaf22034de33191c625cd238aebbf3ad7b9335e03fc3f",
+      "stderrBytes": 0,
+      "packet": "generic-concrete-scalars-native.json",
+      "packetSha256": "6a721b461a35d0745f8057cd3b92019c5f271a39ba34ae5d7a8a81356cb6f927",
+      "packetBytes": 22138,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "generic-concrete-scalars",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "8940f9b28d2c13a396e752883cf5dfaecbaac26b0e372932d97ebd94a2116c36",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "27b15564b2b791e47f991cf0ce5f0641647139bc978502f822466f1c761386c2",
+      "stdoutSha256": "9e0abfd261f4d09afc034e1156fa4e5d44943f697b1dc1ca0fcc157d64efa89b",
+      "stderrBytes": 0,
+      "packet": "generic-concrete-scalars-typescript.json",
+      "packetSha256": "56c714fb8f80345868c01ebc81824e4d8482854b9334231e8140cf66d440179a",
+      "packetBytes": 22138,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-negation",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "7a65e77574615ff3d0f5dc8d65e6e3da2ffd0c1f9a5ba4f2c775faf11319f653",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "877fd6d40592dfb137c6650499e44007f551099965e0726d1a2a37ccb1247c11",
+      "stdoutSha256": "2adea334ca12bf4b68ffc2c5aec55c5fe393e6d538a26a514429397db93af88b",
+      "stderrBytes": 0,
+      "packet": "opaque-negation-native.json",
+      "packetSha256": "5132b341f365094f62a3ccd9a8c8e8666107f26e89956c3486bbe89eb68b02d4",
+      "packetBytes": 10980,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-negation",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "7a65e77574615ff3d0f5dc8d65e6e3da2ffd0c1f9a5ba4f2c775faf11319f653",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "877fd6d40592dfb137c6650499e44007f551099965e0726d1a2a37ccb1247c11",
+      "stdoutSha256": "3318cb8567e536c2189de90f885ad011015fb937c534694901988b59e5976318",
+      "stderrBytes": 0,
+      "packet": "opaque-negation-typescript.json",
+      "packetSha256": "4fa76f5a9c595da2cc489a0c43c3e01b78d29ca9241ef28f6a04835a72442ba7",
+      "packetBytes": 10980,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-inequality",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "69ce0a2ad95660b3f86a8131626557891632259e01cf100471abb76f71df8c72",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "dcde4f8bd09a1209b9f25fa8995c056b2d4e1ff2091750bb2ea69c755a2656b0",
+      "stdoutSha256": "b0de314da8ad4bc97cb4038f8345f9481569e58fe3ea4de9bae4efae1fc42ef7",
+      "stderrBytes": 0,
+      "packet": "opaque-inequality-native.json",
+      "packetSha256": "6d271a40fa2b02178ee88a313485fc0305160de4153715733691dd2423a3d8c5",
+      "packetBytes": 12562,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-inequality",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "82f4d49efba2890e1c821298060628812e146d6bd1fb01db5124e7fd5dc91452",
+      "exactSourceSha256": "69ce0a2ad95660b3f86a8131626557891632259e01cf100471abb76f71df8c72",
+      "inputPinFreezeSha256": "49cd9b63fcc76e2ce6e924c66fbd450926bfe26c677d6b67de8ca56043517a06",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "dcde4f8bd09a1209b9f25fa8995c056b2d4e1ff2091750bb2ea69c755a2656b0",
+      "stdoutSha256": "c6957c82fc52322a205b9b8d3dd639ff81a9da8c822a2f22ae5e4c9d1fd78e28",
+      "stderrBytes": 0,
+      "packet": "opaque-inequality-typescript.json",
+      "packetSha256": "4e4494e20fee290e6586cc7513fdc84af25efc185f898dd03dd7e542fa59d88d",
+      "packetBytes": 12562,
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

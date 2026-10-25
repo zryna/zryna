@@ -1,11 +1,18 @@
 //! Linux x86-64 native object emission, sealed invocation linking, and bounded execution.
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod closure_inventory;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) mod generic_execution;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod link;
 /// Internal total-scalar native C linking; resource-bearing entries remain separate.
 pub mod native_c_v0;
 pub(crate) mod ownership;
 pub(crate) mod recipe;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod runtime_object_bytes;
+mod toolchain_view;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use link::link_and_audit_native_invocation;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -396,26 +403,6 @@ pub struct LinuxX8664LinkToolchain {
     linker_identity: ToolFileIdentity,
     gcc_version: Box<str>,
     linker_version: Box<str>,
-}
-
-impl LinuxX8664LinkToolchain {
-    /// Returns the canonical compiler-driver path retained by this capability.
-    #[must_use]
-    pub fn driver(&self) -> &Path {
-        &self.driver
-    }
-
-    /// Returns the validated GCC version text.
-    #[must_use]
-    pub fn gcc_version(&self) -> &str {
-        &self.gcc_version
-    }
-
-    /// Returns the validated GNU linker version text.
-    #[must_use]
-    pub fn linker_version(&self) -> &str {
-        &self.linker_version
-    }
 }
 
 /// One audited native invocation executable published create-only.

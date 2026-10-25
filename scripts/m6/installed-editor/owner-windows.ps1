@@ -51,8 +51,17 @@ function Retain($process, [string]$reason, [int]$parent, $item) {
 }
 . (Join-Path $PSScriptRoot 'owner-windows-job.ps1')
 function Observe([string]$stage, [long]$deadline) {
+  $script:inventoryComplete = $false
   if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
-  $members = @([M6OwnerJob]::Members($job))
+  $snapshot = [M6OwnerJob]::Snapshot($job)
+  if (-not $snapshot.Complete) {
+    # A changing native list grants neither signal authority nor disappearance proof.
+    # Defer only this observation; the existing absolute execution/cleanup clocks continue.
+    Emit 'observation-scope' @{ scope = 'private-job-inventory-changing'; complete = $false;
+      assigned = $snapshot.Assigned; listed = $snapshot.Listed; action = 'defer-observation' }
+    return
+  }
+  $members = @($snapshot.RequireComplete())
   if (-not $members.Contains([uint32]$PID)) { throw 'Owner private job membership lost.' }
   foreach ($pidValue in $members) {
     if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'Process observation deadline.' }
@@ -100,6 +109,7 @@ function Observe([string]$stage, [long]$deadline) {
       Emit 'image' (Public $item)
     }
   }
+  $script:inventoryComplete = $true
 }
 function KillHeld {
   foreach ($item in $known.Values) {
@@ -222,7 +232,8 @@ try {
     if ($null -ne $cleanup) {
       KillHeld
       $live = @($known.Values | Where-Object { -not $_.gone })
-      if ($null -ne $rootStatus -and $live.Count -eq 0 -and $reads[0].done -and $reads[1].done) {
+      if ($script:inventoryComplete -and $null -ne $rootStatus -and
+          $live.Count -eq 0 -and $reads[0].done -and $reads[1].done) {
         if ($null -eq $quiet) { $quiet = $now }
         if ($now - $quiet -ge 250) {
           $members = @([M6OwnerJob]::Members($job))

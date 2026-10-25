@@ -1,0 +1,8 @@
+export function entry(left: bool, right: bool): i32 {
+  if (left === right) {
+    if (left !== right) { return 101; }
+    return 31;
+  }
+  if (left !== right) { return 37; }
+  return 103;
+}

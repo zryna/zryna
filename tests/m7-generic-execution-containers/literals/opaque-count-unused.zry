@@ -1,0 +1,10 @@
+function make<T extends ZrynaValue>(value: T): Shared<T> {
+  return shared(value);
+}
+function strong<T extends ZrynaValue>(value: Shared<T>): Shared<T> {
+  return clone(value);
+}
+function weak<T extends ZrynaValue>(value: Weak<T>): Weak<T> {
+  return clone(value);
+}
+export function entry(): i32 { return 7; }

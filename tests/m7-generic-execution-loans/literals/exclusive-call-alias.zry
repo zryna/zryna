@@ -1,0 +1,2 @@
+function use(left: BorrowMut<i32>, right: BorrowMut<i32>): i32 { return left + right; }
+export function entry(): i32 { let root: i32 = 1; const loan: BorrowMut<i32> = borrowMut(root); return use(loan, loan); }

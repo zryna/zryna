@@ -1,3 +1,4 @@
+import { withoutM7Workflow } from '../m7-workflow-legacy-cases.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -49,7 +50,7 @@ export function registerRequiredPlatformContracts(ci) {
   });
 
   test('required Rust platform jobs include playground contracts and Linux helper units', () => {
-    const rust = ci.jobs.rust;
+    const rust = withoutM7Workflow(ci).jobs.rust;
     assert.deepEqual(rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
     const contracts = rust.steps.filter(step => [
       'Verify restricted playground contracts', 'Verify M6 contracts',

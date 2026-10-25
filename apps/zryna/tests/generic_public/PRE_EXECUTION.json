@@ -1,0 +1,150 @@
+{
+  "schema": "m416-public-cli-pre-execution-v1",
+  "status": "source-derived expectations frozen before CLI output; no execution observed",
+  "profile": "bounded-generics-v1",
+  "manifest_format": "zryna.generic-bundle.v1",
+  "manifest_name": "zryna-generic-manifest-v1.json",
+  "fixtures": {
+    "scalar": {
+      "files": [
+        {
+          "path": "tests/m7-generic-full-profile-first-vertical/literals/scalar-i32-clone.zry",
+          "member": "main.zry",
+          "bytes": 118,
+          "sha256": "81336e343ddb166fbeea0fb3fa3d882b4ed93766fb50b540504a3840ca999c81"
+        }
+      ],
+      "result_i32": 14,
+      "entry_module": 0
+    },
+    "bool-clone": {
+      "files": [
+        {
+          "path": "tests/m7-generic-full-profile-first-vertical/literals/scalar-bool-clone.zry",
+          "member": "main.zry",
+          "bytes": 173,
+          "sha256": "f2d63a2563090c11f5cf21931c79202ca444bca0b04bd05e2d6ed4505230a3b5"
+        }
+      ],
+      "result_i32": 7,
+      "entry_module": 0
+    },
+    "entry-one": {
+      "files": [
+        {
+          "path": "tests/m7-generic-execution-entry-one/literals/a.zry",
+          "member": "a.zry",
+          "bytes": 80,
+          "sha256": "b0b189e867c2bbdac4fd226e525636bdb3a37496213d4ce913593f0f69c3615b"
+        },
+        {
+          "path": "tests/m7-generic-execution-entry-one/literals/main.zry",
+          "member": "main.zry",
+          "bytes": 96,
+          "sha256": "cef91934e0bb7437b845b0a83ea950da5111f56e49ec657d694ae432c45c9b55"
+        }
+      ],
+      "result_i32": 7,
+      "entry_module": 1,
+      "template_selection": {
+        "names": [
+          "identity",
+          "identity<i32>"
+        ],
+        "code": "ZRYNA-M7005",
+        "file": 0,
+        "start": 16,
+        "end": 24
+      }
+    },
+    "mixed": {
+      "files": [
+        {
+          "path": "tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry",
+          "member": "main.zry",
+          "bytes": 2269,
+          "sha256": "5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6"
+        }
+      ],
+      "result_i32": 97,
+      "entry_module": 0
+    },
+    "unused": {
+      "files": [
+        {
+          "path": "tests/m7-generic-full-profile-first-vertical/literals/opaque-clone-unused.zry",
+          "member": "main.zry",
+          "bytes": 126,
+          "sha256": "be745749a61e30106c0b3b1949be693e71849970d65f305dd5265aa2d0888352"
+        }
+      ],
+      "result_i32": null,
+      "entry_module": 0,
+      "diagnostic": {
+        "code": "ZRYNA-M7002",
+        "file": 0,
+        "start": 65,
+        "end": 70
+      }
+    },
+    "bounds": {
+      "files": [
+        {
+          "path": "tests/m7-generic-execution-dynamic-index/literals/zero-length-bounds.zry",
+          "member": "main.zry",
+          "bytes": 364,
+          "sha256": "868a9fc7d5111fd92cd61b37e1081635f9d0861e4709f2dbff7b086ee514170a"
+        }
+      ],
+      "result_i32": null,
+      "entry_module": 0
+    }
+  },
+  "invocation_errors": {
+    "unknown": "ZRYNA-B2101",
+    "arity": "ZRYNA-B2102",
+    "type": "ZRYNA-B2103"
+  },
+  "bounds_trap": "zryna.trap.bounds-v1",
+  "other_four_public_cli_traps": "not invented; genuine source-only CLI fixtures not established by this test task; owning backend fault controls remain separate qualification",
+  "guide": {
+    "path": "docs/M7_GETTING_STARTED.md",
+    "sections": {
+      "scalar-clone": "scalar",
+      "module-entry": "entry-one",
+      "mixed-catalogue": "mixed"
+    },
+    "corrected_opaque_clone": {
+      "case": "corrected-opaque-clone",
+      "original_sha256": "be745749a61e30106c0b3b1949be693e71849970d65f305dd5265aa2d0888352",
+      "correction_sha256": "1574baf9a1612c5de75792a8e805e571a464455b1a42c94b995122c0d000c081",
+      "expected": {
+        "reject": "ZRYNA-M7002",
+        "return_i32": 7
+      },
+      "executed": false
+    }
+  },
+  "limits_changed": false,
+  "new_dependencies": false,
+  "project_files": [
+    {
+      "path": "apps/zryna/tests/fixtures/public-v0.2.2-hello/zryna.package.json",
+      "member": "zryna.package.json",
+      "bytes": 376,
+      "sha256": "d1325a77c321380a22df82c63b16a571b045fafb0717d2ffd6c16851b3014465"
+    },
+    {
+      "path": "apps/zryna/tests/fixtures/public-v0.2.2-hello/zryna.lock.json",
+      "member": "zryna.lock.json",
+      "bytes": 405,
+      "sha256": "4226c5f27f6b76cbddc797972299021a7f60a1cd7dffaab97b6b604418277f9c"
+    },
+    {
+      "path": "apps/zryna/tests/fixtures/public-v0.2.2-hello/src/main.zry",
+      "member": "src/main.zry",
+      "bytes": 45,
+      "sha256": "a98387ac58fb3ebc639c8dd41d689e45448a291ebaea26ccebd15289bbbd4708"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+interface Signal extends ZrynaEnum { off: ZrynaNone; on: i32; }
+function write(value: BorrowMut<i32>): i32 { value = 9; return value; }
+export function entry(): i32 {
+  let root: Signal = Signal.on(3);
+  const loan: BorrowMut<Signal> = borrowMut(root);
+  const first: i32 = match(loan, { "Signal.off": () => 0, "Signal.on": (payload) => write(payload) });
+  const second: i32 = match(loan, { "Signal.off": () => 0, "Signal.on": (payload) => payload });
+  return first + second;
+}

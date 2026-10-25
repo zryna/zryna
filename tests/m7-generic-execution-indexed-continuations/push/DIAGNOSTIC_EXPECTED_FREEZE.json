@@ -1,0 +1,18 @@
+{
+  "format": "m416.indexed-push-diagnostics.v1",
+  "cases": [
+    {
+      "case": "indexed-push-rhs-relocates-owner",
+      "sourceSha256": "1c51248429b8c9c59964e69ff384c6cef6e482345af4cef4a1201f77460bcbff",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 244,
+        "end": 253
+      },
+      "primaryText": "borrowMut",
+      "AST_role": "incompatible explicit exclusive borrow keyword during RHS preparation",
+      "reason": "Prepared indexed push receiver aliases entire outer Vec; RHS cannot exclusively borrow/resize that outer Vec while the selected receiver address is retained."
+    }
+  ]
+}

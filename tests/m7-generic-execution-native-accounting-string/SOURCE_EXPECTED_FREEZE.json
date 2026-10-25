@@ -1,0 +1,35 @@
+{
+  "format": "m416.native-accounting-string-source.v2",
+  "timing": "Frozen from source and accounting law BEFORE fresh provider processes, implementation, emission or runtime observations",
+  "law_freeze_sha256": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "cases": [
+    {
+      "case": "empty-call-loop",
+      "literal": "literals/empty-call-loop.zry",
+      "bytes": 313,
+      "sha256": "a775fd354662d11803f42ba6e7d3be5c3f49df9384008ba60e0f01c654c5dc6e",
+      "expected_syntax": "accepted without diagnostics",
+      "expected_original": "accepted; affine arguments transfer; Borrow parameter forwarded as a loan; loop restores exact source state",
+      "expected_new_seal": "accepted without changing old issuers"
+    },
+    {
+      "case": "nonempty-call-loop",
+      "literal": "literals/nonempty-call-loop.zry",
+      "bytes": 314,
+      "sha256": "41f53d8b9de2567d177f1a69bd7883affbf91f1bc73fc1181b2bb0dadad1fdea",
+      "expected_syntax": "accepted without diagnostics",
+      "expected_original": "accepted; affine arguments transfer; Borrow parameter forwarded as a loan; loop restores exact source state",
+      "expected_new_seal": "accepted without changing old issuers"
+    },
+    {
+      "case": "retained-clone-call-loop",
+      "literal": "literals/retained-clone-call-loop.zry",
+      "bytes": 425,
+      "sha256": "ae363ce61a8e0c8aa8aaeff0ce3c763ebd40f0ba3fe47cc73d080cbed5036279",
+      "expected_syntax": "accepted without diagnostics",
+      "expected_original": "accepted; affine arguments transfer; Borrow parameter forwarded as a loan; loop restores exact source state",
+      "expected_new_seal": "accepted without changing old issuers"
+    }
+  ],
+  "correction": "V1 source-author error corrected BEFORE semantics/native lowering/output: lexical loan cannot cross loop edge. Move borrow(seed) into loop body; seed remains outside; all original threshold arithmetic unchanged. V1 retained unchanged."
+}

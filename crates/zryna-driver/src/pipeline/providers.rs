@@ -18,6 +18,13 @@ pub(crate) fn execute(
     run: Option<(String, Vec<ScalarValue>)>,
     installation: Option<&crate::distribution::InstalledCompiler>,
 ) -> Result<ProviderCommandSuccess, CommandFailure> {
+    if request.profile == CompilationProfile::BoundedGenericsV1
+        && (installation.is_some() || matches!(request.source, CompilationSource::Project(_)))
+    {
+        return Err(request_failure(
+            "bounded-generics-v1 currently requires a source checkout without installed package admission",
+        ));
+    }
     if installation.is_none()
         && matches!(request.source, CompilationSource::Project(_))
         && request.profile != CompilationProfile::I32
@@ -101,30 +108,14 @@ fn dispatch<Source: ModuleSourceRoot>(
     let entrypoint = NormalizedSourcePath::new(request.entrypoint.clone())
         .map_err(|error| source_failure(Diagnostic::from_source_error(&error)))?;
     validate()?;
+    if request.profile == CompilationProfile::BoundedGenericsV1 {
+        return crate::generic_commands::execute(
+            inputs, entrypoint, source, session, run, validate,
+        )
+        .map(ProviderCommandSuccess::Generic);
+    }
     if request.profile == CompilationProfile::DataOwnership {
-        let frontend = session.frontend_v4()?;
-        let closure = crate::ownership_closure::discover_with_clock(
-            source,
-            entrypoint,
-            &*frontend,
-            Instant::now,
-        )
-        .map_err(|error| super::module_closure_failure(&error))?;
-        validate()?;
-        let prepared = crate::ownership_pipeline::preparation::prepare_closure(
-            inputs,
-            request.node_runtime.clone(),
-            closure,
-            run,
-            &|_| validate(),
-            validate,
-        )?;
-        return crate::ownership_commands::execute_with_provider(
-            &prepared,
-            session.node(),
-            validate,
-        )
-        .map(ProviderCommandSuccess::Ownership);
+        return ownership(request, inputs, run, source, session, entrypoint, validate);
     }
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
     let invocation =
@@ -194,8 +185,37 @@ fn dispatch<Source: ModuleSourceRoot>(
             )
             .map(ProviderCommandSuccess::Scalar)
         }
-        CompilationProfile::DataOwnership => unreachable!("handled before scalar publication"),
+        CompilationProfile::DataOwnership | CompilationProfile::BoundedGenericsV1 => {
+            unreachable!("handled before scalar publication")
+        }
     }
+}
+
+// Existing ownership route; preparation and terminal checks retain their original order.
+fn ownership<Source: ModuleSourceRoot>(
+    request: &ProviderBuildRequest,
+    inputs: &BuildInputs,
+    run: Option<(String, Vec<ScalarValue>)>,
+    source: &Source,
+    session: &ProviderSession<'_>,
+    entrypoint: NormalizedSourcePath,
+    validate: &dyn Fn() -> Result<(), CommandFailure>,
+) -> Result<ProviderCommandSuccess, CommandFailure> {
+    let frontend = session.frontend_v4()?;
+    let closure =
+        crate::ownership_closure::discover_with_clock(source, entrypoint, &*frontend, Instant::now)
+            .map_err(|error| super::module_closure_failure(&error))?;
+    validate()?;
+    let prepared = crate::ownership_pipeline::preparation::prepare_closure(
+        inputs,
+        request.node_runtime.clone(),
+        closure,
+        run,
+        &|_| validate(),
+        validate,
+    )?;
+    crate::ownership_commands::execute_with_provider(&prepared, session.node(), validate)
+        .map(ProviderCommandSuccess::Ownership)
 }
 
 fn source_failure(diagnostic: Diagnostic) -> CommandFailure {

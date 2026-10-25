@@ -1,0 +1,2 @@
+function append(loan: BorrowMut<Vec<String>>, item: String): i32 { push(loan, item); return 7; }
+export function entry(): i32 { let root: Vec<String> = Vec<String>(["first"]); { const parent: BorrowMut<Vec<String>> = borrowMut(root); { const child: BorrowMut<Vec<String>> = borrowMut(parent); const called: i32 = append(child, "second"); } push(parent, "third"); } return 41; }

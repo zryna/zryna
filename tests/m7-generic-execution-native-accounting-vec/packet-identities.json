@@ -1,0 +1,59 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "nonempty-vec-call-loop",
+      "provider": "native",
+      "packet": "nonempty-vec-call-loop-native.json",
+      "packetSha256": "503cdc9c79860145d99d71ab4e8eff5e76dbd1fc2edf28d2728b2e3609df5aa7",
+      "packetBytes": 28538,
+      "exactSourceSha256": "ecdddbb1190e65271668a1efbf3a33c6c2af0c1a9c22f01cf2ba29cf029c952f",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nonempty-vec-call-loop",
+      "provider": "typescript",
+      "packet": "nonempty-vec-call-loop-typescript.json",
+      "packetSha256": "3c597c577957ebeb44fabbe6ffb6af1906cbb93a99913772be7b5376ee2551e3",
+      "packetBytes": 28538,
+      "exactSourceSha256": "ecdddbb1190e65271668a1efbf3a33c6c2af0c1a9c22f01cf2ba29cf029c952f",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "empty-vec-call-loop",
+      "provider": "native",
+      "packet": "empty-vec-call-loop-native.json",
+      "packetSha256": "8f99215d867881e021efc9fbc0c07d472956641a58e612155bf2cd3c5ea121e1",
+      "packetBytes": 27098,
+      "exactSourceSha256": "23dcebee3570be9ed67a56fa986c557d63ecbfab45bf35986f2627c00dcbb891",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "empty-vec-call-loop",
+      "provider": "typescript",
+      "packet": "empty-vec-call-loop-typescript.json",
+      "packetSha256": "bd4685b98cbe63bbb38862f200e7b56738c0723abdf824874afb53ace1cab8eb",
+      "packetBytes": 27098,
+      "exactSourceSha256": "23dcebee3570be9ed67a56fa986c557d63ecbfab45bf35986f2627c00dcbb891",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "reserve-vec-call-loop",
+      "provider": "native",
+      "packet": "reserve-vec-call-loop-native.json",
+      "packetSha256": "d84791a235b9a1638be95adc865a7162f902fc48d392806e891fa85b7215271e",
+      "packetBytes": 34412,
+      "exactSourceSha256": "997fcea3f00647e2c9cd502c85338b29f5370c595ac627f330128581f0fc67eb",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "reserve-vec-call-loop",
+      "provider": "typescript",
+      "packet": "reserve-vec-call-loop-typescript.json",
+      "packetSha256": "a5212a8901041498e55e83f7a6fa1a870c1326c6470f8d8ac20c57e356ed8e5a",
+      "packetBytes": 34412,
+      "exactSourceSha256": "997fcea3f00647e2c9cd502c85338b29f5370c595ac627f330128581f0fc67eb",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

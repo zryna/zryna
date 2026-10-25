@@ -1,0 +1,20 @@
+{
+  "status": "Subset of newly recorded syntax-only provider receipts",
+  "originalReceiptsSha256": "9514e2f97b913cb2c7810256ccc3557b0420b0fa175ff775c290937332496333",
+  "records": [
+    {
+      "case": "deep-indirect-original",
+      "provider": "native",
+      "packet": "deep-indirect-original-native.json",
+      "packetBytes": 656095,
+      "packetSha256": "8628c2ae78a1a365c8ad44a4d40a459fd7dda67711969be84b30f4ff4fcfa691"
+    },
+    {
+      "case": "deep-indirect-original",
+      "provider": "typescript",
+      "packet": "deep-indirect-original-typescript.json",
+      "packetBytes": 656095,
+      "packetSha256": "07413682ef066b76cac608fe0122932f8d6fa3dd629b7ac3534b4e7801c3338e"
+    }
+  ]
+}

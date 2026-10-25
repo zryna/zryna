@@ -73,3 +73,39 @@ class OwnedSourceMirror(unittest.TestCase):
                 (repo / changed).write_bytes(b'// replaced source include')
                 with self.assertRaises(AssertionError):
                     owned_inputs.mirror(repo, output, source)
+
+    def test_original_source_budget_exact_16_mib_and_first_extra_byte(self):
+        # Contract boundary uses full input bytes, independent of source row order or
+        # JSON size. The append-only main remains outside the original-byte budget.
+        for extra in (0, 1):
+            with self.subTest(extra=extra), tempfile.TemporaryDirectory() as directory:
+                repo, output, source = self.mirror_include_fixture(directory)
+                remaining = 16 * 1024 * 1024 - sum(row['bytes'] for row in source['files'])
+                index = 0
+                while remaining:
+                    size = min(remaining, 2 * 1024 * 1024)
+                    remaining -= size
+                    if remaining == 0:
+                        size += extra
+                    relative = f'crates/zryna-driver/src/boundary_{index}.rs'
+                    target = repo / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    data = b'x' * size
+                    target.write_bytes(data)
+                    source['files'].append({'path': relative, 'bytes': size, 'sha256': sha(data)})
+                    index += 1
+                self.assertEqual(sum(row['bytes'] for row in source['files']),
+                                 16 * 1024 * 1024 + extra)
+                if extra:
+                    with self.assertRaises(AssertionError):
+                        owned_inputs.mirror(repo, output, source)
+                    self.assertFalse((output / 'SOURCE_MIRROR.json').exists())
+                else:
+                    root, manifest = owned_inputs.mirror(repo, output, source)
+                    self.assertEqual(sum(row['originalBytes'] for row in manifest),
+                                     16 * 1024 * 1024)
+                    self.assertEqual(len(manifest), len(source['files']))
+                    owned_inputs.check_mirror(repo, root, manifest)
+                    for row in source['files']:
+                        self.assertEqual((root / row['path']).read_bytes(),
+                                         (repo / row['path']).read_bytes())

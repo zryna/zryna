@@ -1,0 +1,3057 @@
+{
+  "diagnostics": [],
+  "files": [
+    {
+      "data_declarations": [
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 63,
+              "file": 0,
+              "start": 62
+            },
+            "extends_span": {
+              "end": 20,
+              "file": 0,
+              "start": 13
+            },
+            "interface_span": {
+              "end": 9,
+              "file": 0,
+              "start": 0
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 30,
+              "file": 0,
+              "start": 21
+            },
+            "name": {
+              "span": {
+                "end": 12,
+                "file": 0,
+                "start": 10
+              },
+              "text": "E0"
+            },
+            "open_brace_span": {
+              "end": 32,
+              "file": 0,
+              "start": 31
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 38,
+                  "file": 0,
+                  "start": 37
+                },
+                "name": {
+                  "span": {
+                    "end": 37,
+                    "file": 0,
+                    "start": 33
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 0,
+                "semicolon_span": {
+                  "end": 46,
+                  "file": 0,
+                  "start": 45
+                },
+                "span": {
+                  "end": 46,
+                  "file": 0,
+                  "start": 33
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 53,
+                  "file": 0,
+                  "start": 52
+                },
+                "name": {
+                  "span": {
+                    "end": 52,
+                    "file": 0,
+                    "start": 47
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 1,
+                "semicolon_span": {
+                  "end": 61,
+                  "file": 0,
+                  "start": 60
+                },
+                "span": {
+                  "end": 61,
+                  "file": 0,
+                  "start": 47
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 63,
+            "file": 0,
+            "start": 0
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 119,
+              "file": 0,
+              "start": 118
+            },
+            "extends_span": {
+              "end": 84,
+              "file": 0,
+              "start": 77
+            },
+            "interface_span": {
+              "end": 73,
+              "file": 0,
+              "start": 64
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 94,
+              "file": 0,
+              "start": 85
+            },
+            "name": {
+              "span": {
+                "end": 76,
+                "file": 0,
+                "start": 74
+              },
+              "text": "E1"
+            },
+            "open_brace_span": {
+              "end": 96,
+              "file": 0,
+              "start": 95
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 102,
+                  "file": 0,
+                  "start": 101
+                },
+                "name": {
+                  "span": {
+                    "end": 101,
+                    "file": 0,
+                    "start": 97
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 2,
+                "semicolon_span": {
+                  "end": 106,
+                  "file": 0,
+                  "start": 105
+                },
+                "span": {
+                  "end": 106,
+                  "file": 0,
+                  "start": 97
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 113,
+                  "file": 0,
+                  "start": 112
+                },
+                "name": {
+                  "span": {
+                    "end": 112,
+                    "file": 0,
+                    "start": 107
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 3,
+                "semicolon_span": {
+                  "end": 117,
+                  "file": 0,
+                  "start": 116
+                },
+                "span": {
+                  "end": 117,
+                  "file": 0,
+                  "start": 107
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 119,
+            "file": 0,
+            "start": 64
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 175,
+              "file": 0,
+              "start": 174
+            },
+            "extends_span": {
+              "end": 140,
+              "file": 0,
+              "start": 133
+            },
+            "interface_span": {
+              "end": 129,
+              "file": 0,
+              "start": 120
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 150,
+              "file": 0,
+              "start": 141
+            },
+            "name": {
+              "span": {
+                "end": 132,
+                "file": 0,
+                "start": 130
+              },
+              "text": "E2"
+            },
+            "open_brace_span": {
+              "end": 152,
+              "file": 0,
+              "start": 151
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 158,
+                  "file": 0,
+                  "start": 157
+                },
+                "name": {
+                  "span": {
+                    "end": 157,
+                    "file": 0,
+                    "start": 153
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 4,
+                "semicolon_span": {
+                  "end": 162,
+                  "file": 0,
+                  "start": 161
+                },
+                "span": {
+                  "end": 162,
+                  "file": 0,
+                  "start": 153
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 169,
+                  "file": 0,
+                  "start": 168
+                },
+                "name": {
+                  "span": {
+                    "end": 168,
+                    "file": 0,
+                    "start": 163
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 5,
+                "semicolon_span": {
+                  "end": 173,
+                  "file": 0,
+                  "start": 172
+                },
+                "span": {
+                  "end": 173,
+                  "file": 0,
+                  "start": 163
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 175,
+            "file": 0,
+            "start": 120
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 231,
+              "file": 0,
+              "start": 230
+            },
+            "extends_span": {
+              "end": 196,
+              "file": 0,
+              "start": 189
+            },
+            "interface_span": {
+              "end": 185,
+              "file": 0,
+              "start": 176
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 206,
+              "file": 0,
+              "start": 197
+            },
+            "name": {
+              "span": {
+                "end": 188,
+                "file": 0,
+                "start": 186
+              },
+              "text": "E3"
+            },
+            "open_brace_span": {
+              "end": 208,
+              "file": 0,
+              "start": 207
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 214,
+                  "file": 0,
+                  "start": 213
+                },
+                "name": {
+                  "span": {
+                    "end": 213,
+                    "file": 0,
+                    "start": 209
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 6,
+                "semicolon_span": {
+                  "end": 218,
+                  "file": 0,
+                  "start": 217
+                },
+                "span": {
+                  "end": 218,
+                  "file": 0,
+                  "start": 209
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 225,
+                  "file": 0,
+                  "start": 224
+                },
+                "name": {
+                  "span": {
+                    "end": 224,
+                    "file": 0,
+                    "start": 219
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 7,
+                "semicolon_span": {
+                  "end": 229,
+                  "file": 0,
+                  "start": 228
+                },
+                "span": {
+                  "end": 229,
+                  "file": 0,
+                  "start": 219
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 231,
+            "file": 0,
+            "start": 176
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 287,
+              "file": 0,
+              "start": 286
+            },
+            "extends_span": {
+              "end": 252,
+              "file": 0,
+              "start": 245
+            },
+            "interface_span": {
+              "end": 241,
+              "file": 0,
+              "start": 232
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 262,
+              "file": 0,
+              "start": 253
+            },
+            "name": {
+              "span": {
+                "end": 244,
+                "file": 0,
+                "start": 242
+              },
+              "text": "E4"
+            },
+            "open_brace_span": {
+              "end": 264,
+              "file": 0,
+              "start": 263
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 270,
+                  "file": 0,
+                  "start": 269
+                },
+                "name": {
+                  "span": {
+                    "end": 269,
+                    "file": 0,
+                    "start": 265
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 8,
+                "semicolon_span": {
+                  "end": 274,
+                  "file": 0,
+                  "start": 273
+                },
+                "span": {
+                  "end": 274,
+                  "file": 0,
+                  "start": 265
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 281,
+                  "file": 0,
+                  "start": 280
+                },
+                "name": {
+                  "span": {
+                    "end": 280,
+                    "file": 0,
+                    "start": 275
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 9,
+                "semicolon_span": {
+                  "end": 285,
+                  "file": 0,
+                  "start": 284
+                },
+                "span": {
+                  "end": 285,
+                  "file": 0,
+                  "start": 275
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 287,
+            "file": 0,
+            "start": 232
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 343,
+              "file": 0,
+              "start": 342
+            },
+            "extends_span": {
+              "end": 308,
+              "file": 0,
+              "start": 301
+            },
+            "interface_span": {
+              "end": 297,
+              "file": 0,
+              "start": 288
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 318,
+              "file": 0,
+              "start": 309
+            },
+            "name": {
+              "span": {
+                "end": 300,
+                "file": 0,
+                "start": 298
+              },
+              "text": "E5"
+            },
+            "open_brace_span": {
+              "end": 320,
+              "file": 0,
+              "start": 319
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 326,
+                  "file": 0,
+                  "start": 325
+                },
+                "name": {
+                  "span": {
+                    "end": 325,
+                    "file": 0,
+                    "start": 321
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 10,
+                "semicolon_span": {
+                  "end": 330,
+                  "file": 0,
+                  "start": 329
+                },
+                "span": {
+                  "end": 330,
+                  "file": 0,
+                  "start": 321
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 337,
+                  "file": 0,
+                  "start": 336
+                },
+                "name": {
+                  "span": {
+                    "end": 336,
+                    "file": 0,
+                    "start": 331
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 11,
+                "semicolon_span": {
+                  "end": 341,
+                  "file": 0,
+                  "start": 340
+                },
+                "span": {
+                  "end": 341,
+                  "file": 0,
+                  "start": 331
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 343,
+            "file": 0,
+            "start": 288
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 399,
+              "file": 0,
+              "start": 398
+            },
+            "extends_span": {
+              "end": 364,
+              "file": 0,
+              "start": 357
+            },
+            "interface_span": {
+              "end": 353,
+              "file": 0,
+              "start": 344
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 374,
+              "file": 0,
+              "start": 365
+            },
+            "name": {
+              "span": {
+                "end": 356,
+                "file": 0,
+                "start": 354
+              },
+              "text": "E6"
+            },
+            "open_brace_span": {
+              "end": 376,
+              "file": 0,
+              "start": 375
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 382,
+                  "file": 0,
+                  "start": 381
+                },
+                "name": {
+                  "span": {
+                    "end": 381,
+                    "file": 0,
+                    "start": 377
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 12,
+                "semicolon_span": {
+                  "end": 386,
+                  "file": 0,
+                  "start": 385
+                },
+                "span": {
+                  "end": 386,
+                  "file": 0,
+                  "start": 377
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 393,
+                  "file": 0,
+                  "start": 392
+                },
+                "name": {
+                  "span": {
+                    "end": 392,
+                    "file": 0,
+                    "start": 387
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 13,
+                "semicolon_span": {
+                  "end": 397,
+                  "file": 0,
+                  "start": 396
+                },
+                "span": {
+                  "end": 397,
+                  "file": 0,
+                  "start": 387
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 399,
+            "file": 0,
+            "start": 344
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 455,
+              "file": 0,
+              "start": 454
+            },
+            "extends_span": {
+              "end": 420,
+              "file": 0,
+              "start": 413
+            },
+            "interface_span": {
+              "end": 409,
+              "file": 0,
+              "start": 400
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 430,
+              "file": 0,
+              "start": 421
+            },
+            "name": {
+              "span": {
+                "end": 412,
+                "file": 0,
+                "start": 410
+              },
+              "text": "E7"
+            },
+            "open_brace_span": {
+              "end": 432,
+              "file": 0,
+              "start": 431
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 438,
+                  "file": 0,
+                  "start": 437
+                },
+                "name": {
+                  "span": {
+                    "end": 437,
+                    "file": 0,
+                    "start": 433
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 14,
+                "semicolon_span": {
+                  "end": 442,
+                  "file": 0,
+                  "start": 441
+                },
+                "span": {
+                  "end": 442,
+                  "file": 0,
+                  "start": 433
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 449,
+                  "file": 0,
+                  "start": 448
+                },
+                "name": {
+                  "span": {
+                    "end": 448,
+                    "file": 0,
+                    "start": 443
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 15,
+                "semicolon_span": {
+                  "end": 453,
+                  "file": 0,
+                  "start": 452
+                },
+                "span": {
+                  "end": 453,
+                  "file": 0,
+                  "start": 443
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 455,
+            "file": 0,
+            "start": 400
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 511,
+              "file": 0,
+              "start": 510
+            },
+            "extends_span": {
+              "end": 476,
+              "file": 0,
+              "start": 469
+            },
+            "interface_span": {
+              "end": 465,
+              "file": 0,
+              "start": 456
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 486,
+              "file": 0,
+              "start": 477
+            },
+            "name": {
+              "span": {
+                "end": 468,
+                "file": 0,
+                "start": 466
+              },
+              "text": "E8"
+            },
+            "open_brace_span": {
+              "end": 488,
+              "file": 0,
+              "start": 487
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 494,
+                  "file": 0,
+                  "start": 493
+                },
+                "name": {
+                  "span": {
+                    "end": 493,
+                    "file": 0,
+                    "start": 489
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 16,
+                "semicolon_span": {
+                  "end": 498,
+                  "file": 0,
+                  "start": 497
+                },
+                "span": {
+                  "end": 498,
+                  "file": 0,
+                  "start": 489
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 505,
+                  "file": 0,
+                  "start": 504
+                },
+                "name": {
+                  "span": {
+                    "end": 504,
+                    "file": 0,
+                    "start": 499
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 17,
+                "semicolon_span": {
+                  "end": 509,
+                  "file": 0,
+                  "start": 508
+                },
+                "span": {
+                  "end": 509,
+                  "file": 0,
+                  "start": 499
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 511,
+            "file": 0,
+            "start": 456
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 567,
+              "file": 0,
+              "start": 566
+            },
+            "extends_span": {
+              "end": 532,
+              "file": 0,
+              "start": 525
+            },
+            "interface_span": {
+              "end": 521,
+              "file": 0,
+              "start": 512
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 542,
+              "file": 0,
+              "start": 533
+            },
+            "name": {
+              "span": {
+                "end": 524,
+                "file": 0,
+                "start": 522
+              },
+              "text": "E9"
+            },
+            "open_brace_span": {
+              "end": 544,
+              "file": 0,
+              "start": 543
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 550,
+                  "file": 0,
+                  "start": 549
+                },
+                "name": {
+                  "span": {
+                    "end": 549,
+                    "file": 0,
+                    "start": 545
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 18,
+                "semicolon_span": {
+                  "end": 554,
+                  "file": 0,
+                  "start": 553
+                },
+                "span": {
+                  "end": 554,
+                  "file": 0,
+                  "start": 545
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 561,
+                  "file": 0,
+                  "start": 560
+                },
+                "name": {
+                  "span": {
+                    "end": 560,
+                    "file": 0,
+                    "start": 555
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 19,
+                "semicolon_span": {
+                  "end": 565,
+                  "file": 0,
+                  "start": 564
+                },
+                "span": {
+                  "end": 565,
+                  "file": 0,
+                  "start": 555
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 567,
+            "file": 0,
+            "start": 512
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 624,
+              "file": 0,
+              "start": 623
+            },
+            "extends_span": {
+              "end": 589,
+              "file": 0,
+              "start": 582
+            },
+            "interface_span": {
+              "end": 577,
+              "file": 0,
+              "start": 568
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 599,
+              "file": 0,
+              "start": 590
+            },
+            "name": {
+              "span": {
+                "end": 581,
+                "file": 0,
+                "start": 578
+              },
+              "text": "E10"
+            },
+            "open_brace_span": {
+              "end": 601,
+              "file": 0,
+              "start": 600
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 607,
+                  "file": 0,
+                  "start": 606
+                },
+                "name": {
+                  "span": {
+                    "end": 606,
+                    "file": 0,
+                    "start": 602
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 20,
+                "semicolon_span": {
+                  "end": 611,
+                  "file": 0,
+                  "start": 610
+                },
+                "span": {
+                  "end": 611,
+                  "file": 0,
+                  "start": 602
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 618,
+                  "file": 0,
+                  "start": 617
+                },
+                "name": {
+                  "span": {
+                    "end": 617,
+                    "file": 0,
+                    "start": 612
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 21,
+                "semicolon_span": {
+                  "end": 622,
+                  "file": 0,
+                  "start": 621
+                },
+                "span": {
+                  "end": 622,
+                  "file": 0,
+                  "start": 612
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 624,
+            "file": 0,
+            "start": 568
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 683,
+              "file": 0,
+              "start": 682
+            },
+            "extends_span": {
+              "end": 646,
+              "file": 0,
+              "start": 639
+            },
+            "interface_span": {
+              "end": 634,
+              "file": 0,
+              "start": 625
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 656,
+              "file": 0,
+              "start": 647
+            },
+            "name": {
+              "span": {
+                "end": 638,
+                "file": 0,
+                "start": 635
+              },
+              "text": "E11"
+            },
+            "open_brace_span": {
+              "end": 658,
+              "file": 0,
+              "start": 657
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 664,
+                  "file": 0,
+                  "start": 663
+                },
+                "name": {
+                  "span": {
+                    "end": 663,
+                    "file": 0,
+                    "start": 659
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 22,
+                "semicolon_span": {
+                  "end": 669,
+                  "file": 0,
+                  "start": 668
+                },
+                "span": {
+                  "end": 669,
+                  "file": 0,
+                  "start": 659
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 676,
+                  "file": 0,
+                  "start": 675
+                },
+                "name": {
+                  "span": {
+                    "end": 675,
+                    "file": 0,
+                    "start": 670
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 23,
+                "semicolon_span": {
+                  "end": 681,
+                  "file": 0,
+                  "start": 680
+                },
+                "span": {
+                  "end": 681,
+                  "file": 0,
+                  "start": 670
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 683,
+            "file": 0,
+            "start": 625
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 742,
+              "file": 0,
+              "start": 741
+            },
+            "extends_span": {
+              "end": 705,
+              "file": 0,
+              "start": 698
+            },
+            "interface_span": {
+              "end": 693,
+              "file": 0,
+              "start": 684
+            },
+            "kind": "enum",
+            "marker_span": {
+              "end": 715,
+              "file": 0,
+              "start": 706
+            },
+            "name": {
+              "span": {
+                "end": 697,
+                "file": 0,
+                "start": 694
+              },
+              "text": "E12"
+            },
+            "open_brace_span": {
+              "end": 717,
+              "file": 0,
+              "start": 716
+            },
+            "variants": [
+              {
+                "colon_span": {
+                  "end": 723,
+                  "file": 0,
+                  "start": 722
+                },
+                "name": {
+                  "span": {
+                    "end": 722,
+                    "file": 0,
+                    "start": 718
+                  },
+                  "text": "left"
+                },
+                "none_span": null,
+                "payload_type": 24,
+                "semicolon_span": {
+                  "end": 728,
+                  "file": 0,
+                  "start": 727
+                },
+                "span": {
+                  "end": 728,
+                  "file": 0,
+                  "start": 718
+                }
+              },
+              {
+                "colon_span": {
+                  "end": 735,
+                  "file": 0,
+                  "start": 734
+                },
+                "name": {
+                  "span": {
+                    "end": 734,
+                    "file": 0,
+                    "start": 729
+                  },
+                  "text": "right"
+                },
+                "none_span": null,
+                "payload_type": 25,
+                "semicolon_span": {
+                  "end": 740,
+                  "file": 0,
+                  "start": 739
+                },
+                "span": {
+                  "end": 740,
+                  "file": 0,
+                  "start": 729
+                }
+              }
+            ]
+          },
+          "span": {
+            "end": 742,
+            "file": 0,
+            "start": 684
+          },
+          "type_parameters": null
+        },
+        {
+          "export_span": null,
+          "kind": {
+            "close_brace_span": {
+              "end": 824,
+              "file": 0,
+              "start": 823
+            },
+            "extends_span": {
+              "end": 787,
+              "file": 0,
+              "start": 780
+            },
+            "fields": [
+              {
+                "colon_span": {
+                  "end": 808,
+                  "file": 0,
+                  "start": 807
+                },
+                "name": {
+                  "span": {
+                    "end": 807,
+                    "file": 0,
+                    "start": 802
+                  },
+                  "text": "value"
+                },
+                "semicolon_span": {
+                  "end": 811,
+                  "file": 0,
+                  "start": 810
+                },
+                "span": {
+                  "end": 811,
+                  "file": 0,
+                  "start": 802
+                },
+                "type_syntax": 26
+              },
+              {
+                "colon_span": {
+                  "end": 817,
+                  "file": 0,
+                  "start": 816
+                },
+                "name": {
+                  "span": {
+                    "end": 816,
+                    "file": 0,
+                    "start": 812
+                  },
+                  "text": "code"
+                },
+                "semicolon_span": {
+                  "end": 822,
+                  "file": 0,
+                  "start": 821
+                },
+                "span": {
+                  "end": 822,
+                  "file": 0,
+                  "start": 812
+                },
+                "type_syntax": 27
+              }
+            ],
+            "interface_span": {
+              "end": 752,
+              "file": 0,
+              "start": 743
+            },
+            "kind": "struct",
+            "marker_span": {
+              "end": 799,
+              "file": 0,
+              "start": 788
+            },
+            "name": {
+              "span": {
+                "end": 757,
+                "file": 0,
+                "start": 753
+              },
+              "text": "Wrap"
+            },
+            "open_brace_span": {
+              "end": 801,
+              "file": 0,
+              "start": 800
+            }
+          },
+          "span": {
+            "end": 824,
+            "file": 0,
+            "start": 743
+          },
+          "type_parameters": {
+            "comma_spans": [],
+            "greater_than_span": {
+              "end": 779,
+              "file": 0,
+              "start": 778
+            },
+            "less_than_span": {
+              "end": 758,
+              "file": 0,
+              "start": 757
+            },
+            "parameters": [
+              {
+                "bound": {
+                  "span": {
+                    "end": 778,
+                    "file": 0,
+                    "start": 768
+                  },
+                  "text": "ZrynaValue"
+                },
+                "extends_span": {
+                  "end": 767,
+                  "file": 0,
+                  "start": 760
+                },
+                "name": {
+                  "span": {
+                    "end": 759,
+                    "file": 0,
+                    "start": 758
+                  },
+                  "text": "T"
+                },
+                "span": {
+                  "end": 778,
+                  "file": 0,
+                  "start": 758
+                }
+              }
+            ],
+            "span": {
+              "end": 779,
+              "file": 0,
+              "start": 757
+            }
+          }
+        }
+      ],
+      "functions": [
+        {
+          "body": {
+            "blocks": [
+              {
+                "close_brace_span": {
+                  "end": 1106,
+                  "file": 0,
+                  "start": 1105
+                },
+                "open_brace_span": {
+                  "end": 855,
+                  "file": 0,
+                  "start": 854
+                },
+                "span": {
+                  "end": 1106,
+                  "file": 0,
+                  "start": 854
+                },
+                "statements": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            ],
+            "expressions": [
+              {
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"L\""
+                },
+                "span": {
+                  "end": 1013,
+                  "file": 0,
+                  "start": 1010
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1014,
+                    "file": 0,
+                    "start": 1013
+                  },
+                  "dot_span": {
+                    "end": 1005,
+                    "file": 0,
+                    "start": 1004
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 1010,
+                    "file": 0,
+                    "start": 1009
+                  },
+                  "payload": 0,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 1004,
+                      "file": 0,
+                      "start": 1002
+                    },
+                    "text": "E0"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 1009,
+                      "file": 0,
+                      "start": 1005
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1014,
+                  "file": 0,
+                  "start": 1002
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1015,
+                    "file": 0,
+                    "start": 1014
+                  },
+                  "dot_span": {
+                    "end": 997,
+                    "file": 0,
+                    "start": 996
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 1002,
+                    "file": 0,
+                    "start": 1001
+                  },
+                  "payload": 1,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 996,
+                      "file": 0,
+                      "start": 994
+                    },
+                    "text": "E1"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 1001,
+                      "file": 0,
+                      "start": 997
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1015,
+                  "file": 0,
+                  "start": 994
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1016,
+                    "file": 0,
+                    "start": 1015
+                  },
+                  "dot_span": {
+                    "end": 989,
+                    "file": 0,
+                    "start": 988
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 994,
+                    "file": 0,
+                    "start": 993
+                  },
+                  "payload": 2,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 988,
+                      "file": 0,
+                      "start": 986
+                    },
+                    "text": "E2"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 993,
+                      "file": 0,
+                      "start": 989
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1016,
+                  "file": 0,
+                  "start": 986
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1017,
+                    "file": 0,
+                    "start": 1016
+                  },
+                  "dot_span": {
+                    "end": 981,
+                    "file": 0,
+                    "start": 980
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 986,
+                    "file": 0,
+                    "start": 985
+                  },
+                  "payload": 3,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 980,
+                      "file": 0,
+                      "start": 978
+                    },
+                    "text": "E3"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 985,
+                      "file": 0,
+                      "start": 981
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1017,
+                  "file": 0,
+                  "start": 978
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1018,
+                    "file": 0,
+                    "start": 1017
+                  },
+                  "dot_span": {
+                    "end": 973,
+                    "file": 0,
+                    "start": 972
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 978,
+                    "file": 0,
+                    "start": 977
+                  },
+                  "payload": 4,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 972,
+                      "file": 0,
+                      "start": 970
+                    },
+                    "text": "E4"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 977,
+                      "file": 0,
+                      "start": 973
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1018,
+                  "file": 0,
+                  "start": 970
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1019,
+                    "file": 0,
+                    "start": 1018
+                  },
+                  "dot_span": {
+                    "end": 965,
+                    "file": 0,
+                    "start": 964
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 970,
+                    "file": 0,
+                    "start": 969
+                  },
+                  "payload": 5,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 964,
+                      "file": 0,
+                      "start": 962
+                    },
+                    "text": "E5"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 969,
+                      "file": 0,
+                      "start": 965
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1019,
+                  "file": 0,
+                  "start": 962
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1020,
+                    "file": 0,
+                    "start": 1019
+                  },
+                  "dot_span": {
+                    "end": 957,
+                    "file": 0,
+                    "start": 956
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 962,
+                    "file": 0,
+                    "start": 961
+                  },
+                  "payload": 6,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 956,
+                      "file": 0,
+                      "start": 954
+                    },
+                    "text": "E6"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 961,
+                      "file": 0,
+                      "start": 957
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1020,
+                  "file": 0,
+                  "start": 954
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1021,
+                    "file": 0,
+                    "start": 1020
+                  },
+                  "dot_span": {
+                    "end": 949,
+                    "file": 0,
+                    "start": 948
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 954,
+                    "file": 0,
+                    "start": 953
+                  },
+                  "payload": 7,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 948,
+                      "file": 0,
+                      "start": 946
+                    },
+                    "text": "E7"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 953,
+                      "file": 0,
+                      "start": 949
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1021,
+                  "file": 0,
+                  "start": 946
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1022,
+                    "file": 0,
+                    "start": 1021
+                  },
+                  "dot_span": {
+                    "end": 941,
+                    "file": 0,
+                    "start": 940
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 946,
+                    "file": 0,
+                    "start": 945
+                  },
+                  "payload": 8,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 940,
+                      "file": 0,
+                      "start": 938
+                    },
+                    "text": "E8"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 945,
+                      "file": 0,
+                      "start": 941
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1022,
+                  "file": 0,
+                  "start": 938
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1023,
+                    "file": 0,
+                    "start": 1022
+                  },
+                  "dot_span": {
+                    "end": 933,
+                    "file": 0,
+                    "start": 932
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 938,
+                    "file": 0,
+                    "start": 937
+                  },
+                  "payload": 9,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 932,
+                      "file": 0,
+                      "start": 930
+                    },
+                    "text": "E9"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 937,
+                      "file": 0,
+                      "start": 933
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1023,
+                  "file": 0,
+                  "start": 930
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1024,
+                    "file": 0,
+                    "start": 1023
+                  },
+                  "dot_span": {
+                    "end": 925,
+                    "file": 0,
+                    "start": 924
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 930,
+                    "file": 0,
+                    "start": 929
+                  },
+                  "payload": 10,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 924,
+                      "file": 0,
+                      "start": 921
+                    },
+                    "text": "E10"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 929,
+                      "file": 0,
+                      "start": 925
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1024,
+                  "file": 0,
+                  "start": 921
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1025,
+                    "file": 0,
+                    "start": 1024
+                  },
+                  "dot_span": {
+                    "end": 916,
+                    "file": 0,
+                    "start": 915
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 921,
+                    "file": 0,
+                    "start": 920
+                  },
+                  "payload": 11,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 915,
+                      "file": 0,
+                      "start": 912
+                    },
+                    "text": "E11"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 920,
+                      "file": 0,
+                      "start": 916
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1025,
+                  "file": 0,
+                  "start": 912
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1026,
+                    "file": 0,
+                    "start": 1025
+                  },
+                  "dot_span": {
+                    "end": 907,
+                    "file": 0,
+                    "start": 906
+                  },
+                  "kind": "enum-construction",
+                  "open_paren_span": {
+                    "end": 912,
+                    "file": 0,
+                    "start": 911
+                  },
+                  "payload": 12,
+                  "type_arguments": null,
+                  "type_name": {
+                    "span": {
+                      "end": 906,
+                      "file": 0,
+                      "start": 903
+                    },
+                    "text": "E12"
+                  },
+                  "variant": {
+                    "span": {
+                      "end": 911,
+                      "file": 0,
+                      "start": 907
+                    },
+                    "text": "left"
+                  }
+                },
+                "span": {
+                  "end": 1026,
+                  "file": 0,
+                  "start": 903
+                }
+              },
+              {
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "7"
+                },
+                "span": {
+                  "end": 1035,
+                  "file": 0,
+                  "start": 1034
+                }
+              },
+              {
+                "kind": {
+                  "close_brace_span": {
+                    "end": 1037,
+                    "file": 0,
+                    "start": 1036
+                  },
+                  "close_paren_span": {
+                    "end": 1038,
+                    "file": 0,
+                    "start": 1037
+                  },
+                  "fields": [
+                    {
+                      "kind": {
+                        "colon_span": {
+                          "end": 902,
+                          "file": 0,
+                          "start": 901
+                        },
+                        "kind": "explicit",
+                        "name": {
+                          "span": {
+                            "end": 901,
+                            "file": 0,
+                            "start": 896
+                          },
+                          "text": "value"
+                        },
+                        "value": 13
+                      },
+                      "span": {
+                        "end": 1026,
+                        "file": 0,
+                        "start": 896
+                      }
+                    },
+                    {
+                      "kind": {
+                        "colon_span": {
+                          "end": 1033,
+                          "file": 0,
+                          "start": 1032
+                        },
+                        "kind": "explicit",
+                        "name": {
+                          "span": {
+                            "end": 1032,
+                            "file": 0,
+                            "start": 1028
+                          },
+                          "text": "code"
+                        },
+                        "value": 14
+                      },
+                      "span": {
+                        "end": 1035,
+                        "file": 0,
+                        "start": 1028
+                      }
+                    }
+                  ],
+                  "kind": "struct-construction",
+                  "open_brace_span": {
+                    "end": 895,
+                    "file": 0,
+                    "start": 894
+                  },
+                  "open_paren_span": {
+                    "end": 894,
+                    "file": 0,
+                    "start": 893
+                  },
+                  "type_arguments": {
+                    "arguments": [
+                      31
+                    ],
+                    "comma_spans": [],
+                    "greater_than_span": {
+                      "end": 893,
+                      "file": 0,
+                      "start": 892
+                    },
+                    "less_than_span": {
+                      "end": 889,
+                      "file": 0,
+                      "start": 888
+                    },
+                    "span": {
+                      "end": 893,
+                      "file": 0,
+                      "start": 888
+                    }
+                  },
+                  "type_name": {
+                    "span": {
+                      "end": 888,
+                      "file": 0,
+                      "start": 884
+                    },
+                    "text": "Wrap"
+                  }
+                },
+                "span": {
+                  "end": 1038,
+                  "file": 0,
+                  "start": 884
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 1080,
+                      "file": 0,
+                      "start": 1074
+                    },
+                    "text": "source"
+                  }
+                },
+                "span": {
+                  "end": 1080,
+                  "file": 0,
+                  "start": 1074
+                }
+              },
+              {
+                "kind": {
+                  "close_paren_span": {
+                    "end": 1081,
+                    "file": 0,
+                    "start": 1080
+                  },
+                  "keyword_span": {
+                    "end": 1073,
+                    "file": 0,
+                    "start": 1068
+                  },
+                  "kind": "clone",
+                  "open_paren_span": {
+                    "end": 1074,
+                    "file": 0,
+                    "start": 1073
+                  },
+                  "value": 16
+                },
+                "span": {
+                  "end": 1081,
+                  "file": 0,
+                  "start": 1068
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 1098,
+                      "file": 0,
+                      "start": 1092
+                    },
+                    "text": "copied"
+                  }
+                },
+                "span": {
+                  "end": 1098,
+                  "file": 0,
+                  "start": 1092
+                }
+              },
+              {
+                "kind": {
+                  "base": 18,
+                  "dot_span": {
+                    "end": 1099,
+                    "file": 0,
+                    "start": 1098
+                  },
+                  "field": {
+                    "span": {
+                      "end": 1103,
+                      "file": 0,
+                      "start": 1099
+                    },
+                    "text": "code"
+                  },
+                  "kind": "field-access"
+                },
+                "span": {
+                  "end": 1103,
+                  "file": 0,
+                  "start": 1092
+                }
+              }
+            ],
+            "root_block": 0,
+            "span": {
+              "end": 1106,
+              "file": 0,
+              "start": 854
+            },
+            "statements": [
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 883,
+                    "file": 0,
+                    "start": 882
+                  },
+                  "initializer": 15,
+                  "keyword_span": {
+                    "end": 863,
+                    "file": 0,
+                    "start": 858
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 870,
+                      "file": 0,
+                      "start": 864
+                    },
+                    "text": "source"
+                  },
+                  "semicolon_span": {
+                    "end": 1039,
+                    "file": 0,
+                    "start": 1038
+                  },
+                  "type_syntax": 30
+                },
+                "span": {
+                  "end": 1039,
+                  "file": 0,
+                  "start": 858
+                }
+              },
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 1067,
+                    "file": 0,
+                    "start": 1066
+                  },
+                  "initializer": 17,
+                  "keyword_span": {
+                    "end": 1047,
+                    "file": 0,
+                    "start": 1042
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 1054,
+                      "file": 0,
+                      "start": 1048
+                    },
+                    "text": "copied"
+                  },
+                  "semicolon_span": {
+                    "end": 1082,
+                    "file": 0,
+                    "start": 1081
+                  },
+                  "type_syntax": 33
+                },
+                "span": {
+                  "end": 1082,
+                  "file": 0,
+                  "start": 1042
+                }
+              },
+              {
+                "kind": {
+                  "keyword_span": {
+                    "end": 1091,
+                    "file": 0,
+                    "start": 1085
+                  },
+                  "kind": "return",
+                  "semicolon_span": {
+                    "end": 1104,
+                    "file": 0,
+                    "start": 1103
+                  },
+                  "value": 19
+                },
+                "span": {
+                  "end": 1104,
+                  "file": 0,
+                  "start": 1085
+                }
+              }
+            ]
+          },
+          "export_span": {
+            "end": 831,
+            "file": 0,
+            "start": 825
+          },
+          "function_span": {
+            "end": 840,
+            "file": 0,
+            "start": 832
+          },
+          "name": {
+            "span": {
+              "end": 846,
+              "file": 0,
+              "start": 841
+            },
+            "text": "entry"
+          },
+          "parameters": [],
+          "result_type": 28,
+          "span": {
+            "end": 1106,
+            "file": 0,
+            "start": 825
+          },
+          "type_parameters": null
+        }
+      ],
+      "id": 0,
+      "imports": [],
+      "path": "main.zry",
+      "type_syntax": [
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 45,
+              "file": 0,
+              "start": 39
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 45,
+            "file": 0,
+            "start": 39
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 60,
+              "file": 0,
+              "start": 54
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 60,
+            "file": 0,
+            "start": 54
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 105,
+                "file": 0,
+                "start": 103
+              },
+              "text": "E0"
+            }
+          },
+          "span": {
+            "end": 105,
+            "file": 0,
+            "start": 103
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 116,
+                "file": 0,
+                "start": 114
+              },
+              "text": "E0"
+            }
+          },
+          "span": {
+            "end": 116,
+            "file": 0,
+            "start": 114
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 161,
+                "file": 0,
+                "start": 159
+              },
+              "text": "E1"
+            }
+          },
+          "span": {
+            "end": 161,
+            "file": 0,
+            "start": 159
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 172,
+                "file": 0,
+                "start": 170
+              },
+              "text": "E1"
+            }
+          },
+          "span": {
+            "end": 172,
+            "file": 0,
+            "start": 170
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 217,
+                "file": 0,
+                "start": 215
+              },
+              "text": "E2"
+            }
+          },
+          "span": {
+            "end": 217,
+            "file": 0,
+            "start": 215
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 228,
+                "file": 0,
+                "start": 226
+              },
+              "text": "E2"
+            }
+          },
+          "span": {
+            "end": 228,
+            "file": 0,
+            "start": 226
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 273,
+                "file": 0,
+                "start": 271
+              },
+              "text": "E3"
+            }
+          },
+          "span": {
+            "end": 273,
+            "file": 0,
+            "start": 271
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 284,
+                "file": 0,
+                "start": 282
+              },
+              "text": "E3"
+            }
+          },
+          "span": {
+            "end": 284,
+            "file": 0,
+            "start": 282
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 329,
+                "file": 0,
+                "start": 327
+              },
+              "text": "E4"
+            }
+          },
+          "span": {
+            "end": 329,
+            "file": 0,
+            "start": 327
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 340,
+                "file": 0,
+                "start": 338
+              },
+              "text": "E4"
+            }
+          },
+          "span": {
+            "end": 340,
+            "file": 0,
+            "start": 338
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 385,
+                "file": 0,
+                "start": 383
+              },
+              "text": "E5"
+            }
+          },
+          "span": {
+            "end": 385,
+            "file": 0,
+            "start": 383
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 396,
+                "file": 0,
+                "start": 394
+              },
+              "text": "E5"
+            }
+          },
+          "span": {
+            "end": 396,
+            "file": 0,
+            "start": 394
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 441,
+                "file": 0,
+                "start": 439
+              },
+              "text": "E6"
+            }
+          },
+          "span": {
+            "end": 441,
+            "file": 0,
+            "start": 439
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 452,
+                "file": 0,
+                "start": 450
+              },
+              "text": "E6"
+            }
+          },
+          "span": {
+            "end": 452,
+            "file": 0,
+            "start": 450
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 497,
+                "file": 0,
+                "start": 495
+              },
+              "text": "E7"
+            }
+          },
+          "span": {
+            "end": 497,
+            "file": 0,
+            "start": 495
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 508,
+                "file": 0,
+                "start": 506
+              },
+              "text": "E7"
+            }
+          },
+          "span": {
+            "end": 508,
+            "file": 0,
+            "start": 506
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 553,
+                "file": 0,
+                "start": 551
+              },
+              "text": "E8"
+            }
+          },
+          "span": {
+            "end": 553,
+            "file": 0,
+            "start": 551
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 564,
+                "file": 0,
+                "start": 562
+              },
+              "text": "E8"
+            }
+          },
+          "span": {
+            "end": 564,
+            "file": 0,
+            "start": 562
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 610,
+                "file": 0,
+                "start": 608
+              },
+              "text": "E9"
+            }
+          },
+          "span": {
+            "end": 610,
+            "file": 0,
+            "start": 608
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 621,
+                "file": 0,
+                "start": 619
+              },
+              "text": "E9"
+            }
+          },
+          "span": {
+            "end": 621,
+            "file": 0,
+            "start": 619
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 668,
+                "file": 0,
+                "start": 665
+              },
+              "text": "E10"
+            }
+          },
+          "span": {
+            "end": 668,
+            "file": 0,
+            "start": 665
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 680,
+                "file": 0,
+                "start": 677
+              },
+              "text": "E10"
+            }
+          },
+          "span": {
+            "end": 680,
+            "file": 0,
+            "start": 677
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 727,
+                "file": 0,
+                "start": 724
+              },
+              "text": "E11"
+            }
+          },
+          "span": {
+            "end": 727,
+            "file": 0,
+            "start": 724
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 739,
+                "file": 0,
+                "start": 736
+              },
+              "text": "E11"
+            }
+          },
+          "span": {
+            "end": 739,
+            "file": 0,
+            "start": 736
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 810,
+                "file": 0,
+                "start": 809
+              },
+              "text": "T"
+            }
+          },
+          "span": {
+            "end": 810,
+            "file": 0,
+            "start": 809
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 821,
+                "file": 0,
+                "start": 818
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 821,
+            "file": 0,
+            "start": 818
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 853,
+                "file": 0,
+                "start": 850
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 853,
+            "file": 0,
+            "start": 850
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 880,
+                "file": 0,
+                "start": 877
+              },
+              "text": "E12"
+            }
+          },
+          "span": {
+            "end": 880,
+            "file": 0,
+            "start": 877
+          }
+        },
+        {
+          "kind": {
+            "kind": "application",
+            "name": {
+              "span": {
+                "end": 876,
+                "file": 0,
+                "start": 872
+              },
+              "text": "Wrap"
+            },
+            "type_arguments": {
+              "arguments": [
+                29
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "end": 881,
+                "file": 0,
+                "start": 880
+              },
+              "less_than_span": {
+                "end": 877,
+                "file": 0,
+                "start": 876
+              },
+              "span": {
+                "end": 881,
+                "file": 0,
+                "start": 876
+              }
+            }
+          },
+          "span": {
+            "end": 881,
+            "file": 0,
+            "start": 872
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 892,
+                "file": 0,
+                "start": 889
+              },
+              "text": "E12"
+            }
+          },
+          "span": {
+            "end": 892,
+            "file": 0,
+            "start": 889
+          }
+        },
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 1064,
+                "file": 0,
+                "start": 1061
+              },
+              "text": "E12"
+            }
+          },
+          "span": {
+            "end": 1064,
+            "file": 0,
+            "start": 1061
+          }
+        },
+        {
+          "kind": {
+            "kind": "application",
+            "name": {
+              "span": {
+                "end": 1060,
+                "file": 0,
+                "start": 1056
+              },
+              "text": "Wrap"
+            },
+            "type_arguments": {
+              "arguments": [
+                32
+              ],
+              "comma_spans": [],
+              "greater_than_span": {
+                "end": 1065,
+                "file": 0,
+                "start": 1064
+              },
+              "less_than_span": {
+                "end": 1061,
+                "file": 0,
+                "start": 1060
+              },
+              "span": {
+                "end": 1065,
+                "file": 0,
+                "start": 1060
+              }
+            }
+          },
+          "span": {
+            "end": 1065,
+            "file": 0,
+            "start": 1056
+          }
+        }
+      ]
+    }
+  ],
+  "schema_version": 5
+}

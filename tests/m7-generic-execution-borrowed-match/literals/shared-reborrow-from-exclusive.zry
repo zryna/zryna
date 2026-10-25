@@ -1,0 +1,9 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function consume(value: String): i32 { return 5; }
+export function entry(): i32 {
+  let root: Packet<Option<String>> = Packet.item<Option<String>>(Option.some<String>("nested"));
+  const outer: BorrowMut<Packet<Option<String>>> = borrowMut(root);
+  const seen: i32 = match(outer, { "Packet.none": () => 0, "Packet.item": (payload) => match(borrow(payload), { "Option.none": () => 0, "Option.some": (child) => consume(clone(child)) }) });
+  const copied: Packet<Option<String>> = clone(outer);
+  return seen;
+}

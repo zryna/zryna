@@ -1,0 +1,10 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function consume(value: String): i32 { return 5; }
+function overwrite(value: BorrowMut<String>): i32 { value = clone(value); value = "new"; return 13; }
+export function entry(): i32 {
+  let root: Packet<String> = Packet.item<String>("old");
+  const loan: BorrowMut<Packet<String>> = borrowMut(root);
+  const first: i32 = match(loan, { "Packet.none": () => 0, "Packet.item": (payload) => overwrite(payload) });
+  const second: i32 = match(loan, { "Packet.none": () => 0, "Packet.item": (payload) => consume(clone(payload)) });
+  return first + second;
+}

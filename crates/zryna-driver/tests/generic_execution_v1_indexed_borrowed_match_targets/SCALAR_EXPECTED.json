@@ -1,0 +1,142 @@
+{
+  "basis": "Frozen from the three original literals before any of their target artifacts were emitted. Signal.off=3, Signal.on=payload; Option.none=2, overwrite returns13. Every invalid index traps bounds. Native allocations count actual Vec storage and owned String construction/Clone, not host observer allocations.",
+  "limits": "Scalar results, bounds identity and balanced actual native malloc/free only; not complete canonical17 event/UTF8/fault-injection/recursive ownership qualification.",
+  "cases": [
+    {
+      "case": "indexed-nominal-shared-join",
+      "source_sha256": "28d6e3635e81fda91f6da9f95e1b63469257e9488db536bee009ac107e756d2e",
+      "runs": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 3,
+          "bounds_trap": false,
+          "native_allocations": 0
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 7,
+          "bounds_trap": false,
+          "native_allocations": 0
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "result": null,
+          "bounds_trap": true,
+          "native_allocations": 0
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "result": null,
+          "bounds_trap": true,
+          "native_allocations": 0
+        }
+      ]
+    },
+    {
+      "case": "indexed-option-exclusive-join",
+      "source_sha256": "0b0f1d8236559f71dcc71a7c4c48ff661528df859142ad998a1ac1886c0352b0",
+      "runs": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 2,
+          "bounds_trap": false,
+          "native_allocations": 2
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 13,
+          "bounds_trap": false,
+          "native_allocations": 4
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "result": null,
+          "bounds_trap": true,
+          "native_allocations": 2
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "result": null,
+          "bounds_trap": true,
+          "native_allocations": 2
+        }
+      ]
+    },
+    {
+      "case": "indexed-chain-nominal-shared-join",
+      "source_sha256": "d94021e3e36f7ded9fe97ae0bfe8a28c3dfcd6cde654f23b81b6cfbbc025b1e9",
+      "runs": [
+        {
+          "arguments": [
+            0,
+            0
+          ],
+          "result": 3,
+          "bounds_trap": false,
+          "native_allocations": 1
+        },
+        {
+          "arguments": [
+            0,
+            1
+          ],
+          "result": 7,
+          "bounds_trap": false,
+          "native_allocations": 1
+        },
+        {
+          "arguments": [
+            1,
+            0
+          ],
+          "result": 11,
+          "bounds_trap": false,
+          "native_allocations": 1
+        },
+        {
+          "arguments": [
+            1,
+            1
+          ],
+          "result": 3,
+          "bounds_trap": false,
+          "native_allocations": 1
+        },
+        {
+          "arguments": [
+            -1,
+            0
+          ],
+          "result": null,
+          "bounds_trap": true,
+          "native_allocations": 1
+        },
+        {
+          "arguments": [
+            0,
+            2
+          ],
+          "result": null,
+          "bounds_trap": true,
+          "native_allocations": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+function pack<T extends ZrynaValue>(value: T): Vec<T> {
+  return Vec<T>([value]);
+}
+export function entry(): i32 {
+  const values: Vec<i32> = pack<i32>(7);
+  const copied: Vec<i32> = clone(values);
+  return values[0] + copied[0];
+}

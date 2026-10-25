@@ -1,0 +1,2 @@
+interface Duo<T extends ZrynaValue> extends ZrynaStruct { first: T; second: T; }
+export function entry(): i32 { let owner: Duo<String> = Duo<String>({ first: "a", second: "b" }); const taken: String = owner.first; owner.first = "c"; const whole: Duo<String> = owner; return 13; }

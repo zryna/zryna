@@ -1,0 +1,29 @@
+{
+  "format": "m416.indexed-borrowed-match-diagnostics.v1",
+  "cases": [
+    {
+      "case": "indexed-selected-arm-escape",
+      "sourceSha256": "a28b766f47b8c2266e067de9a918d9c6d439358a933e97477a8fa610c4c147f0",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 218,
+        "end": 225
+      },
+      "primaryText": "payload",
+      "reason": "First declaration-ordered selected arm result cannot escape its lexical payload loan as Borrow<String>."
+    },
+    {
+      "case": "indexed-match-loan-loop-edge",
+      "sourceSha256": "d4846ea0b2399c8b55a23ca8060147443392f6a3efec0967103b96fb8a8120ae",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "path": "main.zry",
+        "start": 307,
+        "end": 312
+      },
+      "primaryText": "while",
+      "reason": "Lexical indexed loan remains live at the loop header; exact scoped match join permission must not authorize header/backedge transport. No fuel/termination claim."
+    }
+  ]
+}

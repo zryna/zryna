@@ -1,0 +1,8 @@
+{
+  "status": "Frozen independent proposed semantic rejection; unexecuted.",
+  "case": "exclusive-source",
+  "accept": false,
+  "diagnostic": "ZRYNA-M7007",
+  "noInstanceContext": true,
+  "primarySpanMustAuthenticate": true
+}

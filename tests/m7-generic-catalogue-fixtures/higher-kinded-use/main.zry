@@ -1,0 +1,1 @@
+function f<F extends ZrynaValue>(value: F<i32>): F<i32> { return value; }

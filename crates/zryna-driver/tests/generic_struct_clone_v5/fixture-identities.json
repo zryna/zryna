@@ -1,0 +1,221 @@
+{
+  "status": "Pinned exact original Clone literals/expectations and24fresh named provider packets",
+  "files": {
+    "PREFIX_PLAN_ORACLE.json": {
+      "bytes": 2855,
+      "sha256": "55eef3b97e1eb0fd70d8c7b03790cd89e6641e97e9015bed2e962a78fe8d4271"
+    },
+    "PROPOSAL_FREEZE.json": {
+      "bytes": 5295,
+      "sha256": "23dc3113c24a2d74d83fdd887309d9f1a96de639e36684290cb639afb8df9029"
+    },
+    "SOURCE_EXPECTED_FREEZE.json": {
+      "bytes": 4766,
+      "sha256": "46cea891843e537976c96a7cfc6fc00debd6c069fd5570865bcc42e5ad53fbe7"
+    },
+    "STRUCT_CLONE_DESIGN.md": {
+      "bytes": 13166,
+      "sha256": "75a9fe5b1c3fa66ded2f83231abb3beb50d2fad793f333599e753fed44f81baa"
+    },
+    "WIRE_V5_DECISION.md": {
+      "bytes": 3586,
+      "sha256": "86c8d8c9c815b97b5b76d494a84b3debf0bfcb13880648f59723bf37e3e3c2ee"
+    },
+    "copy-struct-native.json": {
+      "bytes": 22956,
+      "sha256": "9f40df0f1d68a5aeb4264f289a492449b6d1fc49863468bc618ce742ae8067d3"
+    },
+    "copy-struct-typescript.json": {
+      "bytes": 22956,
+      "sha256": "6450c7a551ff538f4098d8dc21f1465250411fcf4805745d1c06908efdbf4600"
+    },
+    "exclusive-source-native.json": {
+      "bytes": 21755,
+      "sha256": "ef5045efc61ca289015c53a6f095119d27ec669845678aa6106de5db21259006"
+    },
+    "exclusive-source-typescript.json": {
+      "bytes": 21755,
+      "sha256": "5b00d070463d9358498c46519cf3a1e004c183200a5eee560579eb4b8a21ba8f"
+    },
+    "family-fields-native.json": {
+      "bytes": 27228,
+      "sha256": "82f173c7cfb58e40d9d1b01244b7c50e8eb84c80f2c6a41494cb082f36933beb"
+    },
+    "family-fields-typescript.json": {
+      "bytes": 27228,
+      "sha256": "748953997c6fb1322a4b9e4b7a2a8508f45c51da7a7f9b2bcd0b0eef8ae28a79"
+    },
+    "fixed-member-native.json": {
+      "bytes": 32702,
+      "sha256": "0e82a1d773f56d24db4a5a42f594fb09b9d5e36bb23fe3d4126a6e7556bd2f0b"
+    },
+    "fixed-member-typescript.json": {
+      "bytes": 32702,
+      "sha256": "c93905ccae3f6a6ef1ae0a5363e91add6f00d79fc1b8e374b444d9ef5b3f8e31"
+    },
+    "literals/copy-struct-expected.json": {
+      "bytes": 446,
+      "sha256": "898cb3196c6a25660d6803bac734381c8cc30bcf4e590d1de69ee660a5d25308"
+    },
+    "literals/copy-struct.zry": {
+      "bytes": 261,
+      "sha256": "11f92e90a8d12a2b275f262bed778cb40f4daa0200f9bdfb24be40b6fdac12c4"
+    },
+    "literals/exclusive-source-expected.json": {
+      "bytes": 226,
+      "sha256": "93d682c82bdd6b029213fdfedf5f39fb3a282a453e44449015a77abc40d7efad"
+    },
+    "literals/exclusive-source.zry": {
+      "bytes": 302,
+      "sha256": "b2a880d53ebe6f94570ef00a53517aba74779b814779d50f6a5d4502d4569ece"
+    },
+    "literals/family-fields-expected.json": {
+      "bytes": 1091,
+      "sha256": "6dfc413b9d73a3e28cdba57c63063b7eefe024c82f9c57750288ea9e4d85b99c"
+    },
+    "literals/family-fields.zry": {
+      "bytes": 363,
+      "sha256": "23e41f4694354984bdbcf7ad8b88ec61a2f07698e718b303503adc3d66add670"
+    },
+    "literals/fixed-member-expected.json": {
+      "bytes": 1076,
+      "sha256": "e43c33f2f6dc46ad965aad88e6bbf2493d59c6b041f6b083608a579586bcae8f"
+    },
+    "literals/fixed-member.zry": {
+      "bytes": 428,
+      "sha256": "a58d2c3bcfbbc2544f60acb9eb039742d5395ef7a30bdb1ca98689076ce50686"
+    },
+    "literals/moved-source-expected.json": {
+      "bytes": 222,
+      "sha256": "3de5e4f5caf3200b35a2beacb2e11c5e41d2b4b020f07599bc309261be96eae7"
+    },
+    "literals/moved-source.zry": {
+      "bytes": 281,
+      "sha256": "b8f418314fe27be5fa71c6a6f4935d63a9ea5af1e82fe63ffb61688830d912c2"
+    },
+    "literals/nested-prefix-expected.json": {
+      "bytes": 3243,
+      "sha256": "a874fc15646d69bcafa20e78aaa053f88ee9f6018474cd9d30814db62d6b84a0"
+    },
+    "literals/nested-prefix.zry": {
+      "bytes": 410,
+      "sha256": "1e7d452d2bee1ee6d1cca8222df1535008fc4de2958e86539d0d9fa8db20e9e8"
+    },
+    "literals/opaque-direct-expected.json": {
+      "bytes": 303,
+      "sha256": "efaa37382c7164eac76a6af84106ccbcac306543c060e997db19d86b8747fd74"
+    },
+    "literals/opaque-direct.zry": {
+      "bytes": 119,
+      "sha256": "df8a92762b0b222bb86cb80d3d2356b964fa30a2ad5b6398765b21a0ed8e2301"
+    },
+    "literals/opaque-inactive-expected.json": {
+      "bytes": 307,
+      "sha256": "737e6acd6b39ea39c8d5dd91d478b4ced58471b3415155e91ee47c432f50bfd4"
+    },
+    "literals/opaque-inactive.zry": {
+      "bytes": 227,
+      "sha256": "ac593fcb994742c637a3d0c202c9b7e24a3fb5f9423839cf02484c5f94fa620e"
+    },
+    "literals/opaque-stored-expected.json": {
+      "bytes": 305,
+      "sha256": "c81357462fdbc82fd00b5b69af19dea6ada7d6f77aefffa7eb7c3621a4e1e03f"
+    },
+    "literals/opaque-stored.zry": {
+      "bytes": 199,
+      "sha256": "b45401f32648033f2db0e42a2462afe613743a0d644e1d1aaae665883a9f5478"
+    },
+    "literals/phantom-opaque-expected.json": {
+      "bytes": 449,
+      "sha256": "d04daed550fc185e48e7987eb71b211de82d9cd37031d64df8b6fcf57b3abf59"
+    },
+    "literals/phantom-opaque.zry": {
+      "bytes": 516,
+      "sha256": "dcd0de993297df0ab9a8568467d82303b1431914e0812864cf7a3fd4a4e127c9"
+    },
+    "literals/repeat-source-expected.json": {
+      "bytes": 2724,
+      "sha256": "f78147b7362c58b0667f02884b25e1cc447d0eb92237e2e95bd995b02b5f7fd0"
+    },
+    "literals/repeat-source.zry": {
+      "bytes": 318,
+      "sha256": "3397bb5e977a41c50d2ec98fc9da003149e5e3fb2ff1b2be11c90afeac0c29c6"
+    },
+    "literals/shared-owner-expected.json": {
+      "bytes": 1835,
+      "sha256": "c0e60b79a266e3e9d90850ecccd4c5dccc2a0a9bc34450d11e755923bfa76cfa"
+    },
+    "literals/shared-owner.zry": {
+      "bytes": 326,
+      "sha256": "90771ab350b5bfe1e69a5b861bc067bf802a8d765bb99f82267e8c7ca0b08704"
+    },
+    "moved-source-native.json": {
+      "bytes": 20414,
+      "sha256": "c3e4fdead15feb93ab26a80ae88bd5d3db7ea0b7f28be7f8b5c46b9f955df4a8"
+    },
+    "moved-source-typescript.json": {
+      "bytes": 20414,
+      "sha256": "a97743b50f805767105790e23611964fe80a0e58d23434e9f51c39a1511156c0"
+    },
+    "nested-prefix-native.json": {
+      "bytes": 27877,
+      "sha256": "2d1d871489eca9e7525b9c5e9cc8804f2bbb59c3183ec49361a2186df03f1acc"
+    },
+    "nested-prefix-typescript.json": {
+      "bytes": 27877,
+      "sha256": "6f57c5078e677bed15acc292ddfd1dfe2036b04a882a4aa697dc1598d7de38fb"
+    },
+    "opaque-direct-native.json": {
+      "bytes": 8401,
+      "sha256": "35295699dc2e7409b0b2a5c98035d758e8988356894dd722dba23a5ce123d847"
+    },
+    "opaque-direct-typescript.json": {
+      "bytes": 8401,
+      "sha256": "c3cc3a543b7a74e450fd58b781f344d57a24b51f768f67f18065ef04738a8266"
+    },
+    "opaque-inactive-native.json": {
+      "bytes": 15674,
+      "sha256": "645395259fccd30b2bff5e90795c449c4c100d332d620f861ebdaf62c35c2804"
+    },
+    "opaque-inactive-typescript.json": {
+      "bytes": 15674,
+      "sha256": "c4d9cc021afb22e01d492885a2542f3b8e48465bafac100d9602231c3e14d352"
+    },
+    "opaque-stored-native.json": {
+      "bytes": 13663,
+      "sha256": "fc1131d16451d8262ba9caf013d6c0a1c0c506dc69312f9be13ef69026e0912b"
+    },
+    "opaque-stored-typescript.json": {
+      "bytes": 13663,
+      "sha256": "776645ed1da37e4eeea3f31e6ba75b768cf98388ace64427e64c6f48fe56882c"
+    },
+    "packet-identities.json": {
+      "bytes": 9339,
+      "sha256": "07bbf5f1c3f8a8c90af7a67acf60d1220bdb3002375f9e0f138477a2830ac1c9"
+    },
+    "phantom-opaque-native.json": {
+      "bytes": 37671,
+      "sha256": "04609975ae2f82bac5a98ac929fca5829f563fd6a9e2d953fe2294313680dc9f"
+    },
+    "phantom-opaque-typescript.json": {
+      "bytes": 37671,
+      "sha256": "58a479f2f92b94812634a83f5f60d01a0fc55fac41a5bb7886d58986deffaf2e"
+    },
+    "repeat-source-native.json": {
+      "bytes": 24208,
+      "sha256": "03f356f2a87985216d923792b7d6314a5dabeb5eeb5d6de16a971cbb7b165133"
+    },
+    "repeat-source-typescript.json": {
+      "bytes": 24208,
+      "sha256": "1ba0f1036d2179e68f613f714b01e527ccefe0a7d4d3dfa4bde212c0b0dcc8a6"
+    },
+    "shared-owner-native.json": {
+      "bytes": 24799,
+      "sha256": "634bd4452bc4cec75052c8acd950144bf80420846006e0ef3fca40fea6d6511b"
+    },
+    "shared-owner-typescript.json": {
+      "bytes": 24799,
+      "sha256": "232d55d5faf4b9ecd713ded16f18967fa34b696488808a2183d4814e5b2261e8"
+    }
+  }
+}

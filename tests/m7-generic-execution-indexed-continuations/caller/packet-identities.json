@@ -1,0 +1,23 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "called-indexed-shared-copy",
+      "provider": "native",
+      "packet": "called-indexed-shared-copy-native.json",
+      "packetSha256": "2a1b008baeaa55f3640d497763470d3a562f6d00ebbcc730f494314f184f56b9",
+      "packetBytes": 33300,
+      "exactSourceSha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "called-indexed-shared-copy",
+      "provider": "typescript",
+      "packet": "called-indexed-shared-copy-typescript.json",
+      "packetSha256": "217e143ddf3fdd749626314d3b94822b419f96874a29ef0e73f8339248cffd79",
+      "packetBytes": 33300,
+      "exactSourceSha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

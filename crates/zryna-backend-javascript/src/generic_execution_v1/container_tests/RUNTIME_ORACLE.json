@@ -1,0 +1,47 @@
+{
+  "scope": "Independent language-level JS observation oracle, frozen before provider/backend implementation or execution; acquisition ordinals are actual successful runtime acquisitions; no dynamic-deep support claim",
+  "cases": [
+    {
+      "case": "opaque-count-unused", "observation": 7,
+      "acquisitions": [], "releases": [], "string_clone_calls": 0, "faults": []
+    },
+    {
+      "case": "vec-copy", "observation": 14,
+      "acquisitions": ["source Vec", "destination Vec"], "releases": [2,1], "string_clone_calls": 0,
+      "faults": [
+        {"kind":"allocation","ordinal":1,"trap":"zryna.trap.allocation-v1","releases":[]},
+        {"kind":"allocation","ordinal":2,"trap":"zryna.trap.allocation-v1","releases":[1]}
+      ]
+    },
+    {
+      "case": "vec-owned-prepare", "observation": 7,
+      "acquisitions": ["String A", "String B", "source Vec", "destination Vec", "cloned String A", "cloned String B"],
+      "releases": [6,5,4,2,1,3], "string_clone_calls": 2,
+      "faults": [
+        {"kind":"allocation","ordinal":1,"trap":"zryna.trap.allocation-v1","releases":[]},
+        {"kind":"allocation","ordinal":2,"trap":"zryna.trap.allocation-v1","releases":[1]},
+        {"kind":"allocation","ordinal":3,"trap":"zryna.trap.allocation-v1","releases":[2,1]},
+        {"kind":"allocation","ordinal":4,"trap":"zryna.trap.allocation-v1","releases":[2,1,3]},
+        {"kind":"allocation","ordinal":5,"trap":"zryna.trap.allocation-v1","releases":[4,2,1,3]},
+        {"kind":"allocation","ordinal":6,"trap":"zryna.trap.allocation-v1","releases":[5,4,2,1,3]},
+        {"kind":"string-clone","ordinal":1,"trap":"zryna.trap.allocation-v1","releases":[4,2,1,3]},
+        {"kind":"string-clone","ordinal":2,"trap":"zryna.trap.allocation-v1","releases":[5,4,2,1,3]}
+      ]
+    },
+    {
+      "case":"shared-weak-count", "observation":7,
+      "acquisitions":["String L","Shared control"], "releases":[1,2], "string_clone_calls":0,
+      "count_events":["strongClone","weakDowngrade","weakClone","weakRelease","weakRelease","strongReleaseBegin:notLast","strongReleaseBegin:last","payloadDrop","strongReleaseFinish:deallocated"],
+      "faults":[
+        {"kind":"allocation","ordinal":1,"trap":"zryna.trap.allocation-v1","releases":[]},
+        {"kind":"allocation","ordinal":2,"trap":"zryna.trap.allocation-v1","releases":[1]}
+      ],
+      "refcount_boundary_scope":"Genuine fixture does not reach u32::MAX; no actual overflow claim. Declared status handling can be attacked by hostile provider records separately; canonical count boundary controls must establish unchanged state at the real maximum."
+    }
+  ],
+  "all_faults_require_pristine_success_retry":true,
+  "all_acquired_resources_must_release_exactly_once":true,
+  "unknown_status_rejects_before_result_fields":true,
+  "no_zero_size_vec_element_admission":true,
+  "deep_runtime_stack_scope":"Existing recursive JS shape glue is not a bounded dynamic traversal proof; explicit bounded fallible workstack remains required before general recursive Vec support receipt."
+}

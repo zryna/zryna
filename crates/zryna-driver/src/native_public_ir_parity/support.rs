@@ -56,7 +56,7 @@ pub fn registry() -> (PathBuf, Registry) {
         fs::read(root.join("tests/native-provider-public/registry.json")).expect("frozen registry");
     assert_eq!(
         format!("{:x}", Sha256::digest(&bytes)),
-        "acb66251801fa9a46575b15803b4576d5171e619b2e71d598ce4c3dec136a1fc",
+        "052f5f8dc2081e5347b71cffc0a5f69ab1b7b1c543271f85fbee05c70514065a",
         "exact closed public registry"
     );
     let registry: Registry = serde_json::from_slice(&bytes).expect("registry schema");

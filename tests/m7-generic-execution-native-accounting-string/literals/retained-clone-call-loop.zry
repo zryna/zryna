@@ -1,0 +1,16 @@
+function consume(value: String): i32 { return 1; }
+function step(value: Borrow<String>): i32 {
+  const copied: String = clone(value);
+  return consume(copied);
+}
+export function entry(trips: i32): i32 {
+  const seed: String = "x";
+  let count: i32 = 0;
+  let total: i32 = 0;
+  while (count < trips) {
+    const loan: Borrow<String> = borrow(seed);
+    total = total + step(loan);
+    count = count + 1;
+  }
+  return total;
+}

@@ -1,5 +1,11 @@
 # Compiler status
 
+The #416 candidate adds the separate source-checkout-only `--profile bounded-generics-v1`
+route, syntax protocol v5 and `zryna-generic-manifest-v1.json`. See the
+[M7 guide](M7_GETTING_STARTED.md), [public reference](M7_PUBLIC_PROFILE.md) and
+[candidate host/evidence matrix](M7_SUPPORT.md). Hosted Windows qualification is pending;
+this is not an all-platform completion, installed-profile change or release claim.
+
 Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
 See [the public M3 surface](M3_PUBLIC_PROFILE.md) and [the beginner guide](M3_GETTING_STARTED.md).
 The component checkpoints below retain their historical implementation boundaries; they do not

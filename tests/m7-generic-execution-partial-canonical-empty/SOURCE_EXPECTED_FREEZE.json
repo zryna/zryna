@@ -1,0 +1,36 @@
+{
+  "status": "FROZEN additive original source and source-derived observations BEFORE new providers/implementation/output; original16 and original10 immutable",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "whole-vs-fields",
+      "source": "literals/whole-vs-fields.zry",
+      "bytes": 353,
+      "sha256": "508a3020470166451fc0c7fd4b5e895f25b2ce49bfba460cf25dcbf6f78e637b",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            true
+          ],
+          "i32": 47,
+          "logical_releases": [
+            "b",
+            "a"
+          ]
+        },
+        {
+          "arguments": [
+            false
+          ],
+          "i32": 47,
+          "logical_releases": [
+            "b",
+            "a"
+          ]
+        }
+      ],
+      "basis": "DATA_OWNERSHIP_V1 sections5-7: whole move/drop and moving/dropping every exact field leave equivalent Empty state; no implicit owned clone or conditional drop"
+    }
+  ]
+}

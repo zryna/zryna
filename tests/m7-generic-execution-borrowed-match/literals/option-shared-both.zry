@@ -1,0 +1,9 @@
+function consume(value: String): i32 { return 5; }
+function inspect(value: Borrow<Option<String>>): i32 {
+  return match(value, { "Option.none": () => 2, "Option.some": (payload) => consume(clone(payload)) });
+}
+export function entry(): i32 {
+  const none: Option<String> = Option.none<String>(); const some: Option<String> = Option.some<String>("opt");
+  const a: Borrow<Option<String>> = borrow(none); const b: Borrow<Option<String>> = borrow(some);
+  return inspect(a) + inspect(b);
+}

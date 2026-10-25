@@ -1,0 +1,27 @@
+{
+  "kind": "pre-provider additive owning Copy-only Clone census control",
+  "original_unchanged": {
+    "path": "tests/m7-generic-execution-recursive-owner/literals/drop-only.zry",
+    "sha256": "3d097ad3baedcc0f192bac0f5681bd2b0f92ec94d7091d9d30dcd260d96de8dd"
+  },
+  "source": {
+    "path": "/tmp/m416-native-clone-no-failure-census-v1/copy-only-under-live-root.zry",
+    "target": "tests/m7-generic-native-iterative-clone/literals/copy-only-under-live-root.zry",
+    "sha256": "66445d391e2f77bb30bb663f3888b01ef9a8247ff64e4714c4c35e2edd39e47a",
+    "bytes": 430
+  },
+  "expected": {
+    "originals": "accept",
+    "independent_execution": "accept",
+    "native_mir": "accept",
+    "needs_recursive_arena": true,
+    "clone_frontier_kinds": [
+      "Copy"
+    ],
+    "canonical_clone_calls": 0,
+    "flat_clone_prefix_drop_call_sites": 0,
+    "source_trap": null,
+    "entry_result": "i32 input depth, unchanged by explicit scalar Clone",
+    "scope": "owning object/call-inventory control; no runtime or provider output yet"
+  }
+}

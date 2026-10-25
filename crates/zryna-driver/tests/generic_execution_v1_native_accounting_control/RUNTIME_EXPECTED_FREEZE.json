@@ -1,0 +1,729 @@
+{
+  "format": "m416.native-control8-runtime-oracle.v1",
+  "timing": "law/source-derived before fresh providers, target output or control8 implementation",
+  "law_sha256": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "limits": {
+    "A": 1048576,
+    "L": 1048576,
+    "S": 4194304,
+    "held_law": "S+H<=4194304; exact mandatory future cleanup"
+  },
+  "scope": "actual source thresholds/constant-space observation; not synthetic count-max populations or full-profile closure",
+  "cases": [
+    {
+      "case": "control-birth-call-loop",
+      "per_completed_iteration": {
+        "A": 1,
+        "S": 3,
+        "peak_H": 2,
+        "peak_L": 1,
+        "scalar": 7,
+        "roles": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 0,
+          "weakClone": 0,
+          "weakUpgrade": 0,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 0
+        }
+      },
+      "rows": [
+        {
+          "label": "zero",
+          "arguments": [
+            0
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 0,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 0,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 0,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 0,
+            "strongReleaseFinish": 0,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 0,
+          "malloc_calls_per_invocation": 0,
+          "successful_nonzero_allocations_per_invocation": 0,
+          "free_calls_per_invocation": 0,
+          "peak_live_blocks_per_invocation": 0,
+          "peak_held_per_invocation": 0,
+          "end_context_per_invocation": {
+            "A": 0,
+            "L": 0,
+            "S": 0,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "small",
+          "arguments": [
+            3
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 21,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 3,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 3,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 3,
+            "strongReleaseFinish": 3,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 3,
+          "malloc_calls_per_invocation": 3,
+          "successful_nonzero_allocations_per_invocation": 3,
+          "free_calls_per_invocation": 3,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 3,
+            "L": 0,
+            "S": 9,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "exact",
+          "arguments": [
+            1048576
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 7340032,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 1048576,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 1048576,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 1048576,
+            "strongReleaseFinish": 1048576,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 1048576,
+          "malloc_calls_per_invocation": 1048576,
+          "successful_nonzero_allocations_per_invocation": 1048576,
+          "free_calls_per_invocation": 1048576,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 1048576,
+            "L": 0,
+            "S": 3145728,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "same-process-reset",
+          "arguments": [
+            1048576
+          ],
+          "invocations_same_process": 2,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 7340032,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 1048576,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 1048576,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 1048576,
+            "strongReleaseFinish": 1048576,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 1048576,
+          "malloc_calls_per_invocation": 1048576,
+          "successful_nonzero_allocations_per_invocation": 1048576,
+          "free_calls_per_invocation": 1048576,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 1048576,
+            "L": 0,
+            "S": 3145728,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "first-extra",
+          "arguments": [
+            1048577
+          ],
+          "invocations_same_process": 1,
+          "outcome": "trap",
+          "source_status": 2,
+          "scalar_result": null,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 1048576,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 1048576,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 1048576,
+            "strongReleaseFinish": 1048576,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 1048576,
+          "malloc_calls_per_invocation": 1048576,
+          "successful_nonzero_allocations_per_invocation": 1048576,
+          "free_calls_per_invocation": 1048576,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 1048576,
+            "L": 0,
+            "S": 3145728,
+            "H": 0
+          },
+          "denied_logical_entry": "allocate",
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "allocation-fault",
+          "arguments": [
+            1
+          ],
+          "invocations_same_process": 1,
+          "outcome": "trap",
+          "source_status": 1,
+          "scalar_result": null,
+          "malloc_fault_ordinal": 1,
+          "completed_iterations_per_invocation": 0,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 1,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 0,
+            "strongReleaseFinish": 0,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 1,
+          "malloc_calls_per_invocation": 1,
+          "successful_nonzero_allocations_per_invocation": 0,
+          "free_calls_per_invocation": 0,
+          "peak_live_blocks_per_invocation": 0,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 1,
+            "L": 0,
+            "S": 1,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        }
+      ]
+    },
+    {
+      "case": "control-live-count-call-loop",
+      "per_completed_iteration": {
+        "A": 1,
+        "S": 11,
+        "peak_H": 6,
+        "peak_L": 1,
+        "scalar": 31,
+        "roles": {
+          "allocate": 1,
+          "strongClone": 1,
+          "weakDowngrade": 1,
+          "weakClone": 1,
+          "weakUpgrade": 1,
+          "strongReleaseBegin": 3,
+          "strongReleaseFinish": 1,
+          "weakRelease": 2
+        }
+      },
+      "rows": [
+        {
+          "label": "zero",
+          "arguments": [
+            0
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 0,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 0,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 0,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 0,
+            "strongReleaseFinish": 0,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 0,
+          "malloc_calls_per_invocation": 0,
+          "successful_nonzero_allocations_per_invocation": 0,
+          "free_calls_per_invocation": 0,
+          "peak_live_blocks_per_invocation": 0,
+          "peak_held_per_invocation": 0,
+          "end_context_per_invocation": {
+            "A": 0,
+            "L": 0,
+            "S": 0,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "small",
+          "arguments": [
+            3
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 93,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 3,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 3,
+            "strongClone": 3,
+            "weakDowngrade": 3,
+            "weakClone": 3,
+            "weakUpgrade": 3,
+            "strongReleaseBegin": 9,
+            "strongReleaseFinish": 3,
+            "weakRelease": 6
+          },
+          "positive_backing_attempts_per_invocation": 3,
+          "malloc_calls_per_invocation": 3,
+          "successful_nonzero_allocations_per_invocation": 3,
+          "free_calls_per_invocation": 3,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 6,
+          "end_context_per_invocation": {
+            "A": 3,
+            "L": 0,
+            "S": 33,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "exact",
+          "arguments": [
+            381300
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 11820300,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 381300,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 381300,
+            "strongClone": 381300,
+            "weakDowngrade": 381300,
+            "weakClone": 381300,
+            "weakUpgrade": 381300,
+            "strongReleaseBegin": 1143900,
+            "strongReleaseFinish": 381300,
+            "weakRelease": 762600
+          },
+          "positive_backing_attempts_per_invocation": 381300,
+          "malloc_calls_per_invocation": 381300,
+          "successful_nonzero_allocations_per_invocation": 381300,
+          "free_calls_per_invocation": 381300,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 6,
+          "end_context_per_invocation": {
+            "A": 381300,
+            "L": 0,
+            "S": 4194300,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "same-process-reset",
+          "arguments": [
+            381300
+          ],
+          "invocations_same_process": 2,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 11820300,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 381300,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 381300,
+            "strongClone": 381300,
+            "weakDowngrade": 381300,
+            "weakClone": 381300,
+            "weakUpgrade": 381300,
+            "strongReleaseBegin": 1143900,
+            "strongReleaseFinish": 381300,
+            "weakRelease": 762600
+          },
+          "positive_backing_attempts_per_invocation": 381300,
+          "malloc_calls_per_invocation": 381300,
+          "successful_nonzero_allocations_per_invocation": 381300,
+          "free_calls_per_invocation": 381300,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 6,
+          "end_context_per_invocation": {
+            "A": 381300,
+            "L": 0,
+            "S": 4194300,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "first-extra",
+          "arguments": [
+            381301
+          ],
+          "invocations_same_process": 1,
+          "outcome": "trap",
+          "source_status": 2,
+          "scalar_result": null,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 381300,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 381301,
+            "strongClone": 381300,
+            "weakDowngrade": 381300,
+            "weakClone": 381300,
+            "weakUpgrade": 381300,
+            "strongReleaseBegin": 1143901,
+            "strongReleaseFinish": 381301,
+            "weakRelease": 762600
+          },
+          "positive_backing_attempts_per_invocation": 381301,
+          "malloc_calls_per_invocation": 381301,
+          "successful_nonzero_allocations_per_invocation": 381301,
+          "free_calls_per_invocation": 381301,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 6,
+          "end_context_per_invocation": {
+            "A": 381301,
+            "L": 0,
+            "S": 4194303,
+            "H": 0
+          },
+          "denied_logical_entry": "strongClone",
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "allocation-fault",
+          "arguments": [
+            1
+          ],
+          "invocations_same_process": 1,
+          "outcome": "trap",
+          "source_status": 1,
+          "scalar_result": null,
+          "malloc_fault_ordinal": 1,
+          "completed_iterations_per_invocation": 0,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 1,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 0,
+            "strongReleaseFinish": 0,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 1,
+          "malloc_calls_per_invocation": 1,
+          "successful_nonzero_allocations_per_invocation": 0,
+          "free_calls_per_invocation": 0,
+          "peak_live_blocks_per_invocation": 0,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 1,
+            "L": 0,
+            "S": 1,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        }
+      ]
+    },
+    {
+      "case": "control-expired-call-loop",
+      "per_completed_iteration": {
+        "A": 1,
+        "S": 6,
+        "peak_H": 3,
+        "peak_L": 1,
+        "scalar": 37,
+        "roles": {
+          "allocate": 1,
+          "strongClone": 0,
+          "weakDowngrade": 1,
+          "weakClone": 0,
+          "weakUpgrade": 1,
+          "strongReleaseBegin": 1,
+          "strongReleaseFinish": 1,
+          "weakRelease": 1
+        }
+      },
+      "rows": [
+        {
+          "label": "zero",
+          "arguments": [
+            0
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 0,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 0,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 0,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 0,
+            "strongReleaseFinish": 0,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 0,
+          "malloc_calls_per_invocation": 0,
+          "successful_nonzero_allocations_per_invocation": 0,
+          "free_calls_per_invocation": 0,
+          "peak_live_blocks_per_invocation": 0,
+          "peak_held_per_invocation": 0,
+          "end_context_per_invocation": {
+            "A": 0,
+            "L": 0,
+            "S": 0,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "small",
+          "arguments": [
+            3
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 111,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 3,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 3,
+            "strongClone": 0,
+            "weakDowngrade": 3,
+            "weakClone": 0,
+            "weakUpgrade": 3,
+            "strongReleaseBegin": 3,
+            "strongReleaseFinish": 3,
+            "weakRelease": 3
+          },
+          "positive_backing_attempts_per_invocation": 3,
+          "malloc_calls_per_invocation": 3,
+          "successful_nonzero_allocations_per_invocation": 3,
+          "free_calls_per_invocation": 3,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 3,
+          "end_context_per_invocation": {
+            "A": 3,
+            "L": 0,
+            "S": 18,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "exact",
+          "arguments": [
+            699050
+          ],
+          "invocations_same_process": 1,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 25864850,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 699050,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 699050,
+            "strongClone": 0,
+            "weakDowngrade": 699050,
+            "weakClone": 0,
+            "weakUpgrade": 699050,
+            "strongReleaseBegin": 699050,
+            "strongReleaseFinish": 699050,
+            "weakRelease": 699050
+          },
+          "positive_backing_attempts_per_invocation": 699050,
+          "malloc_calls_per_invocation": 699050,
+          "successful_nonzero_allocations_per_invocation": 699050,
+          "free_calls_per_invocation": 699050,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 3,
+          "end_context_per_invocation": {
+            "A": 699050,
+            "L": 0,
+            "S": 4194300,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "same-process-reset",
+          "arguments": [
+            699050
+          ],
+          "invocations_same_process": 2,
+          "outcome": "return",
+          "source_status": 0,
+          "scalar_result": 25864850,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 699050,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 699050,
+            "strongClone": 0,
+            "weakDowngrade": 699050,
+            "weakClone": 0,
+            "weakUpgrade": 699050,
+            "strongReleaseBegin": 699050,
+            "strongReleaseFinish": 699050,
+            "weakRelease": 699050
+          },
+          "positive_backing_attempts_per_invocation": 699050,
+          "malloc_calls_per_invocation": 699050,
+          "successful_nonzero_allocations_per_invocation": 699050,
+          "free_calls_per_invocation": 699050,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 3,
+          "end_context_per_invocation": {
+            "A": 699050,
+            "L": 0,
+            "S": 4194300,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "first-extra",
+          "arguments": [
+            699051
+          ],
+          "invocations_same_process": 1,
+          "outcome": "trap",
+          "source_status": 2,
+          "scalar_result": null,
+          "malloc_fault_ordinal": 0,
+          "completed_iterations_per_invocation": 699050,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 699051,
+            "strongClone": 0,
+            "weakDowngrade": 699050,
+            "weakClone": 0,
+            "weakUpgrade": 699050,
+            "strongReleaseBegin": 699051,
+            "strongReleaseFinish": 699051,
+            "weakRelease": 699050
+          },
+          "positive_backing_attempts_per_invocation": 699051,
+          "malloc_calls_per_invocation": 699051,
+          "successful_nonzero_allocations_per_invocation": 699051,
+          "free_calls_per_invocation": 699051,
+          "peak_live_blocks_per_invocation": 1,
+          "peak_held_per_invocation": 3,
+          "end_context_per_invocation": {
+            "A": 699051,
+            "L": 0,
+            "S": 4194303,
+            "H": 0
+          },
+          "denied_logical_entry": "weakDowngrade",
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        },
+        {
+          "label": "allocation-fault",
+          "arguments": [
+            1
+          ],
+          "invocations_same_process": 1,
+          "outcome": "trap",
+          "source_status": 1,
+          "scalar_result": null,
+          "malloc_fault_ordinal": 1,
+          "completed_iterations_per_invocation": 0,
+          "canonical_logical_entries_per_invocation": {
+            "allocate": 1,
+            "strongClone": 0,
+            "weakDowngrade": 0,
+            "weakClone": 0,
+            "weakUpgrade": 0,
+            "strongReleaseBegin": 0,
+            "strongReleaseFinish": 0,
+            "weakRelease": 0
+          },
+          "positive_backing_attempts_per_invocation": 1,
+          "malloc_calls_per_invocation": 1,
+          "successful_nonzero_allocations_per_invocation": 0,
+          "free_calls_per_invocation": 0,
+          "peak_live_blocks_per_invocation": 0,
+          "peak_held_per_invocation": 2,
+          "end_context_per_invocation": {
+            "A": 1,
+            "L": 0,
+            "S": 1,
+            "H": 0
+          },
+          "denied_logical_entry": null,
+          "source_status_binding": "Exact private effect status requires independent actual ordinary-object callee probe; SIGILL alone is not source-status proof"
+        }
+      ]
+    }
+  ],
+  "accounting_peak_definition": "peak_held_per_invocation includes provisional successful-owner credit reserved before an admitted canonical call, even when that canonical allocation later fails"
+}

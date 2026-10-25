@@ -1,0 +1,182 @@
+{
+  "status": "Actual root-executed18freshprovider processes;9acceptedfullDTOparity/18strictschema. Source/expected freeze unchanged. No source/seal/runtime claim.",
+  "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+  "inputFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+  "files": [
+    {
+      "path": "/tmp/m416-execution-container-authentication/INPUT_FREEZE.json",
+      "bytes": 60700,
+      "sha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/SOURCE_EXPECTED_FREEZE.json",
+      "bytes": 6603,
+      "sha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/opaque-count-unused-native.json",
+      "bytes": 22431,
+      "sha256": "f99a22dabadacf72f74e3d890419c9592f5111ac9324c41a1e6060c8264b4cfa"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/opaque-count-unused-typescript.json",
+      "bytes": 22431,
+      "sha256": "dbfc7943595e6a2ac36af0bcb1f3f524354a72e82d29f642fa8d349e5916e990"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/opaque-downgrade-unused-native.json",
+      "bytes": 8991,
+      "sha256": "885c9074c091340ce26a660adab194dbc5245c183231157343f114e43d0af199"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/opaque-downgrade-unused-typescript.json",
+      "bytes": 8991,
+      "sha256": "03c24061b40bbd825cc6597e08fbe82a7ec17d3916505993a9ca899aeaddba48"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/opaque-vec-clone-unused-native.json",
+      "bytes": 9565,
+      "sha256": "ecba9a07b52f8c0f0eb0ae33fc3bca985a0a65e29fb60bad8ba0821bb74483e4"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/opaque-vec-clone-unused-typescript.json",
+      "bytes": 9565,
+      "sha256": "094c9dc4333537c048326c67e876f7b0bc1b20e7f7a0f4d70cd6ce5a39640ad9"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/packet-identities.json",
+      "bytes": 7050,
+      "sha256": "4d0ba93b5bb937b686136c3c686f75c0e9b4e4067d0cc42f93c8403352dfa2a5"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/provider-outcomes.json",
+      "bytes": 1691,
+      "sha256": "caed21303bc2e07804b6875f067ba5f0173fb3d2a5bf994c5b2cd9b4b45544ac"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/provider-receipts.json",
+      "bytes": 26867,
+      "sha256": "2d98d4fff9fb100a5a5231c99af1d8bfee828af316201ffa4945549cdffc06d4"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/schema-validation.json",
+      "bytes": 228,
+      "sha256": "b24911222417945cb61b5a5d8ccd468c804702b3d6a44a8b06fd44d41f21df27"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/shared-weak-count-native.json",
+      "bytes": 15547,
+      "sha256": "9aeace1bf73d01b149a63c1fc5acbfb7c44fcd12e98cfd81a3ceac1eae208af4"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/shared-weak-count-typescript.json",
+      "bytes": 15547,
+      "sha256": "26db15b1e5647e881d03d2c2d9e85f3f8c943164f7ae9ff3522a8abf1d2b3912"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/vec-copy-native.json",
+      "bytes": 20697,
+      "sha256": "fa3cc50222196dda6a8499bac606e516b93d6d8f2768b568e197eca67978bd6f"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/vec-copy-typescript.json",
+      "bytes": 20697,
+      "sha256": "82a669c8d7f0e0863f099aad031c02cdc8e4916d0103d11c995a9a6f65642c88"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/vec-owned-prepare-native.json",
+      "bytes": 10563,
+      "sha256": "28c208a316ab03b69f2e3add791be951e06a51fe319114a6e6b7fdca56a0ac96"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/vec-owned-prepare-typescript.json",
+      "bytes": 10563,
+      "sha256": "feb8bd5c12d162a92c4212307eb171df7fd76e5b3b75ca66de04a9760a862abc"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/vec-push-native.json",
+      "bytes": 12287,
+      "sha256": "5ec214bf0eee2f930034426c43ae9dfa4590a033ff2bcfcae457d45c304d64de"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/vec-push-typescript.json",
+      "bytes": 12287,
+      "sha256": "ad73ec673e9ddd1e7d3928a707beae26620236e9076046341100f298f65b2ef2"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/weak-expired-native.json",
+      "bytes": 16492,
+      "sha256": "81567063f1204dde5e3f49fc9abcc08450bb437e6755c6f765cb6234205a8621"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/weak-expired-typescript.json",
+      "bytes": 16492,
+      "sha256": "011a6061793f36512da3d75c0d85f33a02bf968b3d32aaba3b0b61315fd7a81c"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/weak-live-native.json",
+      "bytes": 12699,
+      "sha256": "08e27c720276df7ca8b4fc32c796ff2c19d96912c84a55f92f89893348e5f54d"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/actual/weak-live-typescript.json",
+      "bytes": 12699,
+      "sha256": "d7a9f07987a491d87a6d6aa995888f9cfa98a049005350b51fb4fb671beaec98"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/emit-provider-packets.py",
+      "bytes": 7801,
+      "sha256": "c4673861b7d4c0c25099f6b4f45e87602a3ecedb7e99d98eb5a43415e0630dc5"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/opaque-count-unused.zry",
+      "bytes": 310,
+      "sha256": "f463f16e0ac0eec0d313c2bc63e3a52532cec0cbf531b7e49c5ab77e0a6bf39e"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/opaque-downgrade-unused.zry",
+      "bytes": 134,
+      "sha256": "ef871a14d299a3b2a0079b0fe9165059a34ed57a5a1b4b46b3c287504738795a"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/opaque-vec-clone-unused.zry",
+      "bytes": 134,
+      "sha256": "6d75c5749f65a5530354250bfc760019383fd23ab09c08dbff87382269c9c90f"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/shared-weak-count.zry",
+      "bytes": 232,
+      "sha256": "e3426c8ef974e30d090ce09f6a70e9274a38b366be408c4dbb12c5e4bb610867"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/vec-copy.zry",
+      "bytes": 232,
+      "sha256": "9cef08565d23a4a03968bb483e0981b915b0f4be2b34f438e98d281cb12ffff7"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/vec-owned-prepare.zry",
+      "bytes": 145,
+      "sha256": "9c59e547d071e178768bb729553d92e96c3a3cb5615ef4dab66de8413dfc6fa9"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/vec-push.zry",
+      "bytes": 125,
+      "sha256": "a63e8b3d75c19f4f84908f2d4a02bd7d34507b02bef8e850fd6929f670c56395"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/weak-expired.zry",
+      "bytes": 241,
+      "sha256": "7019b30bf1e5454ef1b6e84246a2b5acba44b83a925dd49c7ae5c27d463a99f6"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/literals/weak-live.zry",
+      "bytes": 187,
+      "sha256": "9b61432da4fefa674cd1c572c62fcb61baad9ef104f641f3f711bee67ddf7936"
+    },
+    {
+      "path": "/tmp/m416-execution-container-authentication/validate-packets.mjs",
+      "bytes": 1315,
+      "sha256": "3ea70d58128f3f253e348eee5e9dd186e6962f00446ed7e4695a79b39874036f"
+    }
+  ]
+}

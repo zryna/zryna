@@ -1,0 +1,184 @@
+{
+  "format": "m416.js-control-portable-runtime-expectations.v1",
+  "scope": "Ordinary public zero/small/reset and private source seeded near-boundary constant-event evidence; no million-physical-allocation claim",
+  "law_sha256": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "source_v2_freeze_sha256": "b446238d4019917fd3df2195ef23c33e8f9c59bee8d4783e66942c626e977369",
+  "limits": {
+    "A": 1048576,
+    "L": 1048576,
+    "S": 4194304
+  },
+  "cases": [
+    {
+      "case": "control-birth-call-loop",
+      "public_rows": [
+        {
+          "label": "zero",
+          "arguments": [
+            0
+          ],
+          "value": 0,
+          "repeats": 1
+        },
+        {
+          "label": "small",
+          "arguments": [
+            3
+          ],
+          "value": 21,
+          "repeats": 2
+        }
+      ],
+      "private_source_rows": [
+        {
+          "label": "exact-final-cleanup",
+          "pre": [
+            0,
+            0,
+            4194301,
+            0
+          ],
+          "value": 7,
+          "error": null,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ]
+        },
+        {
+          "label": "first-extra-held-admission",
+          "pre": [
+            0,
+            0,
+            4194302,
+            0
+          ],
+          "value": null,
+          "error": "zryna.trap.capacity-v1",
+          "after": [
+            0,
+            0,
+            4194302,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "control-live-count-call-loop",
+      "public_rows": [
+        {
+          "label": "zero",
+          "arguments": [
+            0
+          ],
+          "value": 0,
+          "repeats": 1
+        },
+        {
+          "label": "small",
+          "arguments": [
+            3
+          ],
+          "value": 93,
+          "repeats": 2
+        }
+      ],
+      "private_source_rows": [
+        {
+          "label": "exact-final-cleanup",
+          "pre": [
+            0,
+            0,
+            4194293,
+            0
+          ],
+          "value": 31,
+          "error": null,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ]
+        },
+        {
+          "label": "first-extra-held-admission",
+          "pre": [
+            0,
+            0,
+            4194300,
+            0
+          ],
+          "value": null,
+          "error": "zryna.trap.capacity-v1",
+          "after": [
+            1,
+            0,
+            4194303,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "control-expired-call-loop",
+      "public_rows": [
+        {
+          "label": "zero",
+          "arguments": [
+            0
+          ],
+          "value": 0,
+          "repeats": 1
+        },
+        {
+          "label": "small",
+          "arguments": [
+            3
+          ],
+          "value": 111,
+          "repeats": 2
+        }
+      ],
+      "private_source_rows": [
+        {
+          "label": "exact-final-cleanup",
+          "pre": [
+            0,
+            0,
+            4194298,
+            0
+          ],
+          "value": 37,
+          "error": null,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ]
+        },
+        {
+          "label": "first-extra-held-admission",
+          "pre": [
+            0,
+            0,
+            4194300,
+            0
+          ],
+          "value": null,
+          "error": "zryna.trap.capacity-v1",
+          "after": [
+            1,
+            0,
+            4194303,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

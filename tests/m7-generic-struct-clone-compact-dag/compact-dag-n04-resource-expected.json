@@ -1,0 +1,41 @@
+{
+  "status": "Independent compact-source amplification obligation before all provider/compiler execution; exact phase remains unqualified until root runs",
+  "case": "compact-dag-n04",
+  "genericInstantiation": "Wrap<E4>",
+  "closedEnumKey": "110000000004000000",
+  "closedWrapKey": "1200000000050000000100000009000000110000000004000000",
+  "enumNominalKeyBytes": 9,
+  "wrapperClosedKeyBytes": 26,
+  "maximumCanonicalKeyDepth": 1,
+  "storedMemberHeight": 7,
+  "enumPrivateLanes": 8,
+  "wrapperPrivateLanes": 9,
+  "possibleStringOccurrences": 32,
+  "possibleStoredOccurrences": 65,
+  "activeRuntimeStringLiterals": 1,
+  "activeRuntimeStringClones": 1,
+  "sourceCloneAllPossiblePayloads": true,
+  "semanticOutcome": "accept",
+  "independentV5Seal": "required-success-before-backend-resource-observation",
+  "native": {
+    "outcome": "accept",
+    "diagnostic": null,
+    "existingCodegenUnitsCap": 1000000,
+    "minimumStringOccurrenceUnits": 4096
+  },
+  "javascript": {
+    "qualification": "must check its own existing emission budget after same genuine seal; native outcome grants no web authority",
+    "outcome": "accept",
+    "diagnostic": null,
+    "existingEmissionBytesCap": 33554432,
+    "minimumExpandedNodeCharge": 49920
+  },
+  "webassembly": {
+    "qualification": "must check its own existing emission budget after same genuine seal; native outcome grants no web authority",
+    "outcome": "accept",
+    "diagnostic": null,
+    "existingEmissionBytesCap": 33554432,
+    "minimumStringOccurrenceCharge": 65536
+  },
+  "noFullProfileClaimBeforeRootExecution": true
+}

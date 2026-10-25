@@ -1,0 +1,11 @@
+{
+  "original_freeze_sha256": "e04d5f0e2f7fbc61c1522d73c4576a6653e953a61702c960eeffd2f679054c8b",
+  "original_preserved": true,
+  "corrected_before_semantic_or_memory_execution": true,
+  "correction": "The no-arena expectation is unchanged. FixedArray<Node<String>,0> may remain affine/drop_kind1 because capability/layout rules retain child constraints even at length0; do NOT assert Copy/dropkind0. Traverse zero elements, so the Node/Vec argument cycle is unreachable for recursive frame storage.",
+  "basis": [
+    "crates/zryna-layout/src/lib.rs FixedArray needs_drop inherits child without zero-length exemption",
+    "crates/zryna-ir/src/generic_v1/execution_v1/type_world/proof.rs FixedArray arguments retain capability constraints"
+  ],
+  "limits": "Static authority correction before first owning semantic/memory observation; not an observed pass."
+}

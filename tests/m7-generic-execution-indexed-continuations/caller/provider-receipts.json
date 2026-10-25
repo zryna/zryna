@@ -1,0 +1,77 @@
+{
+  "status": "Actual fresh syntax-only processes; complete local stdin/stdout/stderr retained, every failure preserved. No compiler source/semantic/seal/runtime claim.",
+  "records": [
+    {
+      "case": "called-indexed-shared-copy",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "20d2864005eab97c44b9071b3ab8150f15cb3d4753d5b5ae64f17401e75823de",
+      "exactSourceSha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "inputPinFreezeSha256": "0ed21d5be3388bf01c1617b2ab3b2e2ea5399566cd898a4019a3c88a25e70f41",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "133321002e0fdf9afcc4f691fa3f5d2a983ce95b96bbd10364df0b7b20a25ff7",
+      "stdoutSha256": "0003b2228a9c41367f10ee1a07553c71d3b55d8db234535096c966061a616547",
+      "stderrBytes": 0,
+      "packet": "called-indexed-shared-copy-native.json",
+      "packetSha256": "2a1b008baeaa55f3640d497763470d3a562f6d00ebbcc730f494314f184f56b9",
+      "packetBytes": 33300,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "called-indexed-shared-copy",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "20d2864005eab97c44b9071b3ab8150f15cb3d4753d5b5ae64f17401e75823de",
+      "exactSourceSha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "inputPinFreezeSha256": "0ed21d5be3388bf01c1617b2ab3b2e2ea5399566cd898a4019a3c88a25e70f41",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "133321002e0fdf9afcc4f691fa3f5d2a983ce95b96bbd10364df0b7b20a25ff7",
+      "stdoutSha256": "1cf64a3b5c9a49c51841769160696e3798d0aac37fd589ca8c241da1c6118a0e",
+      "stderrBytes": 0,
+      "packet": "called-indexed-shared-copy-typescript.json",
+      "packetSha256": "217e143ddf3fdd749626314d3b94822b419f96874a29ef0e73f8339248cffd79",
+      "packetBytes": 33300,
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

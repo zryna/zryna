@@ -4,6 +4,7 @@
 
 mod cli_paths;
 mod command_h1;
+mod generic;
 mod installed;
 mod ownership;
 mod package;

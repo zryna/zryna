@@ -1,0 +1,1175 @@
+{
+  "status": "Exact NEW affine source/expected first freeze and unchanged genuine provider/schema mechanism dependencies BEFORE providers; root alone executes",
+  "inputs": [
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/node_modules/@typescript/typescript6/lib/typescript.js",
+      "bytes": 45,
+      "sha256": "d3f3cd2b04b7f466f4484df921b744223f7bd1f3e353ec9110bdf52695b983d5"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/node_modules/@typescript/typescript6/package.json",
+      "bytes": 841,
+      "sha256": "d9b8fb53c67c947fece83bcb73fa8512227ea6a12b110e096fdab8ecdc02b655"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/limits-v3.mjs",
+      "bytes": 123,
+      "sha256": "c3e5d4adea4e08d4f9475269cee3f4e5f870ba052a6ea76ff1e6cb5fb23f6913"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/limits-v4.mjs",
+      "bytes": 719,
+      "sha256": "7c6417f75bee60072b65eb5fe7847254835dde4bb07d6500e53c797a7cfba29b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/limits-v5.mjs",
+      "bytes": 760,
+      "sha256": "6c3a03f336483c9c1bb0cc112266975096f7d8bf72c21323a6ffaac367d8735b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/boundary/configuration.mjs",
+      "bytes": 5957,
+      "sha256": "d8f7ef8062e336c94478129d3009284484ba36745befcdc8094fd29de6df4a90"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/boundary/dispatch.mjs",
+      "bytes": 1715,
+      "sha256": "1f96827210a2b16dd6c739589685d1c053e1f26d3fe05bffdb4d8c08d6bceb71"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/boundary/errors.mjs",
+      "bytes": 446,
+      "sha256": "b8409f3d4be9c6f4d70aef34158d41e9f5cd3c98c2e1117a5cf7c80ceb6438e2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/boundary/request.mjs",
+      "bytes": 4636,
+      "sha256": "3ca196b0b46a8684fb6b771c87fd07ba344cb7baee486541c5d25f049173476e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/boundary/transport.mjs",
+      "bytes": 2833,
+      "sha256": "6abc2158478b3bdb9048263f85a74ce35bd8960425db6a384e78477b02c0eff1"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/constructions.mjs",
+      "bytes": 7092,
+      "sha256": "247cfcf34a628abd9e3956808b5080e4ba2c555d245b89045c6c029468e451f8"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/data-declarations.mjs",
+      "bytes": 5053,
+      "sha256": "daf6146ceee7dda4169eaf67263e235d9cb4218d5b993d0057585e692197135c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/diagnostics.mjs",
+      "bytes": 2218,
+      "sha256": "242c2c40f5683b322fbb8e0b29e1c0d6343c72a81d04943796e9b2987fdde6b4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/expression-arena.mjs",
+      "bytes": 923,
+      "sha256": "f09e19068dc6c272a4ce882e40a7423d1eeea8d6172b12eef964d588060cf162"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/expressions.mjs",
+      "bytes": 13206,
+      "sha256": "a767019781ddd03f0aa7d4270ff8d2bfbb5dbca511ec954106f8741bef564f72"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/functions.mjs",
+      "bytes": 3835,
+      "sha256": "8278f75ee7803d1733832d893713415586d03ce2a13eaac006016ed47c36422c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/imports.mjs",
+      "bytes": 4110,
+      "sha256": "f258c8ea8c1df190be34dba99316177beb9e664d3af5ed528c3293d0b02daaf4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/matches.mjs",
+      "bytes": 4894,
+      "sha256": "e1775e50d486bd83e61bc0cdbec30cf7ede3823d173fb95424242da931ba98e2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/names.mjs",
+      "bytes": 1082,
+      "sha256": "5c7bb3e124c1e41ea98d33615cfb1656efbb0609ea3e07c4e71c9e189fe8455d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/source.mjs",
+      "bytes": 4316,
+      "sha256": "9892ecac270ac6c9881e107de3e986044e37f3b337cb87b61674983d342e87ee"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/spans.mjs",
+      "bytes": 1470,
+      "sha256": "e94c22d773c7035b4a36f0b1bddb70641797a393f5d2512054f78de0e5fcf116"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/statements.mjs",
+      "bytes": 11754,
+      "sha256": "2e8dfede5aac0561992438fffaad393ecdee3e836754211caf593864daada3c9"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/tokens.mjs",
+      "bytes": 1409,
+      "sha256": "5fd6718e26341f79e8bb3651c38d237cd9e9b3385f64d043e340431e3da79b9f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v4/syntax/types.mjs",
+      "bytes": 4412,
+      "sha256": "27a3715eb8fed6f96ac8e23a0bbc1431d1af7af857442d364546f2f7f3e030f4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/common.mjs",
+      "bytes": 12907,
+      "sha256": "fee724cb7dd8c4b09bed7044bb960d64e989875ea68886205638e460dff6616c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/construction.mjs",
+      "bytes": 12074,
+      "sha256": "32e55de3ede389e45cecc7d01a7d920e959b64af3c5690df20045e327040fa94"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/data-declarations.mjs",
+      "bytes": 5156,
+      "sha256": "d453c7a09614abfb7ff54886de9ea7e8068fe14eb919f9fabe182a52e8eebc85"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/declarations.mjs",
+      "bytes": 10669,
+      "sha256": "c567217004595af9dd3a5593c419078478de7f8ac2be5ccb11440cf389510348"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/expressions.mjs",
+      "bytes": 13377,
+      "sha256": "46ae51707ccc7584104a5ecddd2a7e98ffd87333e8c71d4fce3c1576348ea930"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/request.mjs",
+      "bytes": 6767,
+      "sha256": "87468fb7b8f8912e49f8dab8db36ebc4e46528e083cce908dab404f815cd0d39"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/statements.mjs",
+      "bytes": 11702,
+      "sha256": "3163b4e8e7d82a879d6c08a225b50576f3ea77e330f28fb292a4f3810cf423f8"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/v5/types.mjs",
+      "bytes": 9193,
+      "sha256": "da3eb10ed26940d927df95ebf4e5bd555828dfd2dc3b3fa9e9fb76cde811173b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/worker-v3.mjs",
+      "bytes": 39227,
+      "sha256": "665ab7eaebae5110377b9832e746859ed4b351c26548c489970ba1d08cd04552"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/worker-v4.mjs",
+      "bytes": 77,
+      "sha256": "50bbc8a578a83d544e6c6be0c0bcf1f36c6e2b916d5bfb468be450da4aecab07"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/worker-v5.mjs",
+      "bytes": 102,
+      "sha256": "6f0ad24e404c7c82da3e3a9ba651f78b73ea0515cd31ee867462374fcc3bc614"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/worker.mjs",
+      "bytes": 32112,
+      "sha256": "404f253a90e070c89fb9a2078e7d0c8144549d34559356cc80d5587e3679e868"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/.runkit_example.js",
+      "bytes": 496,
+      "sha256": "e37e85bf1db5d53a6e4e38a9cac83db25208f28c09a2fa19e3971877c8a7b8cf"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/2019.js",
+      "bytes": 3188,
+      "sha256": "4a1b1d479d0b946af0119f3a3960fcabfd964e1c20e87f7a9575f8f9e705d0c4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/2020.js",
+      "bytes": 2894,
+      "sha256": "908e9670b478b2ba126802a221b7e47006f50cf467e2c5dd7935d3dbef10a20a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/ajv.js",
+      "bytes": 2841,
+      "sha256": "edaed56fc546f5551b0d6dc2ff2a9cc25c2d6c83318a086eaa8c3ad0b2479297"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/codegen/code.js",
+      "bytes": 4676,
+      "sha256": "1287153722f1fc3c5342647de7ae1d7b6fb68bdb3378a0776a937d273fc97e0d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/codegen/index.js",
+      "bytes": 23127,
+      "sha256": "f03b2b72597ef86878d1d4030580c2d0964046efad4867f3d05aa91065ba034c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/codegen/scope.js",
+      "bytes": 5198,
+      "sha256": "d2a0a97af2faa2cad88702314fe421e235ab17f11e0d62883d58d8d4dc734286"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/errors.js",
+      "bytes": 5771,
+      "sha256": "53990f8f2cc05922bba410ae68231d3f869de4f8343277ede5b4834fa564c6c2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/index.js",
+      "bytes": 10046,
+      "sha256": "05b34da22814f3787bfa3ac68dad59c9047f56e55a607e0a20719ebf5afe69ac"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/jtd/parse.js",
+      "bytes": 13727,
+      "sha256": "548b7e6ee5558360945f261e092cd328662868995877140ed2ae7ff981300b7f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/jtd/serialize.js",
+      "bytes": 8962,
+      "sha256": "d4fdfc18734d62f31780b53b5bcc437f07d172b806e35fd12833b4d4871bf803"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/jtd/types.js",
+      "bytes": 291,
+      "sha256": "e92a89e57c3b7d228be4e2e74c71ef3af52320bf061b411add9dccc34ddb0a78"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/names.js",
+      "bytes": 1440,
+      "sha256": "3cab37a2240b996b9bed92fe7a041d91689cfe3ad2e9ae4c0ab99e4146408493"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/ref_error.js",
+      "bytes": 543,
+      "sha256": "81c98fdf34c3037c91bfcc02277ec32156c71e34048f36cfe4e084416e916cb7"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/resolve.js",
+      "bytes": 5006,
+      "sha256": "df75af0e0cf03fa1c6452e8dc61019f5aec645a8a5f6f494dc4e13cb5502d2d9"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/rules.js",
+      "bytes": 918,
+      "sha256": "ec1d86500f497aa8e20f9f0c1695951159d9a909669d00a261ce1bb22b3cf0a9"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/util.js",
+      "bytes": 7103,
+      "sha256": "fa911f5631f29d4d6420adfe086cb693b94b08de2719475c78c54bcb82f831a5"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/applicability.js",
+      "bytes": 853,
+      "sha256": "50c5cba5894a7fb9874b3432355b46ec71b73c9368dafb1323ded8567cca8fc0"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/boolSchema.js",
+      "bytes": 1531,
+      "sha256": "c08abdbdbd3d8b1dcc0552a20fbc7d837ed44f4ca6abb2e464985590ac94377f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/dataType.js",
+      "bytes": 8409,
+      "sha256": "697bd7005361ec7066a23c18830a10b0ef28aec1a33138b4e3098bf78c4fae52"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/defaults.js",
+      "bytes": 1448,
+      "sha256": "05721971df94faa57b09c8cfd60c2eef81b6d14910a7dea5f539d693a029c428"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/index.js",
+      "bytes": 20552,
+      "sha256": "cb2103e5f890e04592c10d24b45857dad91155bae9f9460138a2459bdaaea2cd"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/keyword.js",
+      "bytes": 5695,
+      "sha256": "ab8f070c75c25eee9be5c837f364748909b58f5db66149a2beccbd2f66afeb76"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/compile/validate/subschema.js",
+      "bytes": 3858,
+      "sha256": "ca783d6052af91e65ebb59a5b48b47fb459a2241d37ca6a042f767d4ce451bdc"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/core.js",
+      "bytes": 25185,
+      "sha256": "7fdd03e949ecb3d020e560f669da71ce69a70f4bca28e5aff2ebc34d15bc2134"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/jtd.js",
+      "bytes": 3360,
+      "sha256": "9554827c19abbb10694cafb71edd72a8303ea71e56b9eb7253200f5395610e44"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/data.json",
+      "bytes": 409,
+      "sha256": "d24ab8a97c18b3f5afdde7d7024a0e0ac1df0614a16a41cb88f81379edcc2db3"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/index.js",
+      "bytes": 938,
+      "sha256": "ec400bdf35a0f290266811503cdbfffd7c18c4a690379988b8062c57b48f946d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/meta/applicator.json",
+      "bytes": 1566,
+      "sha256": "9c356a52b0ad5da7d4c1b69f61dff5277c2af46221bc0b0521bbdbf3a12d3a2a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/meta/content.json",
+      "bytes": 477,
+      "sha256": "cf4792ae93f4a4580ec9523640945f7756f75fd624935ebf15194b0ac3909267"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/meta/core.json",
+      "bytes": 1273,
+      "sha256": "629c017994ffaa33f573a96cf01b9dac6cae80c7d5d17dad5e823a3afa18d5fe"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/meta/format.json",
+      "bytes": 375,
+      "sha256": "018ef7c81bcca9e40a4a02ed236e7cabb3a630f2b1ea01fbdeed2f882c15ddc8"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "e038593d36bf1855875a13b8812469d6a2d62ed309436b9c9a2fa5a4ba59085e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "aaba7f2d6fcbdfa6ca97fdc3d3da1ae7d66ca3322b7e90cf5a98b067555d06e6"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2019-09/schema.json",
+      "bytes": 1579,
+      "sha256": "264720afa0dd61919e21bbe9bc1312121b70e43019ac696240e069adc72cce15"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/index.js",
+      "bytes": 1026,
+      "sha256": "2e39089b0aaa14efa7901ecf5384622ec3d5897b206e1d589d2420f17b9fa6e1"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json",
+      "bytes": 1441,
+      "sha256": "f1e465ff0c0cc86bee5c0cc4b51d2734c532e6ea12c75b60a2ac093a4577b2d4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json",
+      "bytes": 479,
+      "sha256": "7ede86f2c48d646202bf1332aefaf46db268c943d59752727db7247dc2920516"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json",
+      "bytes": 1344,
+      "sha256": "c3a5947992d4fe67c95cda7910911207376bbae41c0a124ec9e7e699172e7a49"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json",
+      "bytes": 420,
+      "sha256": "1e31131b1ed21f98c007f04deb501343b8c4dd77f1c5a8494a9c2085f68d769d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "eb008c756b29bdaa237c1f06d32ea4a21f6ef22148b03c6372cea5e4c0782273"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json",
+      "bytes": 472,
+      "sha256": "8f7f75f4274745faa32e4abdba12de99f49b21df225f52f723b5c62043b0edca"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "3cae7069843679429e4ada7df261bb8961fa34cac15be89296026e69af312092"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-2020-12/schema.json",
+      "bytes": 2166,
+      "sha256": "5333c7df76bceee098e865881d0808238dea836126c6c60b49299ec85c6c7a56"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-draft-06.json",
+      "bytes": 3449,
+      "sha256": "a9b6a00af20105009f0924cd7c02d811bbf70c579a96f1552579c3457111f687"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-draft-07.json",
+      "bytes": 3811,
+      "sha256": "f7e8b13cad4fecff9771f3626fef33e20e59027b90938a28fd9d2f6c17cd0773"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/json-schema-secure.json",
+      "bytes": 2521,
+      "sha256": "b7840b4f1526eee47ac19780906a436d0c39df2aa3d505388caf18864085a421"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/refs/jtd-schema.js",
+      "bytes": 2882,
+      "sha256": "ed529445bf027885182bbed71e5458baecec2d356a788b636ed9f0c7cdaccd92"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/equal.js",
+      "bytes": 286,
+      "sha256": "c94467da09ee94e5d194483a7ab821b9bb3bf1c04397270f2ab53dea9de59274"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/parseJson.js",
+      "bytes": 5401,
+      "sha256": "1bc006064c98afbbb4fc03bef49db7e85dd9493fb54a7dc647d4344ad043848e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/quote.js",
+      "bytes": 943,
+      "sha256": "1061132b1475fce15821d2b41c74b9ac710f278a33f5dae3385458715cc962b2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/re2.js",
+      "bytes": 213,
+      "sha256": "e1a6849652ae9a099c36c9aee9d2efc7412c8f83c4b285142413af99a7238361"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/timestamp.js",
+      "bytes": 1536,
+      "sha256": "05cd4fc283b82af25a2a71ee5e587640c1d42945c74cea790627135fff338bef"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/ucs2length.js",
+      "bytes": 808,
+      "sha256": "1df012dd3d23fced07255a7204798004509687cb1f431ae0ab976db436bbd890"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/uri.js",
+      "bytes": 218,
+      "sha256": "d1d61baf97ed87d7310df847a78ed73d19c8cc003207bf5aaec977500bdb1578"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/runtime/validation_error.js",
+      "bytes": 337,
+      "sha256": "11bf5b4affc8114e5e7cdf65b93006c2d997ab60ada1152c22e136f9b828b815"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/standalone/index.js",
+      "bytes": 4480,
+      "sha256": "361d58a7523548bb1b9c782135fae27e76d93c8feaba8c4d613331dbcd3b888f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/standalone/instance.js",
+      "bytes": 1015,
+      "sha256": "4e14aa01e0cb8288fbb75deeb2e738950b0560bd02e1ad8974f391af4c9fc6f3"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/types/index.js",
+      "bytes": 110,
+      "sha256": "fc9c6096246805c2075c83ab1b96082eda2fc98c240a2502caa82f1966096b71"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/types/json-schema.js",
+      "bytes": 116,
+      "sha256": "2e30aa0c0789b5af8248b081ddc14b439b48937730eb1be0ab28de2ca2353b28"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/types/jtd-schema.js",
+      "bytes": 115,
+      "sha256": "6755d0ec5a09cc74205d46089f814c88c1ce4363e56a55486c12a0a86942bd8d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/additionalItems.js",
+      "bytes": 1931,
+      "sha256": "7beb0fbda5e349907067c8398bb8cc3260a6267b6e5dff9793a5ab2171934099"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js",
+      "bytes": 4309,
+      "sha256": "e237cb180cd2e3f2e676feb714d7dcc6a42116640f9db2ad830cd20d9dfc540a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/allOf.js",
+      "bytes": 756,
+      "sha256": "98f46a6434ebe5f851b406480e18b776dd7f1bcc275e28c16a13bfef3cc067c7"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/anyOf.js",
+      "bytes": 343,
+      "sha256": "8d7368d4aebad0514b713191b934993b4f0bf570e1bab93b07dc69712db2cec5"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/contains.js",
+      "bytes": 3680,
+      "sha256": "56165dc93cd8b0b4611db50a97f1e7d7f9af6c5ffe95a7a5b054d6eeaa7f6a8c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/dependencies.js",
+      "bytes": 3198,
+      "sha256": "c1a83bf484b6fde4d268935f079ddba5e74a2f589dfc6d15ca2e20ba4d06ee5b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js",
+      "bytes": 354,
+      "sha256": "d17d23755b0cf8699c180dd98b8b7270b688d2e4fe5a4c4fcc53ffdcc18ee58e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/if.js",
+      "bytes": 2438,
+      "sha256": "42374ee5dc681433579cc689b0c4ae5343f5bf78d4d6a561722b9277c5335ec4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/index.js",
+      "bytes": 1529,
+      "sha256": "5a61978f6d81bbabfa8b9ccb71d7de816ed6dd1fd7de5c72657439a76c2a7cb3"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/items.js",
+      "bytes": 1993,
+      "sha256": "fa87f74adc3aac1f1b5e3e7dddf73294e6850e1dd49ed131fca4352e9645c54e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/items2020.js",
+      "bytes": 1037,
+      "sha256": "c449ef64aec16263c7935293ed450cfc2da3ba66f6df5f99c3198c05f169838f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/not.js",
+      "bytes": 773,
+      "sha256": "ab2f2758d4ea97ac8763fe5540dd0f4d877859676fe5d6c750a18deca387f718"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/oneOf.js",
+      "bytes": 2257,
+      "sha256": "e2aeb6c22d49fd5f348bedcf7f5c4d7b31f5a05dd7ff1a0c531374c6968792a2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/patternProperties.js",
+      "bytes": 3236,
+      "sha256": "0d43da49a82452c439ba990de7372ad5cedb663717918a5f6dae07025abff655"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/prefixItems.js",
+      "bytes": 354,
+      "sha256": "16264f7b3233a6dcb98b48700643efbd3ebc4d11e27b3eacffc83ccb5f44fb23"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/properties.js",
+      "bytes": 2153,
+      "sha256": "c896873ae7251093a2c8880545b69b6e8cb55c44817a53ec830a49818d74104f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/propertyNames.js",
+      "bytes": 1221,
+      "sha256": "b3411cfeaff8efd5e6de12971bb5dc339e64b61fbe62d3b950794c077315c2e7"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/applicator/thenElse.js",
+      "bytes": 446,
+      "sha256": "9bc42eb8699d57188a7ec2a710d3f38052f92bd78c5d4d0442cf98cf2ebbe22d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/code.js",
+      "bytes": 6216,
+      "sha256": "9212ddf8bd0a4c3b1c4b44cdadd141183b2b36f561b91d13df53c83911e3bf63"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/core/id.js",
+      "bytes": 267,
+      "sha256": "49c8eff694ce4371450c1f9986e934fcbf4bd143311caef5332113f29175bc11"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/core/index.js",
+      "bytes": 357,
+      "sha256": "f420e1011b95e27b54c58323a7ed4ffbd0a88cdb4496f771bb6782c2aa22d23e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/core/ref.js",
+      "bytes": 5234,
+      "sha256": "1422c1454b3621d890066042048f37746fe1cf213088307099816199889bbfd1"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/discriminator/index.js",
+      "bytes": 4845,
+      "sha256": "b58b58025d2dbe5a6967376faec9295b860a338664c47037e9a1035c1e8fb88e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/discriminator/types.js",
+      "bytes": 308,
+      "sha256": "2365341d1f30dc72cece7703e908e47aacb8f904b9f66ec4019fe889ae1e57fa"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/draft2020.js",
+      "bytes": 762,
+      "sha256": "2d0dc3a14abd48a45ad1407a97f23a0f943fa5244923037f86e95a7de04a7445"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/draft7.js",
+      "bytes": 557,
+      "sha256": "8c62022c6c3aa302c3ea6f6709a697fc9eb6385d243fa7c2156dbe9f02228170"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js",
+      "bytes": 1261,
+      "sha256": "78222a5b42bab186253d880f9af4b012394ae5988bfab78e79f2510caed0ccf7"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js",
+      "bytes": 1985,
+      "sha256": "acc2913c91d11ff57150dde1751cdd5d9f486a0cb156037870ede203273af917"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/dynamic/index.js",
+      "bytes": 457,
+      "sha256": "8c05d09948653957427f351d9c6172965b932a5663f7dcb63014a491a533cc0b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js",
+      "bytes": 522,
+      "sha256": "9f6cb7e509f9deada1b884010f08c52876f8eace32dcf0e7da28f6d0d91f3f76"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js",
+      "bytes": 325,
+      "sha256": "7b0c651e2c5b5218639cd3ad7e5162f1e226fc9814107a85f4c3e47f5138670d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/errors.js",
+      "bytes": 111,
+      "sha256": "7758b311e7cba27a8ff8b99a5fcd8db6804265cbc48d2867b72bfe56823d36bc"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/format/format.js",
+      "bytes": 4317,
+      "sha256": "6fae0d5124fd821b1a9959492f7d6d7b528bee8830d49a7a4759fc9a9ab81d5f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/format/index.js",
+      "bytes": 209,
+      "sha256": "d5dad5f95c9c5f48f8ca956cdbb927aafc7b56baabfca8c0b0403d92c5ebeb67"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/discriminator.js",
+      "bytes": 2785,
+      "sha256": "14df845b5ef760d96a3c62db8d4446840e3d408a248d1b92ba6db2260fca4da2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/elements.js",
+      "bytes": 949,
+      "sha256": "b2cad5c59d7c8ce936cea240d70beb41404c729901a60f32013c4facdcacfd5b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/enum.js",
+      "bytes": 1745,
+      "sha256": "4a8b7fa05f94b2e67275445c6e8437c337b92f709d243ed30a48ba6a08a9a154"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/error.js",
+      "bytes": 893,
+      "sha256": "d6896337eedc9b71a742912f776580918cb4de58a90b434cd39f152896da16f9"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/index.js",
+      "bytes": 962,
+      "sha256": "c57d340cd0709479d8ea9f102549a8fd2a47a2c1f2e6fe7f0e14067fe6385d7d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/metadata.js",
+      "bytes": 810,
+      "sha256": "237a4bcc04f1a59628ba35aab9bd7c02fa19a007bf026f75c562c20c7a63ab68"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/nullable.js",
+      "bytes": 859,
+      "sha256": "ba6494ac04fb1c2654951e8c8a57861e324fafa0f6c3bd2e1716bea8eb5c823a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/optionalProperties.js",
+      "bytes": 436,
+      "sha256": "82b67841649a948b069c8e0cfab712eb883579690065a05658b7df7e4eddcc62"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/properties.js",
+      "bytes": 6320,
+      "sha256": "4a392193b708f69c25511ed059e80a70ea084585731817ad8e459364f479eb35"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/ref.js",
+      "bytes": 2648,
+      "sha256": "4736880c610f3664a8c714fdb5cf4e9db9fcda1721691dcacad2e9796e937460"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/type.js",
+      "bytes": 2706,
+      "sha256": "f97e19f2c3042938f433cfad0c4500b3342d869719550246bd4fced479db8e1c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/union.js",
+      "bytes": 343,
+      "sha256": "f8404ab539ecfc5f6eb1bc489cc541aad6bf79cf58beecfcfe671226678c3280"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/jtd/values.js",
+      "bytes": 1838,
+      "sha256": "6b98eb1fbe2686a7f26fbf1e8860f61bdc81fe47117c4f5a79d5ca1fc92138f2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/metadata.js",
+      "bytes": 427,
+      "sha256": "45c178744a7ec57e20c85ceeaea8d9f36b5663636ab7e495ea2c3c1bf4a58609"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/next.js",
+      "bytes": 433,
+      "sha256": "491c4d9738e50a6c22b3090cb1df49911b4bb7c3b7dcafc2f2dd4c074c4d82e7"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/unevaluated/index.js",
+      "bytes": 350,
+      "sha256": "4e7936d1a55051e70e2ebbbfc8de94fbe7f1e7b055252df5a984481ea7c156a4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js",
+      "bytes": 1588,
+      "sha256": "4d7010c39f1b7af4a2fe1a62e5b65c8f763d4e58ac3d710099d367659f5e4fda"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js",
+      "bytes": 2608,
+      "sha256": "665029a99612ec32e9bef99c9c4b09a4dc0be6c71d7b920594d414d404806ebe"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/const.js",
+      "bytes": 852,
+      "sha256": "ace994e9ab97a70899a9484794794f4be5ee03bfb3cf32242d3f091d77f0329a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/dependentRequired.js",
+      "bytes": 403,
+      "sha256": "cd69a90089328b24d2232c12edae57858c14f66aaa56923c12929eb3d673e8fa"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/enum.js",
+      "bytes": 1901,
+      "sha256": "61062b318a40eb52fc5a8283e7f4781db98349841744961ef4fe04a4722ebf22"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/index.js",
+      "bytes": 1036,
+      "sha256": "4a1839832de5f10ff423c1c0c6cb232b5b6e1b34980a28862cf56b2763136de4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/limitContains.js",
+      "bytes": 495,
+      "sha256": "0ea6f2e43359add298e1ed9306fe5020c62e086392f2915f10226b01394b200d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/limitItems.js",
+      "bytes": 852,
+      "sha256": "49f0427d29b38aef2fa8aead26e68bda12deb9a2da22f7a7804ba0fed44e1fec"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/limitLength.js",
+      "bytes": 1130,
+      "sha256": "379c28317faaf7784680b6049c3562692d3df6d65cce33f48e6c6c723beeeec2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/limitNumber.js",
+      "bytes": 1036,
+      "sha256": "3dd4bd41dbfc76c522078ff54b6479683485c4e97faa04cfcfaf2d8cb0fb8e65"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/limitProperties.js",
+      "bytes": 896,
+      "sha256": "8523a3f7b36c34882ca32b0ec71a2157d7930907cb86b778a97c1514fa6258ac"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/multipleOf.js",
+      "bytes": 1023,
+      "sha256": "df128c2a6ca74ae57c65fbfe3aea8a101447a3ae8c41fd53cfc5693fa23cc8bd"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/pattern.js",
+      "bytes": 905,
+      "sha256": "592f7966bb9dea6256dc8c0242ab9e05cdfef2b1d6dd27ef478c7a20c9a0471b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/required.js",
+      "bytes": 3188,
+      "sha256": "b953bc18d94274bd73374dd5b4282d7a21159cec8c0e7a357e1eaf3f326b9054"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/dist/vocabularies/validation/uniqueItems.js",
+      "bytes": 3037,
+      "sha256": "666d1a2aa25c0dfe3cf41312d0f9d40e9f99eb2c19be7469134ad89005aadd52"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/data.json",
+      "bytes": 409,
+      "sha256": "d24ab8a97c18b3f5afdde7d7024a0e0ac1df0614a16a41cb88f81379edcc2db3"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/meta/applicator.json",
+      "bytes": 1566,
+      "sha256": "9c356a52b0ad5da7d4c1b69f61dff5277c2af46221bc0b0521bbdbf3a12d3a2a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/meta/content.json",
+      "bytes": 477,
+      "sha256": "cf4792ae93f4a4580ec9523640945f7756f75fd624935ebf15194b0ac3909267"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/meta/core.json",
+      "bytes": 1273,
+      "sha256": "629c017994ffaa33f573a96cf01b9dac6cae80c7d5d17dad5e823a3afa18d5fe"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/meta/format.json",
+      "bytes": 375,
+      "sha256": "018ef7c81bcca9e40a4a02ed236e7cabb3a630f2b1ea01fbdeed2f882c15ddc8"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "e038593d36bf1855875a13b8812469d6a2d62ed309436b9c9a2fa5a4ba59085e"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "aaba7f2d6fcbdfa6ca97fdc3d3da1ae7d66ca3322b7e90cf5a98b067555d06e6"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2019-09/schema.json",
+      "bytes": 1579,
+      "sha256": "264720afa0dd61919e21bbe9bc1312121b70e43019ac696240e069adc72cce15"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/applicator.json",
+      "bytes": 1441,
+      "sha256": "f1e465ff0c0cc86bee5c0cc4b51d2734c532e6ea12c75b60a2ac093a4577b2d4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/content.json",
+      "bytes": 479,
+      "sha256": "7ede86f2c48d646202bf1332aefaf46db268c943d59752727db7247dc2920516"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/core.json",
+      "bytes": 1344,
+      "sha256": "c3a5947992d4fe67c95cda7910911207376bbae41c0a124ec9e7e699172e7a49"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/format-annotation.json",
+      "bytes": 420,
+      "sha256": "1e31131b1ed21f98c007f04deb501343b8c4dd77f1c5a8494a9c2085f68d769d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "eb008c756b29bdaa237c1f06d32ea4a21f6ef22148b03c6372cea5e4c0782273"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/unevaluated.json",
+      "bytes": 472,
+      "sha256": "8f7f75f4274745faa32e4abdba12de99f49b21df225f52f723b5c62043b0edca"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "3cae7069843679429e4ada7df261bb8961fa34cac15be89296026e69af312092"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-2020-12/schema.json",
+      "bytes": 2166,
+      "sha256": "5333c7df76bceee098e865881d0808238dea836126c6c60b49299ec85c6c7a56"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-draft-06.json",
+      "bytes": 3449,
+      "sha256": "a9b6a00af20105009f0924cd7c02d811bbf70c579a96f1552579c3457111f687"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-draft-07.json",
+      "bytes": 3811,
+      "sha256": "f7e8b13cad4fecff9771f3626fef33e20e59027b90938a28fd9d2f6c17cd0773"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/lib/refs/json-schema-secure.json",
+      "bytes": 2521,
+      "sha256": "b7840b4f1526eee47ac19780906a436d0c39df2aa3d505388caf18864085a421"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/ajv@8.17.1/node_modules/ajv/package.json",
+      "bytes": 4457,
+      "sha256": "ce1539e6f4e0f345ed402c47137d2679497b2035d4a4f420ee11acdde03dea92"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-deep-equal@3.1.3/node_modules/fast-deep-equal/es6/index.js",
+      "bytes": 1935,
+      "sha256": "d7f027497048c75e17268dbc66b670579d4f70f2dc0e019cdc9edf5078c247d6"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-deep-equal@3.1.3/node_modules/fast-deep-equal/es6/react.js",
+      "bytes": 2209,
+      "sha256": "366779cbb7821d26d18b9eaa12b6788cbb101cdbbabcae36f2919a5f48534ef0"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-deep-equal@3.1.3/node_modules/fast-deep-equal/index.js",
+      "bytes": 1177,
+      "sha256": "eb469e206280321a3878f2335ec98aa2104a155079d8ed83a23029098dccd215"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-deep-equal@3.1.3/node_modules/fast-deep-equal/package.json",
+      "bytes": 1496,
+      "sha256": "a5c63940db0260739be9e2ac67f3aac268df4db5770420ee4e34e493152f97d2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-deep-equal@3.1.3/node_modules/fast-deep-equal/react.js",
+      "bytes": 1451,
+      "sha256": "37cbd168dbd42c73119ce7326556bddef40b3a5fbd2e215cf81a7c78fb73ff9a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/benchmark/package.json",
+      "bytes": 293,
+      "sha256": "463a034d344b042e495841b770ca69a812693087ee2053d7c18cc8497e020b58"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/eslint.config.js",
+      "bytes": 135,
+      "sha256": "52e3a2601a98f23c954d664ab8de95fddb390789f8b067815e484b010d3da2d0"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/index.js",
+      "bytes": 21620,
+      "sha256": "45b52d2d77365bcc8a41bfac0223482bf73e3bedf7d232027b4b27544f40097b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/lib/schemes.js",
+      "bytes": 7367,
+      "sha256": "c2c61d3fd0bc63a587100928a399e75be8c420d210c439d75f7346da4aa4f3c3"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/lib/utils.js",
+      "bytes": 20635,
+      "sha256": "a523a2da0a4cc3354d6d171107ee9af303ba6437d6db228be0a629e9698d1602"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/package.json",
+      "bytes": 1983,
+      "sha256": "d62cb9be0a111b42131b264efe1fee4638a5f643ff25fe0bc3627675a9b92a8b"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/ajv.test.js",
+      "bytes": 752,
+      "sha256": "75892faa0e01df30856f2a87eb50dcd4a4aa9a3ec1c7aa4e290ff936b0789f72"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/component-safe-serialization.test.js",
+      "bytes": 3335,
+      "sha256": "1f4882873ef4323741b5547bca4409212296dd1e77f372e50fd4a6c2e2beaad2"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/equal.test.js",
+      "bytes": 5117,
+      "sha256": "9a2e83b204e7d9e14139dce7a13457a12b46f02189fb9138e1624bbd25d9b390"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/fixtures/uri-js-parse.json",
+      "bytes": 9888,
+      "sha256": "c954f79d2fa7f4d9779a6e7514cdf8df1eeb95d0097ea62cd3b785d20f2d0859"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/fixtures/uri-js-serialize.json",
+      "bytes": 1688,
+      "sha256": "c10203102fee328d6c8aedbd03319b8eeb364417c3b1137d714537fcd3102d69"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/ipv6-canonical.test.js",
+      "bytes": 1144,
+      "sha256": "647cca74400388c5ea503c67433507a71fa371ba3377e5ddcec5204948b16968"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/ipv6-validation.test.js",
+      "bytes": 2835,
+      "sha256": "21f99d96fc7fe5869bf0e2d75a5a261b6e9c57ac9638565394c6f29211040263"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/malformed-percent.test.js",
+      "bytes": 2795,
+      "sha256": "151bf26b0c6096adb923677c42ea33dfa2dabb999cd4dc07ce34f94aa8281fce"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/malformed-urn.test.js",
+      "bytes": 2196,
+      "sha256": "dfc01dbace807c71fab8e80acd154aeba25d1eca0aa2740681fa62d046bfe437"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/parse.test.js",
+      "bytes": 14516,
+      "sha256": "53d2c5bf0c198a834cb131dfd71795a30df6e49a28cedb1c62eec2d497192702"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/query-fragment-normalization.test.js",
+      "bytes": 1716,
+      "sha256": "18051e881d06450b5e33009e92c7582cc020b4dc39d636103370e0e8dd3ea0a6"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/reserved-path-normalization.test.js",
+      "bytes": 3661,
+      "sha256": "984c6d447e4e0474b8b11c75cf2a5f54ffd855206dc588c8d5c47fd819fe7212"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/resolve.test.js",
+      "bytes": 4480,
+      "sha256": "5f44df0de389cfb13848595184fd73a309ef7a702f55ebf5fc3cf0490ff7709c"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/rfc-3986.test.js",
+      "bytes": 5279,
+      "sha256": "b753dd115304e6cc567d2cb1169dd4d23641148274956fde0fabfdc612c65e27"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/scheme-validation.test.js",
+      "bytes": 3687,
+      "sha256": "eeb22864d23236f723fe00f8fccace70911b95ef9a3f74f116921e5cb18cce32"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/security-normalization.test.js",
+      "bytes": 4795,
+      "sha256": "fa4751a8eb7761372a384df23055afb323a69454f3d821efcb040af34db0f0d1"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/security.test.js",
+      "bytes": 14258,
+      "sha256": "ce2138c92e7c0f6cbad4cdc8e6d142b66ecf78af192b04771cd3b48c604dbb1d"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/serialize.test.js",
+      "bytes": 6283,
+      "sha256": "abb8f831a5ebcfe6d76d8d9abb2220bfe2d255892cab1f2b43d8ef3364f21ab4"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/uri-js-compatibility.test.js",
+      "bytes": 1019,
+      "sha256": "ca79aa1a3917c2bb237ab7e64235e4f1036a6ddacb66a5319845e8926cc89b28"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/uri-js.test.js",
+      "bytes": 42039,
+      "sha256": "dc3a3b9d0a532f6483bc2c11d13b865273afb7c74224e401ce6005a7fa0a834a"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/urn-full-input.test.js",
+      "bytes": 1320,
+      "sha256": "2f36727aafe2524ef08b8c5f1d124dea6971784ec9e96cffbf1986fba6c95718"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/util.test.js",
+      "bytes": 1147,
+      "sha256": "fa0595a97c1f948e641ea4696828a4d81c3389a986a45ac0a16feeffc73f8cad"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/test/websocket-query-preservation.test.js",
+      "bytes": 903,
+      "sha256": "b3e7a45b622530f0c76910d7bdda2aa18b3b17a1d55b66e67dbb86d030fc0769"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/fast-uri@3.1.6/node_modules/fast-uri/tsconfig.json",
+      "bytes": 166,
+      "sha256": "6bbba68684f6d6f1613d9ae79de617c25d8d749f30942307faee46a6d2fd721f"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/json-schema-traverse@1.0.0/node_modules/json-schema-traverse/index.js",
+      "bytes": 2428,
+      "sha256": "024191b747afac01b28ff11d744e9f82720bbad5f716163ba5c962eb62aa2350"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/json-schema-traverse@1.0.0/node_modules/json-schema-traverse/package.json",
+      "bytes": 1004,
+      "sha256": "156fb24af02845c190701360d06dfda35ef04282e34a734289ea9535ad9819ae"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/json-schema-traverse@1.0.0/node_modules/json-schema-traverse/spec/fixtures/schema.js",
+      "bytes": 5544,
+      "sha256": "0262591e321bc88b22dc33ec78bcded5ab664e2fce2c10b9e0c35d3eb6030d27"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/json-schema-traverse@1.0.0/node_modules/json-schema-traverse/spec/index.spec.js",
+      "bytes": 6042,
+      "sha256": "40e6986bda700387e2d397971087a3977d6801bf954591505229691a267c5f69"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/require-from-string@2.0.2/node_modules/require-from-string/index.js",
+      "bytes": 866,
+      "sha256": "cb059342a762b955997bf780f3693add176922727f2fa9f11fcaf1b3fc323239"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/node_modules/.pnpm/require-from-string@2.0.2/node_modules/require-from-string/package.json",
+      "bytes": 511,
+      "sha256": "c0002f7d4c7d7e2a885cf0f97226344902417c3a0980f2beca41962d2bc1f6d8"
+    },
+    {
+      "path": "/tmp/m416-nominal-transport-candidate/schemas/zryna-syntax-v5.schema.json",
+      "bytes": 42762,
+      "sha256": "922bb3fed447cc730cce2054e440b80bef158f07b052c75161a56b54ffe08736"
+    },
+    {
+      "path": "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+      "bytes": 16059472,
+      "sha256": "27d5ff7f8f012d2addaaeaa61c3a14aac5062d627f015b7ed73166e8cba7ea45"
+    },
+    {
+      "path": "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+      "bytes": 124674920,
+      "sha256": "243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/SOURCE_EXPECTED.json",
+      "bytes": 1201,
+      "sha256": "2f65bce97ba9ee5ef79377818c9335db9dfeb6d2c8a2aa0963d81c238fec455d"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/SOURCE_EXPECTED_FREEZE.json",
+      "bytes": 426,
+      "sha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/emit-provider-packets.py",
+      "bytes": 8062,
+      "sha256": "f4bdc175b2ed2b366d03ea7d3a01313edcc410ed9df5dcf0c3515daed88c09a2"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/literals/vec-push-owned-prepare.zry",
+      "bytes": 114,
+      "sha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91"
+    },
+    {
+      "path": "/tmp/m416-execution-affine-push-authentication/validate-packets.mjs",
+      "bytes": 1315,
+      "sha256": "3ea70d58128f3f253e348eee5e9dd186e6962f00446ed7e4695a79b39874036f"
+    },
+    {
+      "path": "/tmp/m416-execution-native-push-upgrade-driver/affine-source-proposal/SOURCE_EXPECTED.json",
+      "bytes": 1201,
+      "sha256": "2f65bce97ba9ee5ef79377818c9335db9dfeb6d2c8a2aa0963d81c238fec455d"
+    },
+    {
+      "path": "/tmp/m416-execution-native-push-upgrade-driver/affine-source-proposal/SOURCE_EXPECTED_FREEZE.json",
+      "bytes": 426,
+      "sha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f"
+    },
+    {
+      "path": "/tmp/m416-execution-native-push-upgrade-driver/affine-source-proposal/literals/vec-push-owned-prepare.zry",
+      "bytes": 114,
+      "sha256": "1f892a8b8624798a03ecb28b6a1fc05e683f6d209adff07569c85f0a0a0c0f91"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+interface Node<T extends ZrynaValue> extends ZrynaEnum { leaf: T; branch: Vec<Node<T>>; }
+export function entry(): i32 {
+  const erased: FixedArray<Node<String>, 0> = FixedArray<Node<String>, 0>([]);
+  return 7;
+}

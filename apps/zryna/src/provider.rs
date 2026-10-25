@@ -17,6 +17,9 @@ pub(super) fn render_provider_result(
         Ok(zryna_driver::ProviderCommandSuccess::Ownership(success)) => {
             ownership::render(Ok(success), command, json)
         }
+        Ok(zryna_driver::ProviderCommandSuccess::Generic(success)) => {
+            super::generic::render(&success, json)
+        }
         Err(failure) => render_failure(command, json, &failure),
     }
 }
@@ -55,6 +58,7 @@ pub(super) fn provider_request(
         None | Some(CliProfile::BrowserComponentV1) => zryna_driver::CompilationProfile::I32,
         Some(CliProfile::ControlFlowV1) => zryna_driver::CompilationProfile::ControlFlow,
         Some(CliProfile::DataOwnershipV1) => zryna_driver::CompilationProfile::DataOwnership,
+        Some(CliProfile::BoundedGenericsV1) => zryna_driver::CompilationProfile::BoundedGenericsV1,
         Some(CliProfile::CommandH1V1) => return Err(command_h1::configuration_error()),
     };
     Ok(zryna_driver::ProviderBuildRequest {

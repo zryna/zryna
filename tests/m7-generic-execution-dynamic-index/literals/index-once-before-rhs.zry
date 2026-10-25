@@ -1,0 +1,8 @@
+function select(counter: BorrowMut<i32>, index: i32): i32 { counter = counter + 1; return index; }
+export function entry(index: i32): i32 {
+  let counter: i32 = 0;
+  let root: Vec<String> = Vec<String>(["left", "right"]);
+  const rhs: String = "replacement";
+  root[select(borrowMut(counter), index)] = clone(rhs);
+  return counter;
+}

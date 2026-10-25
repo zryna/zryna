@@ -1,0 +1,501 @@
+{
+  "format": "m416.native-vec-accounting-held-oracle.v1",
+  "timing": "Frozen law-derived numeric expectations before Vec3 implementation or observed output",
+  "law_freeze_sha256": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "scope": "Private arithmetic/effect classification only; seeded counts do not prove source execution. Growth retires old backing with no extra logical event/debt; corrupted requests/context are invariant failures.",
+  "limits": {
+    "A": 1048576,
+    "L": 1048576,
+    "S": 4194304,
+    "H": 0
+  },
+  "cases": [
+    {
+      "id": "empty-allocate-exact-held-credit",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048576,
+        "L": 0,
+        "S": 4194302,
+        "H": 0
+      },
+      "event": "valid empty VecAllocate OK; storage owner debt1",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1048576,
+          "L": 0,
+          "S": 4194303,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 4194304,
+          "H": 0
+        }
+      }
+    },
+    {
+      "id": "empty-allocate-prospective-credit-extra",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 0,
+        "L": 0,
+        "S": 4194303,
+        "H": 0
+      },
+      "event": "empty VecAllocate; forward1 fits but ownerH1 does not",
+      "expected": {
+        "admission": "DENIED source CAPACITY2",
+        "post": {
+          "A": 0,
+          "L": 0,
+          "S": 4194303,
+          "H": 0
+        },
+        "after_cleanup": null,
+        "no_helper_or_side_effect": true
+      }
+    },
+    {
+      "id": "positive-allocate-attempt-exact",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048575,
+        "L": 0,
+        "S": 1048575,
+        "H": 0
+      },
+      "event": "valid VecAllocate positive backing OK",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 1048576,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 1048577,
+          "H": 0
+        }
+      }
+    },
+    {
+      "id": "positive-allocate-attempt-extra",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048576,
+        "L": 1,
+        "S": 2097151,
+        "H": 1
+      },
+      "event": "valid positive VecAllocate, sufficient status/debt headroom",
+      "expected": {
+        "admission": "DENIED source CAPACITY2",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 2097151,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 2097152,
+          "H": 0
+        },
+        "no_helper_or_side_effect": true
+      }
+    },
+    {
+      "id": "within-capacity-at-attempt-ceiling",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048576,
+        "L": 1,
+        "S": 4194302,
+        "H": 1
+      },
+      "event": "VecReserve within old capacity; exact only-forward credit",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 4194303,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 4194304,
+          "H": 0
+        },
+        "A_delta": 0,
+        "H_delta": 0,
+        "old_bytes_unchanged": true
+      }
+    },
+    {
+      "id": "within-capacity-status-extra",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048576,
+        "L": 1,
+        "S": 4194303,
+        "H": 1
+      },
+      "event": "VecReserve within capacity but no forward credit",
+      "expected": {
+        "admission": "DENIED source CAPACITY2",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 4194303,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 4194304,
+          "H": 0
+        },
+        "no_helper_or_side_effect": true
+      }
+    },
+    {
+      "id": "first-growth-from-empty-exact",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048575,
+        "L": 0,
+        "S": 1048575,
+        "H": 1
+      },
+      "event": "valid VecReserve empty0 ->positive capacity; old empty storage debt transfers",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 1048576,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 1048577,
+          "H": 0
+        },
+        "temporary_live_peak": 1,
+        "no_new_storage_debt": true
+      }
+    },
+    {
+      "id": "replacement-growth-exact",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048575,
+        "L": 1,
+        "S": 1048575,
+        "H": 1
+      },
+      "event": "valid VecReserve replacing old positive block; successful replacement before old retirement",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 1048576,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 1048577,
+          "H": 0
+        },
+        "temporary_live_peak": 2,
+        "no_new_storage_debt": true,
+        "internal_old_retirement_S_delta": 0,
+        "internal_old_retirement_H_delta": 0
+      }
+    },
+    {
+      "id": "positive-reserve-attempt-extra",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048576,
+        "L": 1,
+        "S": 2097151,
+        "H": 1
+      },
+      "event": "valid positive VecReserve with prospective replacement",
+      "expected": {
+        "admission": "DENIED source CAPACITY2",
+        "post": {
+          "A": 1048576,
+          "L": 1,
+          "S": 2097151,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 2097152,
+          "H": 0
+        },
+        "no_helper_or_side_effect": true,
+        "old_bytes_unchanged": true
+      }
+    },
+    {
+      "id": "reserve-admitted-target-allocation-failure",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 4,
+        "L": 1,
+        "S": 8,
+        "H": 1
+      },
+      "event": "valid positive VecReserve admitted then real target ALLOCATION1",
+      "expected": {
+        "admission": "ADMITTED ALLOCATION1",
+        "post": {
+          "A": 5,
+          "L": 1,
+          "S": 9,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 5,
+          "L": 0,
+          "S": 10,
+          "H": 0
+        },
+        "old_bytes_unchanged": true,
+        "failed_out_unpublished": true
+      }
+    },
+    {
+      "id": "canonical-size-capacity-only-forward",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1,
+        "L": 1,
+        "S": 4194302,
+        "H": 1
+      },
+      "event": "exact canonical-known pre-backing size rejection, not global denial; private canonical/model evidence only",
+      "expected": {
+        "admission": "ADMITTED canonical CAPACITY2",
+        "post": {
+          "A": 1,
+          "L": 1,
+          "S": 4194303,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1,
+          "L": 0,
+          "S": 4194304,
+          "H": 0
+        },
+        "A_delta": 0,
+        "H_delta": 0,
+        "old_bytes_unchanged": true,
+        "no_forged_source_reachability": true
+      }
+    },
+    {
+      "id": "positive-storage-release-at-total-ceiling",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1,
+        "L": 1,
+        "S": 4194303,
+        "H": 1
+      },
+      "event": "mandatory VecReleaseStorage positive; children already cleaned",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1,
+          "L": 0,
+          "S": 4194304,
+          "H": 0
+        },
+        "after_cleanup": null,
+        "release_quota_denial_forbidden": true
+      }
+    },
+    {
+      "id": "empty-storage-release-spends-credit",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 0,
+        "L": 0,
+        "S": 1,
+        "H": 1
+      },
+      "event": "mandatory VecReleaseStorage empty",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 0,
+          "L": 0,
+          "S": 2,
+          "H": 0
+        },
+        "after_cleanup": null,
+        "release_quota_denial_forbidden": true
+      }
+    },
+    {
+      "id": "release-without-storage-debt",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1,
+        "L": 1,
+        "S": 2,
+        "H": 0
+      },
+      "event": "forged Vec storage release with missing debt",
+      "expected": {
+        "admission": "PRIVATE INVARIANT ABI255",
+        "post": {
+          "A": 1,
+          "L": 1,
+          "S": 2,
+          "H": 0
+        },
+        "after_cleanup": null,
+        "no_helper_or_side_effect": true
+      }
+    },
+    {
+      "id": "forged-overflow-context",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 0,
+        "L": 0,
+        "S": 18446744073709551615,
+        "H": 1
+      },
+      "event": "attempt any forward event; context sum overflow",
+      "expected": {
+        "admission": "PRIVATE INVARIANT ABI255",
+        "post": {
+          "A": 0,
+          "L": 0,
+          "S": 18446744073709551615,
+          "H": 1
+        },
+        "after_cleanup": null,
+        "no_helper_or_side_effect": true
+      }
+    },
+    {
+      "id": "clone-prefix-second-string-failure",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 3,
+        "L": 3,
+        "S": 3,
+        "H": 3
+      },
+      "event": "existing Vec<String>(A,B) then clone: newstorageOK, firstStringOK, secondStringALLOCATION",
+      "expected": {
+        "admission": "ADMITTED ALLOCATION1",
+        "post": {
+          "A": 6,
+          "L": 5,
+          "S": 6,
+          "H": 5
+        },
+        "after_cleanup": {
+          "A": 6,
+          "L": 0,
+          "S": 11,
+          "H": 0
+        },
+        "exact_cleanup_sequence": [
+          "new copied String A",
+          "new Vec storage",
+          "original String B",
+          "original String A",
+          "original Vec storage"
+        ],
+        "failed_String_provisional_debt_canceled": true,
+        "payload_debt_transferred_not_duplicated": true
+      }
+    },
+    {
+      "id": "prepared-RHS-survives-reserve-failure",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 3,
+        "L": 3,
+        "S": 3,
+        "H": 3
+      },
+      "event": "old Vec storage+old String+prepared RHS String; reserve positive allocation fails before push commit",
+      "expected": {
+        "admission": "ADMITTED ALLOCATION1",
+        "post": {
+          "A": 4,
+          "L": 3,
+          "S": 4,
+          "H": 3
+        },
+        "after_cleanup": {
+          "A": 4,
+          "L": 0,
+          "S": 7,
+          "H": 0
+        },
+        "exact_cleanup_sequence": [
+          "pending RHS String",
+          "old Vec String",
+          "old Vec storage"
+        ],
+        "vector_and_RHS_unchanged_before_cleanup": true,
+        "push_does_not_consume_RHS_on_failure": true
+      }
+    },
+    {
+      "id": "zero-reserve-noop",
+      "evidence_kind": "seeded private arithmetic/effect, not actual source threshold or public seal",
+      "pre": {
+        "A": 1048576,
+        "L": 0,
+        "S": 1,
+        "H": 1
+      },
+      "event": "canonical VecReserve required0 on valid empty owner; private ABI/model, not invented source API",
+      "expected": {
+        "admission": "ADMITTED OK",
+        "post": {
+          "A": 1048576,
+          "L": 0,
+          "S": 2,
+          "H": 1
+        },
+        "after_cleanup": {
+          "A": 1048576,
+          "L": 0,
+          "S": 3,
+          "H": 0
+        },
+        "A_delta": 0,
+        "H_delta": 0,
+        "old_bytes_unchanged": true,
+        "no_forged_source_reachability": true
+      }
+    }
+  ]
+}

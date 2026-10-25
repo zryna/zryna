@@ -1,0 +1,26 @@
+{
+  "kind": "pre-provider_pre-execution_static_source_oracle_proposal",
+  "created_utc": "2026-10-25T15:18:18.526937+00:00",
+  "owner": "/root/wasm_recursive_memory",
+  "provider_or_product_execution_by_designer": false,
+  "files": [
+    {
+      "file": "mixed-catalogue.zry",
+      "bytes": 2269,
+      "sha256": "5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6"
+    },
+    {
+      "file": "PRE_EXECUTION_ORACLE.json",
+      "bytes": 59177,
+      "sha256": "bc6fdcf4d69acbd15cd5585b22bdd1a1d193be794c73177e03268d59902f4266"
+    },
+    {
+      "file": "DERIVATION.md",
+      "bytes": 9327,
+      "sha256": "dfcb9b21c23013c1d54e14cc91e3238de23499c358d30b6f16f30751609e2dab"
+    }
+  ],
+  "original_catalogue_sha256": "9806b7a5623d683549a3b55934c4c4854a580c9f2c3282998c81388ea42beb44",
+  "original_fixtures_changed": false,
+  "next": "Root chooses integration; preserve this freeze before genuine providers, fresh seals, artifact audits and guest evidence."
+}

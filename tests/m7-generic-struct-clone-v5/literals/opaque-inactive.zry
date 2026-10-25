@@ -1,0 +1,3 @@
+interface Hidden<T extends ZrynaValue> extends ZrynaStruct { value: Option<T>; code: i32; }
+function unused<T extends ZrynaValue>(input: Hidden<T>): Hidden<T> { return clone(input); }
+export function entry(): i32 { return 7; }

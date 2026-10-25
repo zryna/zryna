@@ -1,0 +1,9 @@
+interface Signal extends ZrynaEnum { off: ZrynaNone; on: i32; }
+export function entry(index: i32): i32 {
+  const root: FixedArray<Signal, 2> = FixedArray<Signal, 2>([Signal.off(), Signal.on(7)]);
+  let result: i32 = 0;
+  { const loan: Borrow<Signal> = borrow(root[index]);
+    result = match(loan, { "Signal.off": () => 3, "Signal.on": (payload) => payload });
+  }
+  return result;
+}

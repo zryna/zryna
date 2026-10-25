@@ -1,0 +1,15 @@
+export interface Choice<T extends ZrynaValue,E extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;left:T;right:E;nested:Option<Result<T,E>>;}
+export interface Marker<T extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;code:i32;}
+export interface Fixed<T extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;text:String;}
+export interface Plain extends ZrynaEnum {none:ZrynaNone;text:String;}
+interface Unused<T extends ZrynaValue> extends ZrynaEnum {none:ZrynaNone;payload:Option<T>;}
+export function make<T extends ZrynaValue>(value:T):Choice<T,i32> {return Choice.left<T,i32>(value);}
+export function discard<T extends ZrynaValue>(value:T):i32 {return 7;}
+export function read<T extends ZrynaValue>(value:Choice<String,i32>):i32 {
+  const guard:String="guard";
+  const later:String="later";
+  { const view:Borrow<Choice<String,i32>> =borrow(value); match(view,{"Choice.none":()=>0,"Choice.left":(text)=>1,"Choice.right":(code)=>2,"Choice.nested":(inner)=>3}); }
+  { const view:BorrowMut<Choice<String,i32>> =borrowMut(value); match(view,{"Choice.none":()=>0,"Choice.left":(text)=>1,"Choice.right":(code)=>2,"Choice.nested":(inner)=>3}); }
+  return match(value,{"Choice.none":()=>3,"Choice.left":(text)=>discard<String>(text),"Choice.right":(code)=>code,"Choice.nested":(inner)=>match(inner,{"Option.none":()=>5,"Option.some":(result)=>match(result,{"Result.ok":(text)=>discard<String>(text)+10,"Result.err":(code)=>code+20})})});
+}
+export function plainValue<T extends ZrynaValue>(value:Plain):i32 {return match(value,{"Plain.none":()=>39,"Plain.text":(text)=>discard<String>(text)+34});}

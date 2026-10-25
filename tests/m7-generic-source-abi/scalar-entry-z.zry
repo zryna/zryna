@@ -1,0 +1,3 @@
+import { helper } from "./a.zry";
+export function value(input:i32):i32{return input;}
+export function template<T extends ZrynaValue>(input:T):T{return input;}

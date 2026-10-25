@@ -1,0 +1,12 @@
+{
+  "freshProviderProcesses": 2,
+  "cases": [
+    {
+      "case": "called-indexed-shared-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "format": "zryna.m7-generic-acceptance-registry.v1",
+  "profile": "bounded-generics-v1",
+  "commands": [
+    {
+      "id": "public-cli",
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "executable": "cargo",
+      "args": [
+        "test",
+        "--locked",
+        "-p",
+        "zryna",
+        "--test",
+        "generic_public",
+        "--",
+        "--test-threads=1"
+      ],
+      "tests": {
+        "linux": [
+          "native_frontend_builds_all_ordinary_targets_without_node_or_linker",
+          "original_template_only_library_builds_all_with_empty_scalar_abi",
+          "exact_selector_spellings_run_original_scalar_entry_one_mixed_and_bool_clone",
+          "all_three_providers_replay_same_stem_artifacts_and_strict_manifest_bytes",
+          "genuine_empty_vector_and_array_bounds_use_only_controlled_source_trap",
+          "guide_full_source_fences_match_originals_and_execute",
+          "negative::guide_opaque_clone_rejects_then_its_frozen_complete_correction_runs",
+          "negative::unused_opaque_clone_and_template_host_selection_keep_original_spans",
+          "negative::invocation_validation_and_missing_explicit_node_fail_without_execution_output",
+          "negative::unsupported_component_and_real_project_selector_fail_closed",
+          "negative::existing_bundle_and_file_collisions_preserve_every_byte"
+        ],
+        "windows": [
+          "native_frontend_builds_all_ordinary_targets_without_node_or_linker",
+          "original_template_only_library_builds_all_with_empty_scalar_abi",
+          "exact_selector_spellings_run_original_scalar_entry_one_mixed_and_bool_clone",
+          "all_three_providers_replay_same_stem_artifacts_and_strict_manifest_bytes",
+          "genuine_empty_vector_and_array_bounds_use_only_controlled_source_trap",
+          "guide_full_source_fences_match_originals_and_execute",
+          "negative::guide_opaque_clone_rejects_then_its_frozen_complete_correction_runs",
+          "negative::unused_opaque_clone_and_template_host_selection_keep_original_spans",
+          "negative::invocation_validation_and_missing_explicit_node_fail_without_execution_output",
+          "negative::unsupported_component_and_real_project_selector_fail_closed",
+          "negative::existing_bundle_and_file_collisions_preserve_every_byte",
+          "negative::native_run_on_other_hosts_is_an_explicit_host_rejection"
+        ]
+      }
+    },
+    {
+      "id": "portable-deep",
+      "platforms": [
+        "windows"
+      ],
+      "executable": "cargo",
+      "args": [
+        "test",
+        "--locked",
+        "-p",
+        "zryna-driver",
+        "--test",
+        "generic_execution_v1_recursive_portable_acceptance",
+        "--",
+        "--test-threads=1"
+      ],
+      "tests": {
+        "windows": [
+          "recursive_drop_original_source_and_same_seal",
+          "recursive_clone_original_source_and_same_seal",
+          "recursive_controlled_cleanup_original_source_and_same_seal"
+        ]
+      }
+    },
+    {
+      "id": "shared-abi-ignored",
+      "platforms": [
+        "windows"
+      ],
+      "executable": "cargo",
+      "args": [
+        "test",
+        "--locked",
+        "-p",
+        "zryna-ownership-runtime-abi",
+        "--lib",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "tests": {
+        "windows": [
+          "tests::record_declaration_budget_is_exact_and_plus_one",
+          "tests::nested_declaration_budget_is_exact_and_plus_one",
+          "tests::checked_header_budget_is_exact_and_plus_one"
+        ]
+      }
+    }
+  ],
+  "tools": {
+    "node": "22.22.1",
+    "rustc": "1.97.1",
+    "cargo": "1.97.1"
+  },
+  "inherited": {
+    "canonical_m0": {
+      "workflow_job": "rust",
+      "command": [
+        "node",
+        "scripts/run-m0-conformance.mjs"
+      ],
+      "suite": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace"
+      ],
+      "covers": [
+        "scoped source/provider ownership and guarded publication",
+        "V5 source and parser/provider boundaries",
+        "generic semantics/layout/runtime ABI/IR authority and ordinary resource controls",
+        "native MIR/backend SSA and object audit, JS/Wasm ordinary/observed/fault/resource controls",
+        "applicable driver source/target integration and doc tests"
+      ],
+      "counts": "not independently counted by this packet; corroborate actual same-job canonical M0 logs"
+    },
+    "linux_preflight": {
+      "workflow_job": "preflight",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "zryna-ownership-runtime-abi",
+        "--",
+        "--include-ignored"
+      ],
+      "covers": [
+        "shared exact/+1 record, declaration-child and checked-header boundaries"
+      ],
+      "reason": "generic_v1::verify_v1 invokes the same input_within_limits; Linux preflight already executes these controls"
+    },
+    "linux_deep": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace"
+      ],
+      "targets": [
+        "generic_execution_v1_recursive_owner",
+        "generic_execution_v1_native_iterative_drop",
+        "generic_execution_v1_native_iterative_clone"
+      ],
+      "covers": [
+        "existing same-seal JS/Wasm deep/fault gates and Linux-only native lifecycle/drop/clone/fault gates"
+      ],
+      "windows": "not claimed; separate portable-deep command required; native run unsupported"
+    }
+  },
+  "closure": "This local packet is not an issue-completion or all-platform receipt. Both Rust platform jobs and final existing M0 aggregate (including preflight) must succeed for the same tested revision/tree; hosted provenance must be corroborated. PR head and tested merge revision are separate roles."
+}

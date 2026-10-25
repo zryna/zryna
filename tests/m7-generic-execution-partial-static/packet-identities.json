@@ -1,0 +1,293 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "struct-survivor",
+      "provider": "native",
+      "packet": "struct-survivor-native.json",
+      "packetSha256": "2219e93311d3c581dee0dcc85ce5ddd63323776ac4f26b2bde240a978229d044",
+      "packetBytes": 16607,
+      "exactSourceSha256": "f5254a358cdba3bc5e97238ee39d78b21afc6d4de1171df9431f85d901d2d59d",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "struct-survivor",
+      "provider": "typescript",
+      "packet": "struct-survivor-typescript.json",
+      "packetSha256": "9e7e7db8b71bb3019698545c0f8153168370d0bfd02aeac9dda1b2328fc5e078",
+      "packetBytes": 16607,
+      "exactSourceSha256": "f5254a358cdba3bc5e97238ee39d78b21afc6d4de1171df9431f85d901d2d59d",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "struct-refill-whole",
+      "provider": "native",
+      "packet": "struct-refill-whole-native.json",
+      "packetSha256": "159bc4b7619358a701cbc0333bc625d689bb290c433e0f0af8435766f22e25a2",
+      "packetBytes": 21512,
+      "exactSourceSha256": "e196a0bf53471fbdfc7efca05ade3c54e73add6ea15e8a949cb348cecf6abb72",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "struct-refill-whole",
+      "provider": "typescript",
+      "packet": "struct-refill-whole-typescript.json",
+      "packetSha256": "e7db591d8b4895256edd42795b8f7272ae09badbc21eb13aeb6372cd4f41af62",
+      "packetBytes": 21512,
+      "exactSourceSha256": "e196a0bf53471fbdfc7efca05ade3c54e73add6ea15e8a949cb348cecf6abb72",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "partial-root-replacement",
+      "provider": "native",
+      "packet": "partial-root-replacement-native.json",
+      "packetSha256": "886c1771df7be0994be5d92f5bc360fb847deef77339ea5af2f39e738f51bd1c",
+      "packetBytes": 22109,
+      "exactSourceSha256": "e934f14a0c273cb1177fabac45b8be37ef2d0c50761752ca48ffd9cd208397f8",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "partial-root-replacement",
+      "provider": "typescript",
+      "packet": "partial-root-replacement-typescript.json",
+      "packetSha256": "7d05993ce563e0dd3d17aa983daf632f916dc5cd9e046c6b60d2db9fab225f52",
+      "packetBytes": 22109,
+      "exactSourceSha256": "e934f14a0c273cb1177fabac45b8be37ef2d0c50761752ca48ffd9cd208397f8",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nested-disjoint",
+      "provider": "native",
+      "packet": "nested-disjoint-native.json",
+      "packetSha256": "bc04238a41621c42571deb4f05a8a53d235809d59f09aa1f7596d50271e96d8f",
+      "packetBytes": 26202,
+      "exactSourceSha256": "d9c3222dbf9214058a3fb8c28b9f3d901d6f6274856375867afe1474a7aa3066",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nested-disjoint",
+      "provider": "typescript",
+      "packet": "nested-disjoint-typescript.json",
+      "packetSha256": "2cca6384d8e4439275da961d85d5794f590a566eafabf7c3c44432595c354b8a",
+      "packetBytes": 26202,
+      "exactSourceSha256": "d9c3222dbf9214058a3fb8c28b9f3d901d6f6274856375867afe1474a7aa3066",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "array-survivor",
+      "provider": "native",
+      "packet": "array-survivor-native.json",
+      "packetSha256": "7a50d6b00a826da3f9b4ea6094b8e894c1036f372195ca3ca70a9667f9f49408",
+      "packetBytes": 10774,
+      "exactSourceSha256": "151c5f28880bc5369a86266bc0320216502382441e56323c0df93f9c76209f5a",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "array-survivor",
+      "provider": "typescript",
+      "packet": "array-survivor-typescript.json",
+      "packetSha256": "b2967852278f3f1f15f3e90855d9761db39a424ce71a5f888fcde423400a796a",
+      "packetBytes": 10774,
+      "exactSourceSha256": "151c5f28880bc5369a86266bc0320216502382441e56323c0df93f9c76209f5a",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "array-refill",
+      "provider": "native",
+      "packet": "array-refill-native.json",
+      "packetSha256": "878643c3bf8878ebb8bba3f50d698544cf66ca771eeb8900f10a08b0fd99f740",
+      "packetBytes": 15888,
+      "exactSourceSha256": "5e7b03348897865d9be74abc438431713fa152848352e86b83854761c0a3e4ea",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "array-refill",
+      "provider": "typescript",
+      "packet": "array-refill-typescript.json",
+      "packetSha256": "45048a315a1fd8241aa3439ab83988d72bb686c3b3e4a00aed98f84bc9a28285",
+      "packetBytes": 15888,
+      "exactSourceSha256": "5e7b03348897865d9be74abc438431713fa152848352e86b83854761c0a3e4ea",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-child",
+      "provider": "native",
+      "packet": "opaque-child-native.json",
+      "packetSha256": "bc9e871a362e529b2fb2e9f89a00e3b8454b492eced9c0adca1ac38d98b99035",
+      "packetBytes": 40487,
+      "exactSourceSha256": "9c45725e04fd225057e861b7a3eb22a061d2a8156e242365682626fb1de9fe0d",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-child",
+      "provider": "typescript",
+      "packet": "opaque-child-typescript.json",
+      "packetSha256": "228e6244c8ded383473f82ee00881a530e0ef105165d888c89942a31f76d49ec",
+      "packetBytes": 40487,
+      "exactSourceSha256": "9c45725e04fd225057e861b7a3eb22a061d2a8156e242365682626fb1de9fe0d",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "sibling-loan",
+      "provider": "native",
+      "packet": "sibling-loan-native.json",
+      "packetSha256": "e79220b50a29a2f2fb82f5f9c67422b232c87d04d9d80c93675a2ab16486064b",
+      "packetBytes": 23936,
+      "exactSourceSha256": "69c747a577d912236595be23496d0aa563c6f820d929a9a733c2171b78e1faa4",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "sibling-loan",
+      "provider": "typescript",
+      "packet": "sibling-loan-typescript.json",
+      "packetSha256": "b9abc110f25d206bfc303bd6c7b81dafa6b9e4490e2494032084fff68a237f38",
+      "packetBytes": 23936,
+      "exactSourceSha256": "69c747a577d912236595be23496d0aa563c6f820d929a9a733c2171b78e1faa4",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "failure-after-hole",
+      "provider": "native",
+      "packet": "failure-after-hole-native.json",
+      "packetSha256": "43c4aeaa53efa5f150f80fd31dc86c9e61ade5dd58b71487d54a1759ff3e5ec5",
+      "packetBytes": 23233,
+      "exactSourceSha256": "232104836d7dc7ca656a363735599bd1548b065be8774a05e654ed08ee518f83",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "failure-after-hole",
+      "provider": "typescript",
+      "packet": "failure-after-hole-typescript.json",
+      "packetSha256": "e52f815a56704b7f8402c284f70f5288f4c9909a6ce7cd2ce98e81680a83b322",
+      "packetBytes": 23233,
+      "exactSourceSha256": "232104836d7dc7ca656a363735599bd1548b065be8774a05e654ed08ee518f83",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "branch-same-hole",
+      "provider": "native",
+      "packet": "branch-same-hole-native.json",
+      "packetSha256": "b0d4fe65d0c6a8e7a72a718f4ce5f299d90b508fe845b6bf31f94a095e4c650d",
+      "packetBytes": 22503,
+      "exactSourceSha256": "bd614e7fa66dc44cf14fd6e6322427fcbcf6c8940940126ea353360e186a3715",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "branch-same-hole",
+      "provider": "typescript",
+      "packet": "branch-same-hole-typescript.json",
+      "packetSha256": "d6f181106033dcd315314405926308d65e369b654bf6a61635ea86ac0afb8b68",
+      "packetBytes": 22503,
+      "exactSourceSha256": "bd614e7fa66dc44cf14fd6e6322427fcbcf6c8940940126ea353360e186a3715",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "loop-refill",
+      "provider": "native",
+      "packet": "loop-refill-native.json",
+      "packetSha256": "81c7970b6648bdaf5aeb7228b745c1f66658d16f597ae2c40ac30bebfd86d851",
+      "packetBytes": 25575,
+      "exactSourceSha256": "faa5811ce0697d7482dc4ab8cda4d35b3fa5ef449ac3bc8fd4bae376821e263a",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "loop-refill",
+      "provider": "typescript",
+      "packet": "loop-refill-typescript.json",
+      "packetSha256": "2f772cb0a732f6a4ab2fcb178eeeb9e93825f7eb037cb56ce121f8b1ebc4e54d",
+      "packetBytes": 25575,
+      "exactSourceSha256": "faa5811ce0697d7482dc4ab8cda4d35b3fa5ef449ac3bc8fd4bae376821e263a",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "double-field",
+      "provider": "native",
+      "packet": "double-field-native.json",
+      "packetSha256": "a88f7978af9d48ac51c374ed2aa9072ffd9700796d98d14c1d505ffa9b68a746",
+      "packetBytes": 19165,
+      "exactSourceSha256": "ccfbe563c6095463448b16f52b9681ace1ac01f071b45897bfbf0129db0784f6",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "double-field",
+      "provider": "typescript",
+      "packet": "double-field-typescript.json",
+      "packetSha256": "07250d7529b4fe4bf7a859f175ceb0b09c528222ff1e77e6addcabea241fe05d",
+      "packetBytes": 19165,
+      "exactSourceSha256": "ccfbe563c6095463448b16f52b9681ace1ac01f071b45897bfbf0129db0784f6",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "whole-after-hole",
+      "provider": "native",
+      "packet": "whole-after-hole-native.json",
+      "packetSha256": "a2ee231fd0d9fb8d7c857c769ff8c34d71db01ec05aa2c323fbfede02de18715",
+      "packetBytes": 19416,
+      "exactSourceSha256": "8a3da5c49115467f67f44ca20b4893520e7c923940dd2741e2ca362126170515",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "whole-after-hole",
+      "provider": "typescript",
+      "packet": "whole-after-hole-typescript.json",
+      "packetSha256": "963d3ec59758b0637af5ac8346d615c149932f544b754fbbc5e482b96bf808ee",
+      "packetBytes": 19416,
+      "exactSourceSha256": "8a3da5c49115467f67f44ca20b4893520e7c923940dd2741e2ca362126170515",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "write-borrowed-field",
+      "provider": "native",
+      "packet": "write-borrowed-field-native.json",
+      "packetSha256": "d15ede134eb631cd575024846bc314eaa7c029e17286067bffd6c6f76a86a6f5",
+      "packetBytes": 20033,
+      "exactSourceSha256": "f083f54006a3d75de1a7fc20d89421c5da47fc6c48248003f8a26a415d73b097",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "write-borrowed-field",
+      "provider": "typescript",
+      "packet": "write-borrowed-field-typescript.json",
+      "packetSha256": "7bdc6b4f5b3203d7dbd94067ca6545b2bd357ccbb7ba7d1ed428cde9c882cf21",
+      "packetBytes": 20033,
+      "exactSourceSha256": "f083f54006a3d75de1a7fc20d89421c5da47fc6c48248003f8a26a415d73b097",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "unrestored-loop-field",
+      "provider": "native",
+      "packet": "unrestored-loop-field-native.json",
+      "packetSha256": "541017b89baa779a7aae8b342399ef2db6b3007a9310e7f79b5b43b5a78621ff",
+      "packetBytes": 23477,
+      "exactSourceSha256": "fbdb44da53396dc590eb9af48c8c14ce1529c902a37e3b139d990af383ff61c9",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "unrestored-loop-field",
+      "provider": "typescript",
+      "packet": "unrestored-loop-field-typescript.json",
+      "packetSha256": "ddf6c2d6a30b244add018c2e4638905cde9e72e091743e7c2020313230abdffe",
+      "packetBytes": 23477,
+      "exactSourceSha256": "fbdb44da53396dc590eb9af48c8c14ce1529c902a37e3b139d990af383ff61c9",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrong-field-rhs",
+      "provider": "native",
+      "packet": "wrong-field-rhs-native.json",
+      "packetSha256": "17b83b6032bc5e2bfea5fd34fcb0ec138749d19618c8ddf2e02ef97f894c3639",
+      "packetBytes": 16134,
+      "exactSourceSha256": "2915a6a3389dd2c1486527495a338dadc6dc3d0be2999fa87bbd1df0a194e888",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "wrong-field-rhs",
+      "provider": "typescript",
+      "packet": "wrong-field-rhs-typescript.json",
+      "packetSha256": "e19e73b2ad60147eac4abcaa095a58c51e2e47a9c8ff5bb203e197ba0c2585d9",
+      "packetBytes": 16134,
+      "exactSourceSha256": "2915a6a3389dd2c1486527495a338dadc6dc3d0be2999fa87bbd1df0a194e888",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

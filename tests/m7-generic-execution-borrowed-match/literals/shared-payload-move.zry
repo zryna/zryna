@@ -1,0 +1,6 @@
+interface Packet<T extends ZrynaValue> extends ZrynaEnum { none: ZrynaNone; item: T; }
+function consume(value: String): i32 { return 5; }
+export function entry(): i32 {
+  const root: Packet<String> = Packet.item<String>("owned");
+  return match(borrow(root), { "Packet.none": () => 0, "Packet.item": (payload) => consume(payload) });
+}

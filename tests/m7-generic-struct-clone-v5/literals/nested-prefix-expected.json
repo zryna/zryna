@@ -1,0 +1,195 @@
+{
+  "status": "Frozen independent proposed runtime oracle; unexecuted.",
+  "case": "nested-prefix",
+  "accept": true,
+  "result": 7,
+  "allocationAttempts": [
+    {
+      "attempt": 1,
+      "role": "earlier",
+      "operation": "literal",
+      "bytes": "E"
+    },
+    {
+      "attempt": 2,
+      "role": "source.inner.left",
+      "operation": "literal",
+      "bytes": "L"
+    },
+    {
+      "attempt": 3,
+      "role": "source.inner.right",
+      "operation": "literal",
+      "bytes": "R"
+    },
+    {
+      "attempt": 4,
+      "role": "source.tail",
+      "operation": "literal",
+      "bytes": "T"
+    },
+    {
+      "attempt": 5,
+      "role": "copied.inner.left",
+      "operation": "clone",
+      "bytes": "L"
+    },
+    {
+      "attempt": 6,
+      "role": "copied.inner.right",
+      "operation": "clone",
+      "bytes": "R"
+    },
+    {
+      "attempt": 7,
+      "role": "copied.tail",
+      "operation": "clone",
+      "bytes": "T"
+    }
+  ],
+  "successReleaseAttemptIds": [
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1
+  ],
+  "faults": [
+    {
+      "failAttempt": 1,
+      "returnsScalar": false,
+      "releaseAttemptIds": [],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 2,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 3,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        2,
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 4,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        3,
+        2,
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 5,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 6,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "failAttempt": 7,
+      "returnsScalar": false,
+      "releaseAttemptIds": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "retryResult": 7,
+      "retryReleaseAttemptIds": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    }
+  ],
+  "identityRule": "Each successful clone String leaf has a fresh allocation identity even when bytes equal its source. Only successful attempts may be released; every such owner releases exactly once.",
+  "structCarrierAllocations": 0
+}
