@@ -22,7 +22,7 @@ const METADATA = ['metadata/materials.json', 'metadata/architecture-receipt.json
 export function nativeSourceRef(value) {
   if (value === 'refs/heads/main') return true;
   if (typeof value !== 'string' || value.length > 200 || value.split('/').length > 12) return false;
-  const prefix = ['refs/heads/codex/', 'refs/heads/fix/'].find(candidate => value.startsWith(candidate));
+  const prefix = ['refs/heads/codex/', 'refs/heads/fix/', 'refs/heads/test/'].find(candidate => value.startsWith(candidate));
   if (prefix === undefined) return false;
   return value.slice(prefix.length).split('/').every(part =>
     /^[a-z0-9][a-z0-9._-]{0,63}$/.test(part) && !part.includes('..')
