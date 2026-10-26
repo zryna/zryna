@@ -12,7 +12,7 @@ function Record($name, $value) {
 }
 function Material($path) {
     $file = Get-Item -LiteralPath $path
-    if (-not ($file -is [IO.FileInfo]) -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Regular material required' }
+    if (-not ($file -is [IO.FileInfo]) -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "Regular material required: $path" }
     return @{ path = $file.FullName; bytes = $file.Length; sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
 }
 function Capture($name, $exe, $arguments) {
@@ -52,6 +52,11 @@ try {
     $compiler = (Get-Command cl.exe -CommandType Application).Source
     $linker = (Get-Command link.exe -CommandType Application).Source
     $node = (Get-Command node.exe -CommandType Application).Source
+    Record 'tool-locations.json' @($compiler, $linker, $node | ForEach-Object {
+        $item = Get-Item -LiteralPath $_
+        @{ requestedPath = $_; fullName = $item.FullName; itemType = $item.GetType().FullName
+            attributes = [string]$item.Attributes; linkType = $item.LinkType; target = @($item.Target) }
+    })
     $includes = @($env:INCLUDE.Split(';', [StringSplitOptions]::RemoveEmptyEntries))
     $libraries = @($env:LIB.Split(';', [StringSplitOptions]::RemoveEmptyEntries))
     $headers = @('windows.h', 'psapi.h', 'inttypes.h', 'stdio.h', 'wchar.h', 'stdint.h', 'stdbool.h', 'stddef.h', 'limits.h', 'string.h', 'stdarg.h', 'assert.h')
