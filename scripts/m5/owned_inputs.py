@@ -21,6 +21,8 @@ SOURCE_FILES = (
     'crates/zryna-native-c-ir/tests/capture.rs',
     'crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs',
     'crates/zryna-ownership-runtime-abi/include/zryna_ownership_runtime_v1.h',
+    'scripts/distribution/native-recipe-security-candidate-v1.json',
+    'scripts/distribution/materials-rust-security-candidate-v1.json',
     'scripts/m5/sqlite_fixture.json',
     'crates/zryna-frontend/tests/native_parser_v3_calls/calls.snapshot.json',
     'crates/zryna-frontend/tests/native_parser_v3_calls/main.zry',
