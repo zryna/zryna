@@ -101,6 +101,17 @@ class SourceClosure(unittest.TestCase):
             self.assertEqual(len(selected) + len(report['omittedSourcePaths']), len(rows))
             self.assertIn('tests/m7-generic-owned-native/hostile.rs', selected)
             self.assertIn('tests/native-c-rust-v0/library.rs', selected)
+            required_edges = {
+                ('crates/zryna-driver/src/lib.rs',
+                 'crates/zryna-backend-native/tests/recursive_arena/source.rs'),
+                ('crates/zryna-backend-native/tests/recursive_arena/source.rs',
+                 'crates/zryna-backend-native/tests/recursive_arena/input-pins.json'),
+                ('crates/zryna-driver/src/generic_run/tests/source.rs',
+                 'tests/m7-generic-full-profile-first-vertical/literals/scalar-i32-clone.zry'),
+            }
+            self.assertTrue({target for _, target in required_edges} <= selected)
+            self.assertTrue(required_edges <= {
+                (edge['from'], edge['to']) for edge in report['closureAudit']['includePathEdges']})
             self.assertIn('tests/m7-generic-owned-nominal-enum/1-reference.json', report['omittedSourcePaths'])
             self.assertIn('tests/m7-generic-owned-native/hostile.rs', report['closureAudit']['rustFilesExamined'])
             self.assertTrue(report['closureAudit']['includePathEdges'])
@@ -136,3 +147,33 @@ class SourceClosure(unittest.TestCase):
             self.assertEqual(report['omittedSourcePaths'], ['node_modules/tracked-fixture.json'])
             self.assertEqual({row['path'] for row in manifest},
                              {row['path'] for row in tracked} - {'node_modules/tracked-fixture.json'})
+
+    def test_current_m7_compile_dependencies_reject_each_omission_without_broad_roots(self):
+        from owned_inputs import SOURCE_FILES, SOURCE_ROOTS
+        required = {
+            'crates/zryna-backend-native/tests/recursive_arena/source.rs',
+            'crates/zryna-backend-native/tests/recursive_arena/input-pins.json',
+            'tests/m7-generic-full-profile-first-vertical/literals/scalar-i32-clone.zry',
+        }
+        self.assertTrue(required <= set(SOURCE_FILES))
+        self.assertEqual(SOURCE_ROOTS,
+                         ('crates/zryna-driver/src', 'runtime', 'spec', 'adapters', 'examples'))
+        repo = Path(__file__).resolve().parents[3]
+        origin = 'crates/zryna-driver/src/lib.rs'
+        reference = '../../zryna-backend-native/tests/recursive_arena/source.rs'
+        self.assertIn(reference, references((repo / origin).read_text()))
+        # An explicitly inert lexical model retains the actual included-file bytes.
+        # It does not represent Git, a Rust compilation, or a positive execution issuer.
+        files = {origin: '#[cfg(any())] #[path = ' + json.dumps(reference) + '] mod fixture;'}
+        for path in (*sorted(required), 'crates/zryna-driver/src/generic_run/tests/source.rs'):
+            files[path] = (repo / path).read_text()
+        rows = [{'path': path} for path in files]
+        load = lambda path: files[path].encode()
+        complete = audit(rows, load, set(files))
+        self.assertEqual(len(complete['includePathEdges']), 3)
+        for omitted in sorted(required):
+            with self.subTest(omitted=omitted):
+                with self.assertRaisesRegex(AssertionError, 'missing from owned mirror closure'):
+                    audit(rows, load, set(files) - {omitted})
+                with self.assertRaisesRegex(AssertionError, 'missing from complete source census'):
+                    audit([row for row in rows if row['path'] != omitted], load, set(files))

@@ -15,6 +15,8 @@ SOURCE_ROOTS = ('crates/zryna-driver/src', 'runtime', 'spec', 'adapters', 'examp
 # directly or via their bounded, full-hash-authenticated source_snapshot shards.
 # Adding a required include without listing it fails the owned rustc invocation.
 SOURCE_FILES = (
+    'crates/zryna-backend-native/tests/recursive_arena/input-pins.json',
+    'crates/zryna-backend-native/tests/recursive_arena/source.rs',
     'crates/zryna-native-mir/tests/native_c_v0/capture.rs',
     'crates/zryna-native-c-ir/tests/capture.rs',
     'crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs',
@@ -35,6 +37,7 @@ SOURCE_FILES = (
     'tests/m3-fixtures/pair-oracle-v1.json',
     'tests/m3-fixtures/pair-score-v4.json',
     'tests/m3-fixtures/pair-score-v4.zry',
+    'tests/m7-generic-full-profile-first-vertical/literals/scalar-i32-clone.zry',
     'tests/m7-generic-owned-native/hostile.rs',
     'tests/native-c-abi-v0/candidate.h',
     'tests/native-c-abi-v0/declarations.ffi.json',
