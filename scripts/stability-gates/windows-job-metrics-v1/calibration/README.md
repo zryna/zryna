@@ -1,6 +1,13 @@
 # Private Windows Job metrics calibration v1
 
-This source packet is UNEXECUTED and Windows x64 only. It does not change the reviewed13-file helper, Rust unsafe policy, Cargo, compiler behavior, helper900s/16MiB/10s envelope, or any public support/threshold. Compose these additions only with the exact helper FINAL_MAPPING e1a68557de45dfec69a5b5bb257ca7e5b44cb4313d40a8075c78828aa6a546bc. Root must perform pinned MSVC/SDK builds, independent review and actual Windows controls before using the measurement seam. No calibrated baseline or source/host authentication is issued.
+This private calibration is Windows x64 only. The first eight live controls passed
+with both MSVC /W4 /WX builds; the exact source, toolchain and retained evidence
+are recorded in [the qualification note](../../../../docs/WINDOWS_JOB_METRICS_CALIBRATION.md).
+The current source inventory binds the reviewed helper and fixture, including
+their measured integration fixes. Rust unsafe policy, Cargo, compiler behavior,
+the helper900s/16MiB/10s envelope and public support remain unchanged. Workload
+collection requires separate toolchain admission and review. Baseline and
+threshold authority remain unset.
 
 ## Actual build/run required later
 
