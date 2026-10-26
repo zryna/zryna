@@ -1,0 +1,40 @@
+name: Private Windows Job metrics calibration
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/windows-job-metrics.yml
+      - scripts/stability-gates/windows-job-metrics-v1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibration:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - name: Checkout actual workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Select exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - name: Capture tools, build reviewed sources, run eight controls
+        shell: pwsh
+        env:
+          EXPECTED_SOURCE_REVISION: ${{ github.sha }}
+          DECLARED_PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          & ./scripts/stability-gates/windows-job-metrics-v1/calibration/hosted.ps1
+      - name: Retain raw calibration and build observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-job-metrics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/windows-job-metrics-calibration
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,175 @@
+{
+  "format": "zryna.windows-job-calibration-expected.v1",
+  "scope": "fixed trusted helper calibration only; no baseline/source/host authentication",
+  "helperMapSha256": "e1a68557de45dfec69a5b5bb257ca7e5b44cb4313d40a8075c78828aa6a546bc",
+  "combinedRawBytes": 16777216,
+  "helperCleanupReserveMs": 10000,
+  "ownerCleanupReserveMs": 10000,
+  "heldObservationMs": 250,
+  "perOperationReadyBoundMs": 10000,
+  "cases": [
+    {
+      "name": "success",
+      "slots": 1,
+      "helperTimeoutMs": 10000,
+      "measurementValid": true,
+      "mainExit": "0",
+      "stdout": {
+        "kind": "exact-text",
+        "value": "CALIBRATION_OK\n"
+      },
+      "stderr": {
+        "kind": "exact-text",
+        "value": "CALIBRATION_NOTE\n"
+      },
+      "argv": [
+        "",
+        "space argument",
+        "quote\"arg",
+        "trail\\",
+        "Ω😀"
+      ]
+    },
+    {
+      "name": "exit17",
+      "slots": 1,
+      "helperTimeoutMs": 10000,
+      "measurementValid": false,
+      "mainExit": "17",
+      "stdout": {
+        "kind": "prefix-text",
+        "value": "CALIBRATION_EXIT17\n"
+      },
+      "stderr": {
+        "kind": "prefix-text",
+        "value": "CALIBRATION_NOTE\n"
+      },
+      "primaryStage": 11
+    },
+    {
+      "name": "timeout",
+      "slots": 2,
+      "helperTimeoutMs": 5000,
+      "measurementValid": false,
+      "mainExit": "actual-owned-abort",
+      "stdout": {
+        "kind": "prefix-text",
+        "value": "TIMEOUT_READY\n"
+      },
+      "stderr": {
+        "kind": "exact-text",
+        "value": ""
+      },
+      "primaryStage": 12,
+      "requireReadyBeforeTimeout": true
+    },
+    {
+      "name": "exact-limit",
+      "slots": 1,
+      "helperTimeoutMs": 10000,
+      "measurementValid": true,
+      "mainExit": "0",
+      "stdout": {
+        "kind": "repeated-byte",
+        "byte": 79,
+        "exactBytes": 8388608
+      },
+      "stderr": {
+        "kind": "repeated-byte",
+        "byte": 69,
+        "exactBytes": 8388608
+      }
+    },
+    {
+      "name": "first-extra",
+      "slots": 1,
+      "helperTimeoutMs": 10000,
+      "measurementValid": false,
+      "mainExit": "original-handle-status-equals-metadata",
+      "stdout": {
+        "kind": "repeated-byte",
+        "byte": 79,
+        "maximumBytes": 8388609
+      },
+      "stderr": {
+        "kind": "repeated-byte",
+        "byte": 69,
+        "maximumBytes": 8388608
+      },
+      "primaryStage": 10
+    },
+    {
+      "name": "held-eof",
+      "slots": 2,
+      "helperTimeoutMs": 10000,
+      "measurementValid": true,
+      "mainExit": "0",
+      "stdout": {
+        "kind": "exact-text",
+        "value": "MAIN_EXIT\nDESCENDANT_EXIT\n"
+      },
+      "stderr": {
+        "kind": "exact-text",
+        "value": ""
+      },
+      "mainExitedBeforeRelease": true,
+      "helperNotExitedWhileHeld": true
+    },
+    {
+      "name": "stripped-stdio",
+      "slots": 2,
+      "helperTimeoutMs": 10000,
+      "measurementValid": true,
+      "mainExit": "0",
+      "stdout": {
+        "kind": "exact-text",
+        "value": "MAIN_EXIT\n"
+      },
+      "stderr": {
+        "kind": "exact-text",
+        "value": ""
+      },
+      "mainExitedBeforeRelease": true,
+      "helperNotExitedWhileHeld": true,
+      "descendantStdHandles": "only-owned-NUL"
+    },
+    {
+      "name": "memory-overlap",
+      "slots": 3,
+      "helperTimeoutMs": 10000,
+      "measurementValid": true,
+      "mainExit": "0",
+      "stdout": {
+        "kind": "exact-text",
+        "value": "MEMORY_OK\n"
+      },
+      "stderr": {
+        "kind": "exact-text",
+        "value": ""
+      },
+      "committedBytes": [
+        0,
+        33554432,
+        67108864
+      ],
+      "minimumJobCommitBytes": 100663296,
+      "eachObservedProcessPeakBelowBytes": 100663296,
+      "jobPeakGreaterThanEveryObservedProcessPeak": true,
+      "explicitReadyReleaseOverlap": true
+    }
+  ],
+  "allCases": {
+    "allExpectedOriginalProcessHandlesObserved": true,
+    "allExpectedReadyMarkers": true,
+    "allOriginalProcessesGoneBeforeOuterCleanup": true,
+    "outerCleanupConfirmed": true,
+    "noOuterTerminationNeededForExpectedResult": true,
+    "qpcFrequencyMatchesHelper": true,
+    "noRetryIntoPass": true
+  },
+  "metric": "job-peak-committed-bytes.v1",
+  "thresholds": null,
+  "sourceAuthenticated": false,
+  "proofQualified": false,
+  "closureStatus": "blocked"
+}

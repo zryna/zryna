@@ -1,0 +1,181 @@
+{
+  "format": "zryna.windows-job-calibration-source-pins.v1",
+  "role": "local source byte identities only; not build or host authentication",
+  "helperFinalMapSha256": "e1a68557de45dfec69a5b5bb257ca7e5b44cb4313d40a8075c78828aa6a546bc",
+  "files": [
+    {
+      "path": "build-msvc.cmd",
+      "bytes": 621,
+      "sha256": "df733b6ee1a95e5ab11e78c06227c07be4faab73ec0ae46b323e4a4223acbb6e",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "cleanup.c",
+      "bytes": 5312,
+      "sha256": "a95db6e80fc4e6fe3c29e4750463309fe8a4ffcff741313b42053620ce5c81ba",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "launch.c",
+      "bytes": 4051,
+      "sha256": "c488ce92e7a7a0ffd7351889c96ab40d88c37c65a88d8f6f2661033140c4466f",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "main.c",
+      "bytes": 689,
+      "sha256": "2e991995b366d6263b9854b5dbb949cb165e0bc87b9a9f32b78d148cd2e92a61",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "measure.c",
+      "bytes": 4380,
+      "sha256": "3ed038b465204cd16af6e5000e0596909d31c61a7b60c2796ac7941a119c5c07",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "options.c",
+      "bytes": 2802,
+      "sha256": "7a63875d533f4d6e75223583569138a502ca36d7fdd77cdbdc0cedaf21856eb0",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "pipes.c",
+      "bytes": 2609,
+      "sha256": "4eac3b38ea81b7a80aaa087abf5ecaf8a5d94a3bfbd7bb1d3586d4f5e030cdc6",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "portable.c",
+      "bytes": 4791,
+      "sha256": "67216e29323ca6fdedae4eca4e89b451299b5920f9536d554cad727fb389f3d4",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "portable.h",
+      "bytes": 784,
+      "sha256": "05afadb98501bb5e6760fd4a335b32a4cf18c090aed44452085c3506e6825db8",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "result.c",
+      "bytes": 3149,
+      "sha256": "b0bec650b768d8040872ab8923ac34c740d3e313be1083694e6c3bda449de198",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "streams.c",
+      "bytes": 2008,
+      "sha256": "083e350b314438c6f1986c1263dd4b45d19cef43c054d0187f5424e9648b2f60",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "tests/portable.c",
+      "bytes": 4952,
+      "sha256": "9a0461e07452b30ca9dfa40c5ead4ba9caceb0863228f4e17965173660edb069",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "win.h",
+      "bytes": 1919,
+      "sha256": "0475daa2f26a9204efe42f68e42a63b3dc1c59bd40e28d79d20480f41b5dc64c",
+      "role": "unchanged-reviewed-helper"
+    },
+    {
+      "path": "calibration/README.md",
+      "bytes": 6691,
+      "sha256": "03e571c24b1929864f2bd97a8a59ca5252920d3a4e364cd342c276f9ba36f377",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/build-msvc.cmd",
+      "bytes": 633,
+      "sha256": "5f0c1d9f3feb0e1146429fcd404d3dc890e25712de3299cf516225161aa76868",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/calibrate.mjs",
+      "bytes": 4882,
+      "sha256": "7edf36c627eb2f3ab2785c2a3ea747cc788ab34073ea09a3f3c9a7571d72a99f",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/cleanup.c",
+      "bytes": 2050,
+      "sha256": "bed9c31ccd15558351e286adc0e5c18458e968c049537de9081c3e81fb9886d7",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/control.c",
+      "bytes": 4085,
+      "sha256": "5d3b2b3ce9f41f696b5a745f5ec7045db99260ccce1187689bb4dc34bb886a29",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/expected.json",
+      "bytes": 4351,
+      "sha256": "6473639748e54a850a041ee495c5ecd4aee22920ac9379218c41d40753facc74",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/files.mjs",
+      "bytes": 3113,
+      "sha256": "287c1a02727958ab69da190ab0a541d7b0e52dfe151fc1d48116a4b0babf2d06",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/fixture.h",
+      "bytes": 3015,
+      "sha256": "85a1701e64ed4838777b19a69c55eb709e6ed3edcc63d2b8f6a307c691f0238f",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/launch.c",
+      "bytes": 3030,
+      "sha256": "0794ced2d8ae807919e19e33a2e534789596bb39b42b40dcd869e1b97fa0a596",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/main.c",
+      "bytes": 402,
+      "sha256": "3dd4a9f8f319d4a10cfa0d4cb83404312d0b8c2492444ffb0b8390e52cbe1749",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/observe.c",
+      "bytes": 4005,
+      "sha256": "af217aec35890a544843005d44ffc9f61ce4b5d58e7286df72737fd13eb89941",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/protocol.mjs",
+      "bytes": 3834,
+      "sha256": "b47d3d240df3ecb6e557a52d923056650f031660a73d940443e7f906f3e1ca73",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/report.c",
+      "bytes": 3044,
+      "sha256": "459b7524b15f9e65594887312ad14189f336bec43efaa677a7148053bd422307",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/subject.c",
+      "bytes": 5740,
+      "sha256": "6f11905ab4ca971f64cd7091145112787fe4d52bca1c6c286076309bf5b9363d",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/supervisor.c",
+      "bytes": 3542,
+      "sha256": "e4f0840e017301d050e836be210155fdbac55f601bd6625323deb54b99378a2e",
+      "role": "new-calibration-source-not-executed"
+    },
+    {
+      "path": "calibration/verify.mjs",
+      "bytes": 6915,
+      "sha256": "aa41c11c529e96270f70e17e74b9b95b65d7859b5da02f84c79738df776c75c5",
+      "role": "new-calibration-source-not-executed"
+    }
+  ]
+}
