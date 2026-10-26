@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import './native-provider-activation-workflow.test.mjs';
 import { registerWorkflowInventoryContracts } from './workflow-routing/inventory-contracts.mjs';
 import { registerInstalledCommandContract } from './workflow-routing/installed-command.mjs';
@@ -30,7 +31,7 @@ const root = resolve(import.meta.dirname, '..');
 const workflow = (name) => {
   const parsed = parseDocument(readFileSync(resolve(root, '.github/workflows', name), 'utf8'));
   assert.deepEqual(parsed.errors, []);
-  return parsed.toJS();
+  return name === 'ci.yml' ? withoutDriverTransfer(parsed.toJS()) : parsed.toJS();
 };
 const ci = workflow('ci.yml');
 const documentation = workflow('documentation.yml');

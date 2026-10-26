@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -49,7 +50,7 @@ export function withoutM7Workflow(candidate) {
 
 const parsed = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(parsed.errors, []);
-const workflow = parsed.toJS();
+const workflow = withoutDriverTransfer(parsed.toJS());
 
 test('M7 legacy projection removes only exact reviewed additions without mutating input', () => {
   const before = structuredClone(workflow);

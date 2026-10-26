@@ -10,6 +10,8 @@ use std::{
 
 #[path = "listener_identity_holders.rs"]
 mod holder_diagnostics;
+#[path = "listener_probe_slot.rs"]
+mod probe_slot;
 
 const TABLE_BYTES: u64 = 1024 * 1024;
 const TABLE_ROWS: usize = 4096;
@@ -39,11 +41,15 @@ pub(super) struct Identity {
 }
 impl Identity {
     pub(super) fn capture(listener: &TcpListener) -> Self {
+        probe_slot::run(|wait| Self::capture_probe(listener, wait))
+    }
+
+    fn capture_probe(listener: &TcpListener, wait: Duration) -> Self {
         let deadline = Instant::now() + PROBE_TIME;
         let address = listener.local_addr().expect("original listener address");
         assert!(address.is_ipv4() && address.ip().is_loopback());
         let inode = socket_inode(listener);
-        let snapshot = snapshot(deadline, inode);
+        let snapshot = snapshot(deadline, inode, "capture", wait);
         assert_eq!(snapshot.matches, 1, "original listener inode must have one actual TCP row");
         let original = snapshot.first_match.expect("actual original listener TCP row");
         assert_eq!(original.inode, inode, "original listener row identity binding");
@@ -68,9 +74,13 @@ impl Identity {
     }
 
     fn assert_gone_probe(&self) {
+        probe_slot::run(|wait| self.assert_gone_locked(wait));
+    }
+
+    fn assert_gone_locked(&self, wait: Duration) {
         let deadline = Instant::now() + PROBE_TIME;
         assert_eq!(std::process::id(), self.process, "original listener owning process");
-        let snapshot = snapshot(deadline, self.inode);
+        let snapshot = snapshot(deadline, self.inode, "closure", wait);
         // All states, not only LISTEN: any surviving original inode is a failure.
         assert!(
             snapshot.matches == 0,
@@ -98,14 +108,32 @@ fn socket_inode(listener: &TcpListener) -> u64 {
     inode
 }
 
-fn snapshot(deadline: Instant, inode: u64) -> Snapshot {
-    assert!(Instant::now() < deadline, "original TCP table deadline before open");
+fn snapshot(deadline: Instant, inode: u64, phase: &str, wait: Duration) -> Snapshot {
+    let begun = Instant::now();
+    assert!(begun < deadline, "original TCP table deadline before open: phase={phase}");
     let file = File::open("/proc/self/net/tcp").expect("actual original-process TCP table");
+    let opened = Instant::now();
     let mut bytes = Vec::new();
-    file.take(TABLE_BYTES + 1).read_to_end(&mut bytes).expect("bounded actual TCP table read");
-    assert!(Instant::now() < deadline, "original TCP table deadline after read");
+    let read = file.take(TABLE_BYTES + 1).read_to_end(&mut bytes);
+    let read_done = Instant::now();
+    read.expect("bounded actual TCP table read");
+    assert!(
+        read_done < deadline,
+        "original TCP table deadline after read: phase={phase} inode={inode} open={:?} read={:?} total={:?} bytes={} budget_at_entry={:?} separate_slot_wait={wait:?}",
+        opened.duration_since(begun),
+        read_done.duration_since(opened),
+        read_done.duration_since(begun),
+        bytes.len(),
+        deadline.saturating_duration_since(begun),
+    );
     let rows = parse(&bytes, inode);
-    assert!(Instant::now() < deadline, "original TCP table deadline after parse");
+    assert!(
+        Instant::now() < deadline,
+        "original TCP table deadline after parse: phase={phase} rows={} bytes={} read={:?} separate_slot_wait={wait:?}",
+        rows.rows,
+        bytes.len(),
+        read_done.duration_since(opened),
+    );
     rows
 }
 

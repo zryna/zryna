@@ -1,3 +1,5 @@
+import './ci-driver-transfer.test.mjs';
+import { withoutDriverTransferText } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -116,7 +118,7 @@ test('CI preflight partitions retain the exact frozen command set', () => {
 });
 
 test('independent platform jobs start alongside preflight and aggregates require every gate', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const workflow = withoutDriverTransferText(await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
   const document = parseDocument(workflow);
   assert.deepEqual(document.errors, []);
   const parsed = document.toJS();

@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -8,7 +9,7 @@ import { classifyWorkflowPaths } from '../scripts/classify-workflow-paths.mjs';
 const workflow = name => {
   const result = parseDocument(readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), 'utf8'));
   assert.deepEqual(result.errors, []);
-  return result.toJS();
+  return name === 'ci.yml' ? withoutDriverTransfer(result.toJS()) : result.toJS();
 };
 function artifactUploads(job, lane, evidence) {
   const uploads = job.steps.filter(step => step.uses?.startsWith('actions/upload-artifact@'));

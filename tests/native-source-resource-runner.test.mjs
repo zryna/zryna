@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -27,7 +28,7 @@ export function withoutNativeSourceResources(candidate) {
 
 const parsed = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(parsed.errors, []);
-const workflow = parsed.toJS();
+const workflow = withoutDriverTransfer(parsed.toJS());
 const output = `${REQUIRED_RESOURCE_TESTS.map((name) => `test ${name} ... ok`).join('\n')}
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 345 filtered out;`;
 

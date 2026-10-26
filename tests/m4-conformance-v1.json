@@ -294,8 +294,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 35545,
-      "sha256": "77bc79ec0734b9510b2665f2ec0706a3771b5371e4b8289476c5c7a7d8b0c7a2"
+      "bytes": 36048,
+      "sha256": "368b6c3a6867afa27b5e507a26d8220afb5887f3b03082eccc0a9f036c3e8c64"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -1664,8 +1664,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_transport/listener_identity.rs",
-      "bytes": 8314,
-      "sha256": "fc79cd4c61b1c0ec77e74a6f56bbab12a8224177bb75da0b778edaa50bbbb23f"
+      "bytes": 9327,
+      "sha256": "4b19b64e221118722273382e706dbd37c477267f3444e82c1a9cbc415a9924ad"
     },
     {
       "path": "crates/zryna-driver/src/server_transport/mod.rs",
@@ -2434,8 +2434,8 @@
     },
     {
       "path": "tests/m0-conformance.test.mjs",
-      "bytes": 12937,
-      "sha256": "2dc3ec3caa2e107ea4d3f87077349a8260fffc5434b1e64b94e04aae35aa3471"
+      "bytes": 12856,
+      "sha256": "a7b0144ff9b77a63dfbd5a1d29aedb13ffd6732af4a10385ee782277930b3cca"
     },
     {
       "path": "tests/m1-conformance-v1.json",
@@ -2544,8 +2544,8 @@
     },
     {
       "path": "tests/m4-workflow.test.mjs",
-      "bytes": 8954,
-      "sha256": "3936df9217216c6ea66152893a138b635c81e163b01914ec3d05560b6d035036"
+      "bytes": 9085,
+      "sha256": "a7abbab02f82cbba4c4f3d9a04a5b2493282bd80b55fcd7bd5034f4a2c87c53a"
     },
     {
       "path": "tests/scalar-host-conformance.test.mjs",

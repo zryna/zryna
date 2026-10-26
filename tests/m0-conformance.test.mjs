@@ -1,3 +1,4 @@
+import { withoutDriverTransferText } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -9,6 +10,8 @@ import {
   validateManifestDocument,
   validatePackageDocument,
 } from '../scripts/run-m0-conformance.mjs';
+
+const ciWorkflowAtBoundary = withoutDriverTransferText(await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 
 const fixturePaths = [
   'tests/fixtures/syntax-v2-valid.json',
@@ -160,7 +163,7 @@ test('package protocol gates retain exact v2 and v3 coverage', async () => {
 });
 
 test('required CI consumes the same canonical gate on Linux and Windows', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const workflow = ciWorkflowAtBoundary;
   const rust = workflowJob(workflow, 'rust');
   const adapterPlatform = workflowJob(workflow, 'adapter-platform');
   assert.doesNotMatch(rust, /needs:/);
@@ -174,7 +177,7 @@ test('required CI consumes the same canonical gate on Linux and Windows', async 
 });
 
 test('CI avoids duplicate feature runs and cancels superseded revisions', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const workflow = ciWorkflowAtBoundary;
   assert.match(workflow, /on:\n  pull_request:\n  workflow_dispatch:/);
   assert.doesNotMatch(workflow, /push:\n    branches: \[main\]/);
   assert.match(
@@ -185,7 +188,7 @@ test('CI avoids duplicate feature runs and cancels superseded revisions', async 
 });
 
 test('Windows CLI smoke precedes the complete M0 gate', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const workflow = ciWorkflowAtBoundary;
   const rust = workflowJob(workflow, 'rust');
   const smoke = 'cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact';
   const completeGate = 'node scripts/run-m0-conformance.mjs';
@@ -196,7 +199,7 @@ test('Windows CLI smoke precedes the complete M0 gate', async () => {
 
 test('main documentation publication revalidates and binds exact provenance', async () => {
   const workflow = await readFile(new URL('../.github/workflows/documentation.yml', import.meta.url), 'utf8');
-  const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const ciWorkflow = ciWorkflowAtBoundary;
   const rust = workflowJob(ciWorkflow, 'rust');
   const publisher = workflowJob(workflow, 'docs-publish');
   const docsCheck = 'run: pnpm docs:check';
@@ -227,7 +230,7 @@ test('main documentation publication revalidates and binds exact provenance', as
 });
 
 test('required CI exposes a stable aggregate over Rust and adapter gates', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const workflow = ciWorkflowAtBoundary;
   const adapter = workflowJob(workflow, 'adapter');
   const aggregate = workflowJob(workflow, 'm0');
   assert.match(adapter, /name: adapter/);

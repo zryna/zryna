@@ -16,12 +16,27 @@ fn without_listener_inheritance(fixture: impl FnOnce() + UnwindSafe) {
     }
 }
 
+fn assert_original_survives(original: &Identity) {
+    let panic = catch_unwind(|| original.assert_gone_probe())
+        .expect_err("actual surviving original inode must reject closure");
+    let text = panic
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        .or_else(|| panic.downcast_ref::<&str>().copied())
+        .expect("original closure diagnostic text");
+    let expected = format!(
+        "original listener really closed: process={} address={} inode={} surviving=",
+        original.process, original.address, original.inode,
+    );
+    assert!(text.starts_with(&expected), "unrelated failure cannot prove inode survival: {text}");
+}
+
 #[test]
 fn actual_live_original_listener_cannot_receive_gone_credit() {
     without_listener_inheritance(|| {
         let listener = TcpListener::bind("127.0.0.1:0").expect("live original listener");
         let original = Identity::capture(&listener);
-        assert!(catch_unwind(|| original.assert_gone_probe()).is_err());
+        assert_original_survives(&original);
         drop(listener);
         original.assert_gone_probe();
     });
@@ -34,7 +49,7 @@ fn cloned_original_listener_remains_live_after_first_handle_drops() {
         let original = Identity::capture(&listener);
         let alias = listener.try_clone().expect("test-only live alias negative");
         drop(listener);
-        assert!(catch_unwind(|| original.assert_gone_probe()).is_err());
+        assert_original_survives(&original);
         drop(alias);
         original.assert_gone_probe();
     });
@@ -51,7 +66,7 @@ fn different_inode_at_same_endpoint_is_not_the_original_listener() {
         let replacement_identity = Identity::capture(&replacement);
         assert_ne!(original.inode, replacement_identity.inode, "distinct actual socket identities");
         original.assert_gone_probe();
-        assert!(catch_unwind(|| replacement_identity.assert_gone_probe()).is_err());
+        assert_original_survives(&replacement_identity);
         // The old strict endpoint probe still rejects a real live peer. No waiver or retry.
         assert!(catch_unwind(|| super::super::assert_listener_closed(address)).is_err());
     });
@@ -101,7 +116,7 @@ fn table_schema_and_first_extra_bounds_are_strict() {
 #[test]
 fn expired_original_deadline_cannot_read_or_credit_a_table() {
     let expired = Instant::now().checked_sub(PROBE_TIME).expect("past instant");
-    assert!(catch_unwind(|| snapshot(expired, 42)).is_err());
+    assert!(catch_unwind(|| snapshot(expired, 42, "expired-control", Duration::ZERO)).is_err());
 }
 
 #[test]
