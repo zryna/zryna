@@ -123,7 +123,8 @@ def scan(stage, deadline):
                     raise RuntimeError("owned executing image deleted")
                 if old["image"] and old["image"].startswith(stage + "/") and actual["image"] \
                         and not actual["image"].startswith(stage + "/"):
-                    raise RuntimeError("owned stage image moved or changed outside approved stage")
+                    raise RuntimeError("owned stage image moved or changed outside approved stage: "
+                                       f"pid={pid} start={actual['start']} before={old['image']!r} after={actual['image']!r}")
                 if actual["image"] and old["image"] != actual["image"]:
                     old["image"] = actual["image"]
                     event("image", pid=pid, start=old["start"], image=actual["image"])
