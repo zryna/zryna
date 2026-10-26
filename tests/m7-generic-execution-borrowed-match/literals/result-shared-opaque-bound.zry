@@ -1,0 +1,9 @@
+function relay<T extends ZrynaValue>(value: Borrow<T>): i32 { return 3; }
+function inspect<T extends ZrynaValue, U extends ZrynaValue>(value: Borrow<Result<T, U>>): i32 {
+  return match(value, { "Result.ok": (payload) => relay<T>(payload), "Result.err": (payload) => relay<U>(payload) });
+}
+export function entry(): i32 {
+  const ok: Result<String, i32> = Result.ok<String, i32>("ok"); const err: Result<String, i32> = Result.err<String, i32>(7);
+  const a: Borrow<Result<String, i32>> = borrow(ok); const b: Borrow<Result<String, i32>> = borrow(err);
+  return inspect<String, i32>(a) + inspect<String, i32>(b);
+}

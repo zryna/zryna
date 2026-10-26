@@ -1,0 +1,6 @@
+export function entry(index: i32): i32 {
+  let root: Vec<String> = Vec<String>(["left", "right"]);
+  const rhs: String = "replacement";
+  root[index] = clone(rhs);
+  return 7;
+}

@@ -1,5 +1,8 @@
 //! Match the complete explicitly retained provider graph and versioned imports.
-use super::*;
+use super::{
+    ClosureInventory, Diagnostic, Digest, ObjectInventory, ProviderExpectation, RetainedProvider,
+    Sha256, dynamic, image, inspect, rejected, resolution,
+};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(super) fn audit(

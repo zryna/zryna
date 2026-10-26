@@ -148,6 +148,37 @@ impl Failure {
             "failed_final_elf_sha256":self.final_elf.as_ref().map(|bytes|digest(bytes)),
             "invocations":self.invocations.iter().map(invocation).collect::<Vec<_>>()})
     }
+    pub(super) fn retain_runtime_rejection(
+        &mut self,
+        requirements: &HandleLinkRequirements,
+        foreign: &CompiledObject,
+        runtime: &CompiledObject,
+    ) {
+        self.comparator_stage = Some("private-runtime-object-inventory");
+        // These compilations completed before the rejection. Do not count them as
+        // processes newly attempted by observe; retain their actual records as inputs.
+        let compilation = serde_json::json!({
+            "kind":"previously-completed-runtime-inventory-inputs",
+            "foreign_compile":invocation(&foreign.invocation),
+            "runtime_compile":invocation(&runtime.invocation),
+            "private_runtime_source_sha256":digest(&runtime.source),
+            "private_runtime_object_sha256":digest(&runtime.bytes),
+            "execution_authorized":false,
+            "target_executed":false,
+        });
+        self.artifacts.extend([
+            ("program.o", requirements.object().bytes().to_vec()),
+            ("program-header.h", requirements.object().header().as_bytes().to_vec()),
+            ("foreign.o", foreign.bytes.clone()),
+            ("foreign.c", foreign.source.clone()),
+            ("private-runtime.o", runtime.bytes.clone()),
+            ("private-runtime.c", runtime.source.clone()),
+            (
+                "runtime-inventory-inputs.json",
+                serde_json::to_vec_pretty(&compilation).expect("JSON values serialize"),
+            ),
+        ]);
+    }
     pub(super) fn retain_objects(
         &mut self,
         requirements: &HandleLinkRequirements,

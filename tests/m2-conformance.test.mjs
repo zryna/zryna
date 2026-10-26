@@ -1,3 +1,4 @@
+import { withoutDriverTransferText } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -207,7 +208,7 @@ test('package and CI expose one stable cross-platform M2 gate', async () => {
   assert.equal(packageDocument.scripts['m2:check'], 'node scripts/run-m2-conformance.mjs');
   assert.equal(packageDocument.scripts['m2:quick'], 'node scripts/run-m2-quick.mjs');
 
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const workflow = withoutDriverTransferText(await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
   const document = parseDocument(workflow);
   assert.deepEqual(document.errors, []);
   const parsed = document.toJS();

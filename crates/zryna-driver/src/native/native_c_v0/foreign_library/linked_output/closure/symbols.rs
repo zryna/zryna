@@ -1,5 +1,11 @@
 //! Dynamic symbols and supported hash table structure; kinds remain explicit observations.
-use super::{dynamic::Dynamic, image::*, *};
+use super::{
+    Diagnostic, ProviderExpectation, Serialize,
+    dynamic::Dynamic,
+    image::{Image, MAX_STRINGS, MAX_SYMBOLS, index_word, string, string_bytes, u32_word, word},
+    rejected, versions,
+};
+#[path = "symbols/hash.rs"]
 mod hash;
 pub(super) fn hash_tables(
     elf: &Image<'_>,

@@ -1,0 +1,10 @@
+import { Carrier as ImportedCarrier, Box as ImportedBox } from "./values.zry";
+import { Payload as LeafValue } from "./z-leaf.zry";
+interface Declared extends ZrynaStruct { wrong: String; }
+interface Box<T extends ZrynaValue> extends ZrynaStruct { wrong: String; }
+export function entry(): i32 {
+  const root: ImportedCarrier<i32> = ImportedCarrier<i32>({ nested: ImportedBox<LeafValue>({ value: LeafValue({ value: 7 }) }), marker: 7 });
+  const viewed: ImportedBox<LeafValue> = root.nested;
+  const leaf: LeafValue = viewed.value;
+  return leaf.value;
+}

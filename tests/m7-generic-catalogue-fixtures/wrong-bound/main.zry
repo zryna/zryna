@@ -1,0 +1,1 @@
+function f<T extends Copy>(value: T): T { return value; }

@@ -1,5 +1,11 @@
 # Zryna
 
+The current #416 candidate adds explicit source-checkout `--profile bounded-generics-v1`,
+with syntax protocol v5 and a separate generic manifest. Start with the
+[complete M7 programs](docs/M7_GETTING_STARTED.md), [public reference](docs/M7_PUBLIC_PROFILE.md)
+and [candidate host/evidence matrix](docs/M7_SUPPORT.md). Hosted Windows qualification is
+pending; this local integration does not close #416 or change an immutable release.
+
 Current public M3 selection is `--profile data-ownership-v1`, using protocol v4 and manifest v3.
 See [the public M3 surface](docs/M3_PUBLIC_PROFILE.md) and [the beginner guide](docs/M3_GETTING_STARTED.md).
 

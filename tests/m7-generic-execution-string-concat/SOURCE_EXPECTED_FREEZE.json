@@ -1,0 +1,71 @@
+{
+  "status": "FROZEN additive concat originals and owning expectations BEFORE provider authentication/source implementation/target output",
+  "accepted_spelling": "concat(left, right), inherited M3 builtin call; no String+ extension",
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "cases": [
+    {
+      "case": "local-observation",
+      "source": "literals/local-observation.zry",
+      "sha256": "e9c3fe48b3727e231773d58189930e390b282ac8a5b14d9a6486c63f7740ab66",
+      "bytes": 181,
+      "expect": "whole-new-seal/native-object/runtime",
+      "i32Result": 17
+    },
+    {
+      "case": "same-source",
+      "source": "literals/same-source.zry",
+      "sha256": "d04df1fbfc26bf4fcb270263ccb7498c63e12f50990de93fd4db288dada8dfe1",
+      "bytes": 119,
+      "expect": "whole-new-seal/native-object/runtime",
+      "i32Result": 19
+    },
+    {
+      "case": "nested-temporaries",
+      "source": "literals/nested-temporaries.zry",
+      "sha256": "0c1b2550e658940cb91bf128b735d40f46776ca7951b6bbb21d355f80c0584c6",
+      "bytes": 140,
+      "expect": "whole-new-seal/native-object/runtime",
+      "i32Result": 23
+    },
+    {
+      "case": "formal-observation",
+      "source": "literals/formal-observation.zry",
+      "sha256": "ad3cbf1de952e717d253e4534a140c83df24ce3cb83696525af18c155cd553cc",
+      "bytes": 223,
+      "expect": "whole-new-seal/native-object/runtime",
+      "i32Result": 29
+    },
+    {
+      "case": "moved-first",
+      "source": "literals/moved-first.zry",
+      "sha256": "59ed3bc46a98d4c2276d6a6edb411a965bbb9a9d475e93601ce87f05a721a32f",
+      "bytes": 176,
+      "expect": "owning-original-retained-read-rejection",
+      "obligation": "retain exact first String read throughout second operand preparation; do not consume or mutate overlapping source"
+    },
+    {
+      "case": "mutated-first",
+      "source": "literals/mutated-first.zry",
+      "sha256": "a8981ad406d945d2dbc8015636f5faac896305a458afde33132c70c35705da0d",
+      "bytes": 250,
+      "expect": "owning-original-retained-read-rejection",
+      "obligation": "retain exact first String read throughout second operand preparation; do not consume or mutate overlapping source"
+    }
+  ],
+  "normative_references": [
+    "spec/language/DATA_OWNERSHIP_V1.md section8",
+    "crates/zryna-semantics/src/data_ownership_v1/owned_string_lowering/expressions_and_calls.rs",
+    "crates/zryna-semantics/src/data_ownership_v1/owned_aggregate_lowering/structured_string.rs"
+  ],
+  "source_rules": [
+    "Observe operands left to right without consuming named owner values.",
+    "Prepared temporary operands stay pending through later operand preparation and concat failure; after concat success drop temporary operands in reverse preparation order.",
+    "Preserve first exact source availability/read validity across second operand evaluation; reject overlap moves/mutation/exclusive call alias that invalidates retained read.",
+    "Same readable source twice is permitted; formal lexical shared referents remain nonstored loans.",
+    "Every failure cleanup excludes unpublished destination and retains prepared temporaries plus preexisting owners; end generated loans before owners if any genuine implicit loan protocol is selected."
+  ],
+  "not_claimed": "No packets, phase admission, object generation, runtime execution, or exact hostile diagnostic code/span have been fabricated; those are owning qualification gates"
+}

@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "status": "TESTS-FIRST STATIC ADDENDUM BEFORE ANY Stage2 candidate/product execution",
+  "original_source_oracle_sha256": "eb01f8297eb221c683d264fa35ab4f046f1a3ca3f7b561637090d77fd9b6ee24",
+  "source_sha256": "30b5f845909ccac7e6f9276a078594570b50cb1fc8ae7533658e9a568bb87f21",
+  "actual_typescript_sha256": "e65cd5fcc52a1b2f4591785f5846d16d89ffe013d85db8b742f79d933f27c546",
+  "depths": [
+    0,
+    1,
+    8192,
+    65536
+  ],
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "source_result": 7,
+  "success": {
+    "acquisitions": "original1..D+1; cloned outer-to-inner Vec D+2..2D+1; cloned String2D+2",
+    "count": "2D+2",
+    "frees": "descending[2D+2..D+2], then ascending[1..D+1]",
+    "outer_roles": "[3,7*D(construction),7*D(Clone),4,6,9*D,6,9*D]",
+    "logical_status_calls": "4D+4",
+    "status": "all0"
+  },
+  "leaf_failure": {
+    "seam": "existing first StringClone fault; poison unpublished output, canonical1, source ALLOCATION SIGILL after cleanup",
+    "acquisitions": "1..2D+1",
+    "frees": "descending[2D+1..D+2], then ascending[1..D+1]",
+    "outer_roles": "[3,7*D(construction),7*D(Clone),4status1,9*D,6,9*D]",
+    "logical_status_calls": "4D+3",
+    "status": "exactly one outer4status1, all other actual statuses0",
+    "retry": "separate pristine process after failed SIGILL child; no same-process recovery claim"
+  },
+  "TLS_used": {
+    "construction": "0",
+    "cloned_Vec_allocation_j_1based": "j-1 at entry/leave",
+    "cloned_String_role4": "D",
+    "cloned_String_free_ID2D+2": "D",
+    "cloned_Vec_free_IDi": "i-(D+2), frame popped before that canonical free",
+    "original_free_IDi": "D+1-i",
+    "all_events": "busy1/same nonzero owner while inside actual calls; used<=live; at free used<live; rootdone/SIGILL idle(0,0,0,0)",
+    "basis": "Stage2 intended frame invariant coordinated with ci_deadline_repair, NOT implemented Stage1 qualification"
+  },
+  "payload": "Clone-only wrappers assert exact live original handle and UTF8x(0x78),length1,capacity1 before/after realClone; successful fresh destination same payload; injected poisoned output never read or released. Stage1wrapper/events unchanged.",
+  "bounds_unchanged": {
+    "compile_seconds": 30,
+    "child_seconds": 20,
+    "trace_bytes": 67108864,
+    "trace_rows": 1048576,
+    "allocation_rows": 262144,
+    "allocation_buckets": 524288,
+    "D65536_success_allocations": 131074,
+    "D65536_expected_trace_rows": 786446
+  },
+  "limits": "Source/call/free/rollback/lifecycle/payload tests, not all17role coverage or arbitrary-graph proof. No caps/quotas/deadlines raised.",
+  "preimages": {
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop.rs": {
+      "bytes": 1972,
+      "sha256": "35e9322fc86a737a56ce95e2acc1b85c6332944689c0745dadc2e6ee12f8726f"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/input-pins.json": {
+      "bytes": 1318,
+      "sha256": "eb272625fe719d8d4d52aebd972a948df49a786485cf3921604919706ebb0ca4"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/source.rs": {
+      "bytes": 3675,
+      "sha256": "bc28b1c944cff3a1fad32b34de0b8653ccafd2dc0a12572e726137f514181850"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/emit.rs": {
+      "bytes": 2596,
+      "sha256": "6ebf7a727c5ddb7590a9510c3464d766a979af3b52eb93f2a0c12cdf95acb538"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/execute.rs": {
+      "bytes": 4412,
+      "sha256": "e46b536afd351f2f8a68fa06aa03692bda60d386b94fd5d3293b4ee99417017e"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/verify.rs": {
+      "bytes": 6196,
+      "sha256": "6f42b11b2da1790074dc92965bd99e627e198d511b639d8f48208830714732ed"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/calls.rs": {
+      "bytes": 3296,
+      "sha256": "3f59f554fae7dfa250b9442c451faeb1993b945e03ca2ae695aa1e2b5b30d11b"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/observer.c": {
+      "bytes": 4625,
+      "sha256": "253453db57aafeb4366ddc25b1500a556079e8ff271476f4130619745fb06235"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/wrappers.c": {
+      "bytes": 4871,
+      "sha256": "d96bc5d0678a9f12471a9bad8580c60d1b5cf05b923d0365d65815d30088a24a"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/observer.h": {
+      "bytes": 2413,
+      "sha256": "ddeb153f18cd33193534b2c931f99bcfbb693a272613247def159dae9c092d86"
+    },
+    "crates/zryna-driver/tests/generic_execution_v1_native_iterative_drop/symbols.json": {
+      "bytes": 327,
+      "sha256": "c240c4bbe4582fe2f9477b7e6322ab515a5814778cc09a12dea2310e8ec3fd17"
+    },
+    "tests/m7-generic-execution-recursive-owner/literals/clone.zry": {
+      "bytes": 463,
+      "sha256": "30b5f845909ccac7e6f9276a078594570b50cb1fc8ae7533658e9a568bb87f21"
+    },
+    "tests/m7-generic-execution-recursive-owner/typescript/clone.json": {
+      "bytes": 37837,
+      "sha256": "e65cd5fcc52a1b2f4591785f5846d16d89ffe013d85db8b742f79d933f27c546"
+    },
+    "tests/m7-generic-execution-recursive-owner/SOURCE_EXPECTED_FREEZE.json": {
+      "bytes": 1664,
+      "sha256": "eb01f8297eb221c683d264fa35ab4f046f1a3ca3f7b561637090d77fd9b6ee24"
+    },
+    "tests/m7-generic-native-iterative-drop/SOURCE_RUNTIME_EXPECTED_FREEZE.json": {
+      "bytes": 4195,
+      "sha256": "09f5137c88628325ef96ab3c0ee69a347bca8b55a5d8d3539aa37c67eb132c74"
+    }
+  }
+}

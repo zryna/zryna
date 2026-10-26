@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,6 +11,7 @@ import { QUICK, FULL, validateCommands, runCommand } from '../scripts/lib/m3-gat
 const bytes = readFileSync(resolve(workspaceRoot, 'tests/m3-conformance-v1.json'));
 const workflow = parseDocument(readFileSync(resolve(workspaceRoot, '.github/workflows/ci.yml'), 'utf8'));
 assert.deepEqual(workflow.errors, []);
+const workflowAtBoundary = withoutDriverTransfer(workflow.toJS());
 
 function validateWorkflow(candidate) {
   const jobs = candidate.jobs;
@@ -104,7 +106,7 @@ test('failed spawn, signal, nonzero status and zero-test filters reject', () => 
   });
 });
 test('Linux/Windows aggregate retains M0-M2 and rejects bypasses', () => {
-  validateWorkflow(workflow.toJS());
+  validateWorkflow(structuredClone(workflowAtBoundary));
   for (const mutate of [
     w => w.jobs.m3.needs.pop(), w => { w.jobs.m3.if = 'success()'; },
     w => { w.jobs.m3.steps[0].run += ' || true'; },
@@ -116,5 +118,5 @@ test('Linux/Windows aggregate retains M0-M2 and rejects bypasses', () => {
     w => { w.jobs['m3-platform'].steps.at(-1).env.RUST_TEST_THREADS += 1; },
     w => { w.jobs['m3-platform'].steps.at(-1)['continue-on-error'] = true; },
     w => w.jobs.m0.needs.pop(), w => w.jobs.m2.needs.pop(),
-  ]) { const changed = workflow.toJS(); mutate(changed); assert.throws(() => validateWorkflow(changed)); }
+  ]) { const changed = structuredClone(workflowAtBoundary); mutate(changed); assert.throws(() => validateWorkflow(changed)); }
 });

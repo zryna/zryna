@@ -1,0 +1,19 @@
+[
+  "allocate",
+  "grow",
+  "release",
+  "string_from_utf8_copy",
+  "string_clone",
+  "string_concat",
+  "string_release",
+  "vec_allocate",
+  "vec_reserve",
+  "vec_release_storage",
+  "strong_clone",
+  "weak_downgrade",
+  "weak_clone",
+  "weak_upgrade",
+  "strong_release_begin",
+  "strong_release_finish",
+  "weak_release"
+]

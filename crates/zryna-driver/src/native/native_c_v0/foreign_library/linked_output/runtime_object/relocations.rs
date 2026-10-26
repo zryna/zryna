@@ -1,12 +1,12 @@
 //! Bounded non-PIC relocation fields and validated symbol targets; no deferred interpretation.
 
 use super::{
-    Diagnostic, error,
+    Failure, error,
     inventory::Symbol,
     tables::{self, Tables},
 };
 
-pub(super) fn check(table: &Tables<'_>, symbols: &[Symbol<'_>]) -> Result<(), Diagnostic> {
+pub(in crate::native) fn check(table: &Tables<'_>, symbols: &[Symbol<'_>]) -> Result<(), Failure> {
     let mut fields = Vec::new();
     for row in table.relocations.chunks_exact(24) {
         let offset = tables::number(row, 0, 8)?;

@@ -1,5 +1,5 @@
 //! Indexed declared-symbol compatibility, not runtime relocation or resolver attestation.
-use super::*;
+use super::{Diagnostic, ObjectInventory, rejected, symbols};
 use std::collections::{BTreeMap, BTreeSet};
 
 type Definitions<'a> = BTreeMap<(String, Option<String>), &'a symbols::Symbol>;

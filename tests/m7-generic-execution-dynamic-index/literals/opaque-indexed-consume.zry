@@ -1,0 +1,5 @@
+function bad<T extends ZrynaValue>(values: Vec<T>, index: i32): i32 {
+  const moved: T = values[index];
+  return 0;
+}
+export function entry(index: i32): i32 { return bad<String>(Vec<String>(["left", "right"]), index); }

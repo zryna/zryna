@@ -1,0 +1,14 @@
+function consume(value: String): i32 { return 1; }
+function step(): i32 {
+  const value: String = "";
+  return consume(value);
+}
+export function entry(trips: i32): i32 {
+  let count: i32 = 0;
+  let total: i32 = 0;
+  while (count < trips) {
+    total = total + step();
+    count = count + 1;
+  }
+  return total;
+}

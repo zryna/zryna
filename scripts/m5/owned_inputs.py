@@ -4,15 +4,66 @@ import hashlib
 import os
 import stat
 from capture_io import Directory, REPORT_LIMIT, read, sha, stamp, write_json
+from owned_source_closure import audit
 
-SOURCE_ROOTS = ('crates/zryna-driver/src', 'tests', 'runtime', 'spec', 'adapters', 'examples')
-# Existing --cfg=test driver modules consume these exact source files and fixture manifest.
+SOURCE_ROOTS = ('crates/zryna-driver/src', 'runtime', 'spec', 'adapters', 'examples')
+# Keep the complete driver source tree. The fixed bin is not a Cargo test harness:
+# only its appended main runs; other unit-test fixture directories are not runtime inputs.
+# These exact paths retain the external include_*! and #[path] dependencies (including
+# inactive #[test] bodies), without copying every unrelated growing test corpus.
+# SOURCE_BEFORE/AFTER.json retain the complete authenticated checkout census,
+# directly or via their bounded, full-hash-authenticated source_snapshot shards.
+# Adding a required include without listing it fails the owned rustc invocation.
 SOURCE_FILES = (
+    'crates/zryna-backend-native/tests/recursive_arena/input-pins.json',
+    'crates/zryna-backend-native/tests/recursive_arena/source.rs',
     'crates/zryna-native-mir/tests/native_c_v0/capture.rs',
     'crates/zryna-native-c-ir/tests/capture.rs',
     'crates/zryna-semantics/src/data_ownership_v1/tests/aggregate_contracts.rs',
     'crates/zryna-ownership-runtime-abi/include/zryna_ownership_runtime_v1.h',
     'scripts/m5/sqlite_fixture.json',
+    'crates/zryna-frontend/tests/native_parser_v3_calls/calls.snapshot.json',
+    'crates/zryna-frontend/tests/native_parser_v3_calls/main.zry',
+    'crates/zryna-frontend/tests/native_parser_v3_calls/math.zry',
+    'crates/zryna-frontend/tests/native_parser_v4_data/data.snapshot.json',
+    'crates/zryna-frontend/tests/native_parser_v4_data/data.zry',
+    'tests/fixtures/typescript-adapter-v2-error-result.json',
+    'tests/fixtures/typescript-adapter-v2-result.json',
+    'tests/m2-fixtures/valid/main.zry',
+    'tests/m2-fixtures/valid/math.zry',
+    'tests/m3-conformance-v1.json',
+    'tests/m3-fixtures/conformance/array.zry',
+    'tests/m3-fixtures/conformance/owned-aggregate-body.zry',
+    'tests/m3-fixtures/pair-oracle-v1.json',
+    'tests/m3-fixtures/pair-score-v4.json',
+    'tests/m3-fixtures/pair-score-v4.zry',
+    'tests/m7-generic-full-profile-first-vertical/literals/scalar-i32-clone.zry',
+    'tests/m7-generic-owned-native/hostile.rs',
+    'tests/native-c-abi-v0/candidate.h',
+    'tests/native-c-abi-v0/declarations.ffi.json',
+    'tests/native-c-abi-v0/source-buffer.zry',
+    'tests/native-c-abi-v0/source-handle.zry',
+    'tests/native-c-abi-v0/source-scalar.zry',
+    'tests/native-c-auth-v0/library-policy.json',
+    'tests/native-c-prototype/fixture.c',
+    'tests/native-c-prototype/fixture_control.h',
+    'tests/native-c-prototype/reverse_client.c',
+    'tests/native-c-rust-v0/declarations.ffi.json',
+    'tests/native-c-rust-v0/library-policy.json',
+    'tests/native-c-rust-v0/library.h',
+    'tests/native-c-rust-v0/library.rs',
+    'tests/native-c-rust-v0/reverse-client.c',
+    'tests/native-c-rust-v0/source-buffer.zry',
+    'tests/native-c-rust-v0/source-scalar.zry',
+    'tests/native-c-sqlite-v0/declarations.ffi.json',
+    'tests/native-c-sqlite-v0/generated-client.c',
+    'tests/native-c-sqlite-v0/generated-oracle.c',
+    'tests/native-c-sqlite-v0/library-policy.json',
+    'tests/native-c-sqlite-v0/library.c',
+    'tests/native-c-sqlite-v0/library.h',
+    'tests/native-c-sqlite-v0/source-buffer.zry',
+    'tests/scalar-host/corpus.js',
+    'tests/wit-capability-profiles-v1.json',
 )
 INPUT_BYTES = 6 * 1024 * 1024 * 1024  # Existing normal Cargo target bound; no private inventory claim.
 INPUT_ENTRIES = 10000
@@ -90,6 +141,17 @@ def mirror(repo, output, source):
         row['path'].startswith(prefix + '/') for prefix in SOURCE_ROOTS)]
     assert set(SOURCE_FILES) <= {row['path'] for row in rows}, 'complete fixed cross-crate includes'
     assert rows and len(rows) <= INPUT_ENTRIES
+    indexed = {row['path']: row for row in source['files']}
+    assert len(indexed) == len(source['files']), 'unique complete source census paths'
+
+    def source_bytes(path):
+        row = indexed[path]
+        data = read(Path(repo) / path, 2 * 1024 * 1024)
+        assert len(data) == row['bytes'] and sha(data) == row['sha256']
+        return data
+
+    selected = {row['path'] for row in rows}
+    closure = audit(source['files'], source_bytes, selected)
     total, manifest = 0, []
     for row in rows:
         data = read(Path(repo) / row['path'], 2 * 1024 * 1024)
@@ -108,6 +170,8 @@ def mirror(repo, output, source):
     with Directory(output) as held:
         write_json(held, 'SOURCE_MIRROR.json', {'roots': SOURCE_ROOTS,
             'includeFiles': SOURCE_FILES, 'files': manifest,
+            'closureAudit': closure,
+            'omittedSourcePaths': sorted(set(indexed) - selected),
             'appendOnly': 'crates/zryna-driver/src/lib.rs + source-owned fixed main',
             'originalSourceBytes': total})
     return root, manifest

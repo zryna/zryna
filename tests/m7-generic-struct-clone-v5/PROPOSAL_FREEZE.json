@@ -1,0 +1,162 @@
+{
+  "status": "Pure structural Struct Clone design/literal proposal FROZEN; no active edits, provider process, Cargo, source admission, wire emission or runtime execution.",
+  "sourceExpectedFreeze": "SOURCE_EXPECTED_FREEZE.json",
+  "positiveCases": 7,
+  "negativeCases": 5,
+  "futureObligations": {
+    "successesPerTarget": 7,
+    "faultsPerTarget": 21,
+    "retriesPerTarget": 21,
+    "observationsThreeTargets": 147,
+    "nativeSigillProcesses": 21
+  },
+  "wireDecision": {
+    "headerHex": "5a52594e412d47454e455249432d4f574e45442d49522d563500",
+    "version": 5,
+    "newOwnedOpcode": 10,
+    "operation": "CloneStruct { value:u32 }",
+    "oldDomainsUnchanged": true
+  },
+  "files": [
+    {
+      "path": "PREFIX_PLAN_ORACLE.json",
+      "bytes": 2855,
+      "sha256": "55eef3b97e1eb0fd70d8c7b03790cd89e6641e97e9015bed2e962a78fe8d4271"
+    },
+    {
+      "path": "SOURCE_EXPECTED_FREEZE.json",
+      "bytes": 4766,
+      "sha256": "46cea891843e537976c96a7cfc6fc00debd6c069fd5570865bcc42e5ad53fbe7"
+    },
+    {
+      "path": "STRUCT_CLONE_DESIGN.md",
+      "bytes": 13166,
+      "sha256": "75a9fe5b1c3fa66ded2f83231abb3beb50d2fad793f333599e753fed44f81baa"
+    },
+    {
+      "path": "WIRE_V5_DECISION.md",
+      "bytes": 3586,
+      "sha256": "86c8d8c9c815b97b5b76d494a84b3debf0bfcb13880648f59723bf37e3e3c2ee"
+    },
+    {
+      "path": "literals/copy-struct-expected.json",
+      "bytes": 446,
+      "sha256": "898cb3196c6a25660d6803bac734381c8cc30bcf4e590d1de69ee660a5d25308"
+    },
+    {
+      "path": "literals/copy-struct.zry",
+      "bytes": 261,
+      "sha256": "11f92e90a8d12a2b275f262bed778cb40f4daa0200f9bdfb24be40b6fdac12c4"
+    },
+    {
+      "path": "literals/exclusive-source-expected.json",
+      "bytes": 226,
+      "sha256": "93d682c82bdd6b029213fdfedf5f39fb3a282a453e44449015a77abc40d7efad"
+    },
+    {
+      "path": "literals/exclusive-source.zry",
+      "bytes": 302,
+      "sha256": "b2a880d53ebe6f94570ef00a53517aba74779b814779d50f6a5d4502d4569ece"
+    },
+    {
+      "path": "literals/family-fields-expected.json",
+      "bytes": 1091,
+      "sha256": "6dfc413b9d73a3e28cdba57c63063b7eefe024c82f9c57750288ea9e4d85b99c"
+    },
+    {
+      "path": "literals/family-fields.zry",
+      "bytes": 363,
+      "sha256": "23e41f4694354984bdbcf7ad8b88ec61a2f07698e718b303503adc3d66add670"
+    },
+    {
+      "path": "literals/fixed-member-expected.json",
+      "bytes": 1076,
+      "sha256": "e43c33f2f6dc46ad965aad88e6bbf2493d59c6b041f6b083608a579586bcae8f"
+    },
+    {
+      "path": "literals/fixed-member.zry",
+      "bytes": 428,
+      "sha256": "a58d2c3bcfbbc2544f60acb9eb039742d5395ef7a30bdb1ca98689076ce50686"
+    },
+    {
+      "path": "literals/moved-source-expected.json",
+      "bytes": 222,
+      "sha256": "3de5e4f5caf3200b35a2beacb2e11c5e41d2b4b020f07599bc309261be96eae7"
+    },
+    {
+      "path": "literals/moved-source.zry",
+      "bytes": 281,
+      "sha256": "b8f418314fe27be5fa71c6a6f4935d63a9ea5af1e82fe63ffb61688830d912c2"
+    },
+    {
+      "path": "literals/nested-prefix-expected.json",
+      "bytes": 3243,
+      "sha256": "a874fc15646d69bcafa20e78aaa053f88ee9f6018474cd9d30814db62d6b84a0"
+    },
+    {
+      "path": "literals/nested-prefix.zry",
+      "bytes": 410,
+      "sha256": "1e7d452d2bee1ee6d1cca8222df1535008fc4de2958e86539d0d9fa8db20e9e8"
+    },
+    {
+      "path": "literals/opaque-direct-expected.json",
+      "bytes": 303,
+      "sha256": "efaa37382c7164eac76a6af84106ccbcac306543c060e997db19d86b8747fd74"
+    },
+    {
+      "path": "literals/opaque-direct.zry",
+      "bytes": 119,
+      "sha256": "df8a92762b0b222bb86cb80d3d2356b964fa30a2ad5b6398765b21a0ed8e2301"
+    },
+    {
+      "path": "literals/opaque-inactive-expected.json",
+      "bytes": 307,
+      "sha256": "737e6acd6b39ea39c8d5dd91d478b4ced58471b3415155e91ee47c432f50bfd4"
+    },
+    {
+      "path": "literals/opaque-inactive.zry",
+      "bytes": 227,
+      "sha256": "ac593fcb994742c637a3d0c202c9b7e24a3fb5f9423839cf02484c5f94fa620e"
+    },
+    {
+      "path": "literals/opaque-stored-expected.json",
+      "bytes": 305,
+      "sha256": "c81357462fdbc82fd00b5b69af19dea6ada7d6f77aefffa7eb7c3621a4e1e03f"
+    },
+    {
+      "path": "literals/opaque-stored.zry",
+      "bytes": 199,
+      "sha256": "b45401f32648033f2db0e42a2462afe613743a0d644e1d1aaae665883a9f5478"
+    },
+    {
+      "path": "literals/phantom-opaque-expected.json",
+      "bytes": 449,
+      "sha256": "d04daed550fc185e48e7987eb71b211de82d9cd37031d64df8b6fcf57b3abf59"
+    },
+    {
+      "path": "literals/phantom-opaque.zry",
+      "bytes": 516,
+      "sha256": "dcd0de993297df0ab9a8568467d82303b1431914e0812864cf7a3fd4a4e127c9"
+    },
+    {
+      "path": "literals/repeat-source-expected.json",
+      "bytes": 2724,
+      "sha256": "f78147b7362c58b0667f02884b25e1cc447d0eb92237e2e95bd995b02b5f7fd0"
+    },
+    {
+      "path": "literals/repeat-source.zry",
+      "bytes": 318,
+      "sha256": "3397bb5e977a41c50d2ec98fc9da003149e5e3fb2ff1b2be11c90afeac0c29c6"
+    },
+    {
+      "path": "literals/shared-owner-expected.json",
+      "bytes": 1835,
+      "sha256": "c0e60b79a266e3e9d90850ecccd4c5dccc2a0a9bc34450d11e755923bfa76cfa"
+    },
+    {
+      "path": "literals/shared-owner.zry",
+      "bytes": 326,
+      "sha256": "90771ab350b5bfe1e69a5b861bc067bf802a8d765bb99f82267e8c7ca0b08704"
+    }
+  ]
+}

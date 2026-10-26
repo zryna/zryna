@@ -1,5 +1,8 @@
 //! Independently bind SysV/GNU lookup tables to the exact active dynamic symbol data.
-use super::*;
+use super::{
+    Diagnostic, Dynamic, Image, MAX_SYMBOLS, gnu_hash, index_word, rejected, string, sysv_hash,
+    u32_word, word,
+};
 
 pub(super) fn check(elf: &Image<'_>, d: &Dynamic<'_>, count: usize) -> Result<(), Diagnostic> {
     let mut present = false;

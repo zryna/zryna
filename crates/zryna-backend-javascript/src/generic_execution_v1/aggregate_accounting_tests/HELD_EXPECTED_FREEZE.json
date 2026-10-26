@@ -1,0 +1,378 @@
+{
+  "format": "m416.js-aggregate-accounting-source-projection.v1",
+  "authority": "Immutable qualified source/scalar/cleanup oracles plus shared fixed A/L/S/H law a269; frozen before new Plan/target output. No source/diagnostic/physical-allocator expectation changes.",
+  "inputs": [
+    {
+      "path": "crates/zryna-backend-javascript/src/generic_execution_v1/loan_tests/RUNTIME_ORACLE.json",
+      "sha256": "a772a260962503436a0d4fde7836f72db9a4fdc2857f79085b05f624a11d4264"
+    },
+    {
+      "path": "crates/zryna-driver/tests/generic_execution_v1_borrowed_match_targets/RUNTIME_EXPECTED.json",
+      "sha256": "d743e826942ba7b1f2a8cd064d332a5218c87e9e2fbd964aefcc88663fa1c1ec"
+    },
+    {
+      "path": "crates/zryna-driver/tests/generic_execution_v1_partial_static_targets/RUNTIME_EXPECTED_CORRECTED_V2.json",
+      "sha256": "5523df410a9f3d760f9684467f33f1f03fa16b9017874c62f1ba98d50296c5d1"
+    },
+    {
+      "path": "tests/m7-generic-full-profile-first-vertical/SOURCE_EXPECTED.json",
+      "sha256": "99570cb50f7c75af51c88339584817f65069495e5f25eb6c04b78a724ffde16d"
+    }
+  ],
+  "full_source": [
+    {
+      "case": "referent-catalogue",
+      "group": "catalogue",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 97,
+          "error": null,
+          "after": [
+            22,
+            0,
+            52,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "nominal-shared-clone",
+      "group": "borrowed",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 5,
+          "error": null,
+          "after": [
+            3,
+            0,
+            6,
+            0
+          ]
+        },
+        {
+          "id": "last-enum-clone-denied",
+          "pre": [
+            1048574,
+            0,
+            0,
+            0
+          ],
+          "value": null,
+          "error": "zryna.trap.capacity-v1",
+          "after": [
+            1048576,
+            0,
+            4,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "nested-exclusive-result",
+      "group": "borrowed",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 9,
+          "error": null,
+          "after": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "shared-reborrow-from-exclusive",
+      "group": "borrowed",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 5,
+          "error": null,
+          "after": [
+            3,
+            0,
+            6,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "option-nominal-enum-clone",
+      "group": "vertical",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 7,
+          "error": null,
+          "after": [
+            2,
+            0,
+            4,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "partial-root-replacement",
+      "group": "partial",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 17,
+          "error": null,
+          "after": [
+            4,
+            0,
+            8,
+            0
+          ]
+        },
+        {
+          "id": "prepared-replacement-second-field-denied",
+          "pre": [
+            1048573,
+            0,
+            0,
+            0
+          ],
+          "value": null,
+          "error": "zryna.trap.capacity-v1",
+          "after": [
+            1048576,
+            0,
+            6,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "array-refill",
+      "group": "partial",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 29,
+          "error": null,
+          "after": [
+            3,
+            0,
+            6,
+            0
+          ]
+        },
+        {
+          "id": "refill-denied-keeps-original-cleanup",
+          "pre": [
+            1048574,
+            0,
+            0,
+            0
+          ],
+          "value": null,
+          "error": "zryna.trap.capacity-v1",
+          "after": [
+            1048576,
+            0,
+            4,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "case": "failure-after-hole",
+      "group": "partial",
+      "rows": [
+        {
+          "id": "zero",
+          "pre": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "value": 41,
+          "error": null,
+          "after": [
+            4,
+            0,
+            8,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "array_prefix": [
+    {
+      "id": "zero",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "error": null,
+      "prepared": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "after": [
+        4,
+        0,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "exact-A",
+      "pre": [
+        1048572,
+        0,
+        0,
+        0
+      ],
+      "error": null,
+      "prepared": [
+        1048576,
+        4,
+        4,
+        4
+      ],
+      "after": [
+        1048576,
+        0,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "first-extra-A",
+      "pre": [
+        1048573,
+        0,
+        0,
+        0
+      ],
+      "error": "zryna.trap.capacity-v1",
+      "prepared": [
+        1048576,
+        2,
+        4,
+        2
+      ],
+      "after": [
+        1048576,
+        0,
+        6,
+        0
+      ]
+    },
+    {
+      "id": "exact-S",
+      "pre": [
+        0,
+        0,
+        4194296,
+        0
+      ],
+      "error": null,
+      "prepared": [
+        4,
+        4,
+        4194300,
+        4
+      ],
+      "after": [
+        4,
+        0,
+        4194304,
+        0
+      ]
+    },
+    {
+      "id": "first-extra-S",
+      "pre": [
+        0,
+        0,
+        4194297,
+        0
+      ],
+      "error": "zryna.trap.capacity-v1",
+      "prepared": [
+        3,
+        2,
+        4194301,
+        2
+      ],
+      "after": [
+        3,
+        0,
+        4194303,
+        0
+      ]
+    }
+  ],
+  "derivation": {
+    "catalogue": "18 String acquisitions+releases =36S; 2 Vec allocations+releases=4S; 2 control births+10 count/release entries=12S. All22 positive acquired blocks ultimately released. Array prefix holds original2; success clones2, rejection of second child rolls back first before original reverse cleanup.",
+    "nominal": "from1, clone1+consume release, cloneEnum active String1, drop clone and original =>A3/S6. Last Enum clone denied after first consumed child leaves one original release =>S4.",
+    "inactive_nested_result": "Option.some(Result.err(i32)): retained all-variant Clone may fail, active i32 copies and drops require no ABI entry/debt.",
+    "partial": "Only actually initialized remaining children are released; preparation quota failure releases successful RHS fields before existing originals. Fixed source release order is not replaced by counter assertions."
+  },
+  "execution": false
+}

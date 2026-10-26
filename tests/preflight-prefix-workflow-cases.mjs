@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -127,7 +128,7 @@ export function withoutPreflightBudgets(candidate) {
 
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
-const current = document.toJS();
+const current = withoutDriverTransfer(document.toJS());
 
 function changeSuffix(mutate) {
   const changed = structuredClone(current);

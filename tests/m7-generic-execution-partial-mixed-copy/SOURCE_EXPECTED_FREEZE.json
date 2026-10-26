@@ -1,0 +1,45 @@
+{
+  "status": "FROZEN additive exact original sources and source-derived observations BEFORE provider authentication, implementation or target output; no execution claim",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "move-text-read-copy",
+      "source": "literals/move-text-read-copy.zry",
+      "bytes": 215,
+      "sha256": "b7785ad7f8faa26d46e775c0dcdc1f60611ca6a3100ebeb2b2f6e6b08e2a6b45",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 53,
+          "logical_releases": [
+            "old"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "refill-text-whole-move",
+      "source": "literals/refill-text-whole-move.zry",
+      "bytes": 271,
+      "sha256": "838b5041bf53f844d005169431818d7f59591fd24ace25f90264b714611c06d5",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 59,
+          "logical_releases": [
+            "old",
+            "new"
+          ]
+        }
+      ]
+    }
+  ],
+  "basis": "DATA_OWNERSHIP_V1 sections5-7 and existing independently checked partial storage/root-anchor rules. Moving the only affine child leaves initialized Copy storage; the root cannot be normalized to Empty. Refilling restores Whole without reacquiring its existing pending-root anchor.",
+  "cleanup_derivation": {
+    "move-text-read-copy": "The extracted old String remains the only destructor obligation; initialized count53 remains readable in the partial root. Return copies count, then releases taken old exactly once.",
+    "refill-text-whole-move": "The partial root keeps its original pending anchor while count59 remains initialized. Child replacement prepares new, fills the hole and restores Whole without changing that root anchor. Whole move to restored inherits that anchor; extracted taken old was acquired later. Reverse pending order releases taken old, then restored new; Copy count has no release."
+  },
+  "qualification": "Two finite positive originals. Whole-source/new-seal controls follow only after fresh actual native and TypeScript provider packet authentication. Runtime traces/fault projections remain separate future gates; no runtime observation claimed."
+}

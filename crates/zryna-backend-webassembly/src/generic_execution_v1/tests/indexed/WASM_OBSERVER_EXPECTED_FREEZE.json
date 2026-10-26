@@ -1,0 +1,4045 @@
+{
+  "format": "m416.wasm-indexed-existing-observer-projection.v1",
+  "timing": "Frozen by source/oracle-only transformation before any Wasm indexed output",
+  "authority_sha256": "e4ffbd6b69f42d8d023fa9265b51a3bc1b08cebdc679caaa0cd3bb852032bad3",
+  "boundary": "Existing observer traces String acquisitions/releases/failures, including sparse physical IDs. Generic Vec allocation/free are not traced by this protocol. Exact vector roles/order remain independent actual-byte obligations plus live-owner exit/reset. No complete canonical17 trace claim.",
+  "normal_repeats": 2,
+  "cases": [
+    {
+      "case": "array-exclusive-copy",
+      "sourceSha256": "fc1006341f970c79e1843b1496e10ae76a043715e7b7bfba35cbd36392788361",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 51,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 46,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": []
+    },
+    {
+      "case": "array-indexed-rhs-match",
+      "sourceSha256": "c0dca781637a5e4b8d05530051f41fc047633b33d7fe275e5ffc27f7f27554cc",
+      "normal": [
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "result": 17,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 3,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "6669727374"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "result": 17,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 3,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "result": 17,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 4,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "result": 17,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 4,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1,
+            false
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2,
+            true
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 3,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 3,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 4,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 4,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7365636f6e64"
+            },
+            {
+              "tag": 3,
+              "id": 3,
+              "source": 0,
+              "utf8": "6669727374"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "array-shared-copy",
+      "sourceSha256": "ff07d0fd8de57c072f2c2564e861afb16eb838521be3e38b1015f47f95e5ccb5",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 11,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 19,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": []
+    },
+    {
+      "case": "chained-shared-copy",
+      "sourceSha256": "583f53870fea708dc7d5bcc04ff0f053a512b8476f324f45d7573037f90ac736",
+      "normal": [
+        {
+          "arguments": [
+            0,
+            0
+          ],
+          "result": 3,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            1
+          ],
+          "result": 5,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            0
+          ],
+          "result": 7,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            1
+          ],
+          "result": 11,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1,
+            0
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2,
+            0
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0,
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1,
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "copy-read-control",
+      "sourceSha256": "48848c9f2c022b0954fefe54e6502629aa30601d77896ea66d4918b1821e899c",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 13,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 22,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "index-once-before-rhs",
+      "sourceSha256": "4701b03baee9b27da87f8b8a2afbe6bd0bd9c763edea7010d5ec8cf151026433",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 1,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 1,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "vec-exclusive-replace",
+      "sourceSha256": "970e88245af983bbad70574d130d44b6e3d95983af8977b97e52350e82a363f8",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 23,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "6e6577"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "6e6577"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 23,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "6e6577"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "6e6577"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "6e6577"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "6e6577"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "vec-indexed-replace",
+      "sourceSha256": "30cb737e3e91e46a9c23dba596610318feb52f2bb97565acfdec67794c577e67",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 7,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 7,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 2,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 5,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 5
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 1,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 4,
+              "id": 5,
+              "source": 4,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7265706c6163656d656e74"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 5,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "vec-shared-clone",
+      "sourceSha256": "b5cbfcb4772f116e2c07bb49919567a970caf4e8274b1fbfc1b997f2bdd15ada",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 31,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 2,
+              "id": 4,
+              "source": 1,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 31,
+          "category": 0,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 2,
+              "id": 4,
+              "source": 2,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 4,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 1,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 4,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 4,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [
+            {
+              "tag": 1,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            },
+            {
+              "tag": 1,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 4,
+              "id": 4,
+              "source": 2,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 2,
+              "source": 0,
+              "utf8": "7269676874"
+            },
+            {
+              "tag": 3,
+              "id": 1,
+              "source": 0,
+              "utf8": "6c656674"
+            }
+          ],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    },
+    {
+      "case": "zero-length-bounds",
+      "sourceSha256": "868a9fc7d5111fd92cd61b37e1081635f9d0861e4709f2dbff7b086ee514170a",
+      "normal": [
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1,
+            false
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1,
+            true
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": []
+    },
+    {
+      "case": "called-indexed-shared-copy",
+      "sourceSha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 11,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 19,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 0,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": []
+    },
+    {
+      "case": "indexed-push-copy",
+      "sourceSha256": "b46ff330872d036351bdfb49e9bd416b66a392ec27cf9f7d9d087e5ef259f766",
+      "normal": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 18,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 26,
+          "category": 0,
+          "trace": [],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1",
+          "category": 1,
+          "trace": [],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        }
+      ],
+      "faults": [
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            0
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 1
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 1,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 2
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 2,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 3
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 3,
+          "all_successful_owners_cleaned": true
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "trap": "zryna.trap.allocation-v1",
+          "fault": {
+            "kind": "allocation",
+            "ordinal": 4
+          },
+          "category": 2,
+          "trace": [],
+          "physicalAttempts": 4,
+          "all_successful_owners_cleaned": true
+        }
+      ]
+    }
+  ]
+}

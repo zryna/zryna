@@ -8,7 +8,7 @@ use super::{Distribution, TEXT as LEGACY_TEXT, source_ref_matches_version};
 pub(super) const FORMAT: &str = "zryna.native-distribution.v2";
 pub(super) const RECIPE_FORMAT: &str = "zryna.native-distribution-recipe.v2";
 pub(super) const RECIPE_SHA256: &str =
-    "1dd148410ee06fbb00ef3c07fa28a55c14977c70b6f34797d935cc12ffc82558";
+    "fbc5eb291f8e878e07d3385f5a17c4f29d4bf1542c8ca5f918dea9514702416e";
 const TEXT: [&str; 5] = ["LICENSE", "NOTICE", "README.md", "SUPPORT.md", "VERSION"];
 const REQUIRED: [&str; 7] = [
     "LICENSE",
@@ -77,7 +77,9 @@ pub(super) fn source_ref_is_candidate(value: &str) -> bool {
     if value == "refs/heads/main" {
         return true;
     }
-    let Some(branch) = value.strip_prefix("refs/heads/codex/") else {
+    let Some(branch) =
+        value.strip_prefix("refs/heads/codex/").or_else(|| value.strip_prefix("refs/heads/fix/"))
+    else {
         return false;
     };
     value.len() <= 200

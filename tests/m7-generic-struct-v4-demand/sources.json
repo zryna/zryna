@@ -1,0 +1,6 @@
+{
+  "plain-struct": "interface Plain extends ZrynaStruct { value: i32; } export function score(input: i32): i32 { return input; }",
+  "closed-template": "interface Plain extends ZrynaStruct { value: i32; } interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } interface Foreign<T extends ZrynaValue> extends ZrynaStruct { value: T; } function unused<T extends ZrynaValue>(input: Box<i32>, marker: T): T { return marker; } export function score(input: i32): i32 { return input; }",
+  "open-parent": "function unused<T extends ZrynaValue>(input: Result<T,Option<i32>>): Result<T,Option<i32>> { return input; } export function score(input: i32): i32 { return input; }",
+  "borrow-parent": "function unused<T extends ZrynaValue>(input: Borrow<Option<i32>>, marker: T): T { return marker; } export function score(input: i32): i32 { return input; }"
+}

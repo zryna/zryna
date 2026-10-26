@@ -1,0 +1,289 @@
+{
+  "status": "FROZEN exact original literals and semantic expectations BEFORE provider/implementation/runtime output; no execution claim",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "struct-survivor",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 11,
+          "logical_releases": [
+            "a",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/struct-survivor.zry",
+      "bytes": 229,
+      "sha256": "f5254a358cdba3bc5e97238ee39d78b21afc6d4de1171df9431f85d901d2d59d"
+    },
+    {
+      "case": "struct-refill-whole",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 13,
+          "logical_releases": [
+            "a",
+            "c",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/struct-refill-whole.zry",
+      "bytes": 280,
+      "sha256": "e196a0bf53471fbdfc7efca05ade3c54e73add6ea15e8a949cb348cecf6abb72"
+    },
+    {
+      "case": "partial-root-replacement",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 17,
+          "logical_releases": [
+            "b",
+            "e",
+            "d",
+            "a"
+          ]
+        }
+      ],
+      "source": "literals/partial-root-replacement.zry",
+      "bytes": 277,
+      "sha256": "e934f14a0c273cb1177fabac45b8be37ef2d0c50761752ca48ffd9cd208397f8"
+    },
+    {
+      "case": "nested-disjoint",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 19,
+          "logical_releases": [
+            "c",
+            "a",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/nested-disjoint.zry",
+      "bytes": 371,
+      "sha256": "d9c3222dbf9214058a3fb8c28b9f3d901d6f6274856375867afe1474a7aa3066"
+    },
+    {
+      "case": "array-survivor",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 23,
+          "logical_releases": [
+            "a",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/array-survivor.zry",
+      "bytes": 148,
+      "sha256": "151c5f28880bc5369a86266bc0320216502382441e56323c0df93f9c76209f5a"
+    },
+    {
+      "case": "array-refill",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 29,
+          "logical_releases": [
+            "b",
+            "c",
+            "a"
+          ]
+        }
+      ],
+      "source": "literals/array-refill.zry",
+      "bytes": 206,
+      "sha256": "5e7b03348897865d9be74abc438431713fa152848352e86b83854761c0a3e4ea"
+    },
+    {
+      "case": "opaque-child",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 31,
+          "logical_releases": [
+            "a",
+            "c",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/opaque-child.zry",
+      "bytes": 475,
+      "sha256": "9c45725e04fd225057e861b7a3eb22a061d2a8156e242365682626fb1de9fe0d"
+    },
+    {
+      "case": "sibling-loan",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 37,
+          "logical_releases": [
+            "b",
+            "a",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/sibling-loan.zry",
+      "bytes": 320,
+      "sha256": "69c747a577d912236595be23496d0aa563c6f820d929a9a733c2171b78e1faa4"
+    },
+    {
+      "case": "failure-after-hole",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 41,
+          "logical_releases": [
+            "ab",
+            "b",
+            "a",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/failure-after-hole.zry",
+      "bytes": 319,
+      "sha256": "232104836d7dc7ca656a363735599bd1548b065be8774a05e654ed08ee518f83"
+    },
+    {
+      "case": "branch-same-hole",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            true
+          ],
+          "i32": 43,
+          "logical_releases": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "arguments": [
+            false
+          ],
+          "i32": 43,
+          "logical_releases": [
+            "a",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/branch-same-hole.zry",
+      "bytes": 297,
+      "sha256": "bd614e7fa66dc44cf14fd6e6322427fcbcf6c8940940126ea353360e186a3715"
+    },
+    {
+      "case": "loop-refill",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 2,
+          "logical_releases": [
+            "a",
+            "c",
+            "c",
+            "b"
+          ]
+        }
+      ],
+      "source": "literals/loop-refill.zry",
+      "bytes": 310,
+      "sha256": "faa5811ce0697d7482dc4ab8cda4d35b3fa5ef449ac3bc8fd4bae376821e263a"
+    },
+    {
+      "case": "double-field",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 238,
+        "end": 249,
+        "token": "owner.first"
+      },
+      "source": "literals/double-field.zry",
+      "bytes": 263,
+      "sha256": "ccfbe563c6095463448b16f52b9681ace1ac01f071b45897bfbf0129db0784f6"
+    },
+    {
+      "case": "whole-after-hole",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 243,
+        "end": 248,
+        "token": "owner"
+      },
+      "source": "literals/whole-after-hole.zry",
+      "bytes": 262,
+      "sha256": "8a3da5c49115467f67f44ca20b4893520e7c923940dd2741e2ca362126170515"
+    },
+    {
+      "case": "write-borrowed-field",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 229,
+        "end": 240,
+        "token": "owner.first"
+      },
+      "source": "literals/write-borrowed-field.zry",
+      "bytes": 260,
+      "sha256": "f083f54006a3d75de1a7fc20d89421c5da47fc6c48248003f8a26a415d73b097"
+    },
+    {
+      "case": "unrestored-loop-field",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 243,
+        "end": 254,
+        "token": "owner.first"
+      },
+      "source": "literals/unrestored-loop-field.zry",
+      "bytes": 293,
+      "sha256": "fbdb44da53396dc590eb9af48c8c14ce1529c902a37e3b139d990af383ff61c9"
+    },
+    {
+      "case": "wrong-field-rhs",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7006",
+      "primary": {
+        "file": 0,
+        "start": 193,
+        "end": 197,
+        "token": "true"
+      },
+      "source": "literals/wrong-field-rhs.zry",
+      "bytes": 211,
+      "sha256": "2915a6a3389dd2c1486527495a338dadc6dc3d0be2999fa87bbd1df0a194e888"
+    }
+  ],
+  "qualification": "11 positive and 5 hostile originals; whole seal is separate from runtime receipt; partial static structs/fixed arrays checkpoint with accepted remaining forms open",
+  "fault_obligation": "Each reachable fallible acquisition ordinal preserves prepared RHS/old initialized frontier and cleans actual initialized owners exactly once in reverse required order; exact runtime fault matrix must freeze separately before runtime execution.",
+  "basis": "DATA_OWNERSHIP_V1 sections5-7 and9; universal opaque original legality, no implicit Clone or whole-value read of partial state"
+}

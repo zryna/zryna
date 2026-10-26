@@ -1,0 +1,159 @@
+{
+  "status": "Frozen literal and owning expectations before provider authentication and production implementation; no claimed DTO or issuer success",
+  "schema": 5,
+  "profile": "same accepted full execution profile; incomplete dependency checkpoint, no new exclusions",
+  "cases": [
+    {
+      "case": "formal-copy",
+      "source": "literals/formal-copy.zry",
+      "sha256": "d9c7704a3ac8d0253e3b54c3cfe13626211704e2c7ec4ab5ff822345fbb44191",
+      "bytes": 248,
+      "expect": "whole-seal",
+      "i32Result": 40
+    },
+    {
+      "case": "opaque-forward",
+      "source": "literals/opaque-forward.zry",
+      "sha256": "f51e835ff97f3f0c790690ad092adfca0937d82d57504e98c2b7ed07c7391b60",
+      "bytes": 300,
+      "expect": "whole-seal",
+      "i32Result": 7
+    },
+    {
+      "case": "shared-reborrow-clone",
+      "source": "literals/shared-reborrow-clone.zry",
+      "sha256": "56433d02ed55449f56a4fe3b6120e1a9cd6421c388d36e2d35fa232e01c314b7",
+      "bytes": 338,
+      "expect": "whole-seal",
+      "i32Result": 31
+    },
+    {
+      "case": "exclusive-reborrow-push",
+      "source": "literals/exclusive-reborrow-push.zry",
+      "sha256": "08bfe4720cbbdb90e4fd7873dc0d3ba217177d18583d4d530998905ffd0103ac",
+      "bytes": 378,
+      "expect": "whole-seal",
+      "i32Result": 41
+    },
+    {
+      "case": "generic-replace",
+      "source": "literals/generic-replace.zry",
+      "sha256": "64db2cc9fcda613bbdf335d9b43cafc64611886bb832cf3c13c90c925939ef59",
+      "bytes": 365,
+      "expect": "whole-seal",
+      "i32Result": 43
+    },
+    {
+      "case": "static-disjoint",
+      "source": "literals/static-disjoint.zry",
+      "sha256": "ce59b0e187b4f8f6b1dc67e1cd6cd9559189966f42f2cc7dfd28e9777533349b",
+      "bytes": 661,
+      "expect": "whole-seal",
+      "i32Result": 44
+    },
+    {
+      "case": "branch-cleanup",
+      "source": "literals/branch-cleanup.zry",
+      "sha256": "a49caf4d62e57d381b5c7f60313c22b72740ade37c2fd3294b937dfcf0ce3362",
+      "bytes": 287,
+      "expect": "whole-seal",
+      "i32Result": 53
+    },
+    {
+      "case": "fallible-cleanup",
+      "source": "literals/fallible-cleanup.zry",
+      "sha256": "d4fdb1adb00b857fa3271ae87668cec2e707af57563779aa0efa6c9951fe4c7a",
+      "bytes": 317,
+      "expect": "whole-seal",
+      "i32Result": 59
+    },
+    {
+      "case": "parent-frozen",
+      "source": "literals/parent-frozen.zry",
+      "sha256": "6e892740f12e97b1ade0ec69a26c363024b755fb2ca733d3e6e3e49a89864a66",
+      "bytes": 197,
+      "expect": "owning-rejection",
+      "obligation": "exclusive parent frozen by live child"
+    },
+    {
+      "case": "overlap-exclusive",
+      "source": "literals/overlap-exclusive.zry",
+      "sha256": "09ce1c268add0531437e14aa7229db515efe20ad011add890c9080244bb661b6",
+      "bytes": 149,
+      "expect": "owning-rejection",
+      "obligation": "new overlapping exclusive loan rejected"
+    },
+    {
+      "case": "root-moved",
+      "source": "literals/root-moved.zry",
+      "sha256": "55d62c2a27bd1843fab857afb18c571ecb1bd6ad798b36047c2b58efaa99cadb",
+      "bytes": 143,
+      "expect": "owning-rejection",
+      "obligation": "whole affine root cannot move while loan live"
+    },
+    {
+      "case": "affine-read",
+      "source": "literals/affine-read.zry",
+      "sha256": "064a8979aa13327a43a6afba81dee6960183e00d67d32f0ed5661f9ba5502be1",
+      "bytes": 104,
+      "expect": "owning-rejection",
+      "obligation": "implicit borrowed affine read rejected"
+    },
+    {
+      "case": "shared-write",
+      "source": "literals/shared-write.zry",
+      "sha256": "3fa9c9259a41af48d0f220907538cbfa53f7fda47b1fc9bcc1eea88f1e51db63",
+      "bytes": 128,
+      "expect": "owning-rejection",
+      "obligation": "shared referent mutation rejected"
+    },
+    {
+      "case": "wrong-access",
+      "source": "literals/wrong-access.zry",
+      "sha256": "237ca80510dcb066357de2f1d68fab448f363395770e6e7ff0d7abfbaa0b842a",
+      "bytes": 171,
+      "expect": "owning-rejection",
+      "obligation": "exact call access"
+    },
+    {
+      "case": "wrong-referent",
+      "source": "literals/wrong-referent.zry",
+      "sha256": "951c97f1cfd31f2d103417b7b587208f98bc07679ce53357416593ca43052d32",
+      "bytes": 194,
+      "expect": "owning-rejection",
+      "obligation": "exact call referent"
+    },
+    {
+      "case": "opaque-clone",
+      "source": "literals/opaque-clone.zry",
+      "sha256": "e01055d514cb8fa4be16f329e2d7a5465328f548185dfe0018252e0c116ab1a9",
+      "bytes": 123,
+      "expect": "owning-rejection",
+      "obligation": "universal original Clone capability, independent of closed layouts"
+    },
+    {
+      "case": "borrow-escape",
+      "source": "literals/borrow-escape.zry",
+      "sha256": "9c20fa295ed8ebc7f87d36245414aaeb7d6daf730f78c73f403a7c9db28b00cc",
+      "bytes": 108,
+      "expect": "owning-rejection",
+      "obligation": "loan cannot escape function result"
+    },
+    {
+      "case": "exclusive-call-alias",
+      "source": "literals/exclusive-call-alias.zry",
+      "sha256": "1ac72be8c0f16682e9f7f59c805d6c034ea079144fc3132e8de1b5a714206e0c",
+      "bytes": 210,
+      "expect": "owning-rejection",
+      "obligation": "duplicate exclusive call alias rejected"
+    },
+    {
+      "case": "referent-catalogue",
+      "source": "literals/referent-catalogue.zry",
+      "sha256": "9806b7a5623d683549a3b55934c4c4854a580c9f2c3282998c81388ea42beb44",
+      "bytes": 1863,
+      "expect": "whole-seal",
+      "i32Result": 97
+    }
+  ]
+}

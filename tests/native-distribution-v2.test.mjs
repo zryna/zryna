@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { bytes, sha256 } from '../scripts/distribution/canonical.mjs';
 import { validateDistribution } from '../scripts/distribution/prepare.mjs';
 import {
@@ -143,8 +144,9 @@ test('native documents describe the actual separate source-candidate and runtime
   assert.throws(() => nativeInstallationDocuments('0.2.3', 'aarch64-apple-darwin'));
 });
 
-test('native source policy admits actual main/codex branches and rejects hostile labels', () => {
-  for (const ref of ['refs/heads/main', 'refs/heads/codex/native-install', 'refs/heads/codex/m414/v2.1']) {
+test('native source policy admits actual main/codex/fix branches and rejects hostile labels', () => {
+  for (const ref of ['refs/heads/main', 'refs/heads/codex/native-install', 'refs/heads/codex/m414/v2.1',
+    'refs/heads/fix/bounded-generics-profile', 'refs/heads/fix/m416/v2.1']) {
     const record = fixture(); record.source.ref = ref; validateNativeDistribution(record);
   }
   for (const ref of ['refs/heads/codex/', 'refs/heads/codex/a//b', 'refs/heads/codex/../main',
@@ -156,5 +158,14 @@ test('native source policy admits actual main/codex branches and rejects hostile
     `refs/heads/codex/${Array(3).fill('a'.repeat(64)).join('/')}`]) {
     const record = fixture(); record.source.ref = ref;
     assert.throws(() => validateNativeDistribution(record), ref);
+    if (ref.startsWith('refs/heads/codex/')) {
+      const fixed = fixture(); fixed.source.ref = ref.replace('refs/heads/codex/', 'refs/heads/fix/');
+      assert.throws(() => validateNativeDistribution(fixed), fixed.source.ref);
+    }
   }
+  assert.deepEqual(nativeRecipe.sourceRefPolicy.candidatePrefixes,
+    ['refs/heads/codex/', 'refs/heads/fix/']);
+  assert.equal(nativeRecipe.productionAdmission, 'forbidden');
+  const lock = readFileSync(new URL('../Cargo.lock', import.meta.url));
+  assert.deepEqual(nativeRecipe.cargoLock, { bytes: lock.length, sha256: sha256(lock) });
 });

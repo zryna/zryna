@@ -1,0 +1,215 @@
+{
+  "status": "Wasm projection frozen before new target implementation/runtime; uses existing kind2 allocation and kind6 StringClone only. No two-source concat identity or container physical-identity claim.",
+  "sourceOracle": {
+    "path": "/tmp/m416-nominal-transport-candidate/crates/zryna-backend-javascript/src/generic_execution_v1/loan_tests/RUNTIME_ORACLE.json",
+    "sha256": "a772a260962503436a0d4fde7836f72db9a4fdc2857f79085b05f624a11d4264"
+  },
+  "cases": [
+    {
+      "case": "formal-copy",
+      "result": 40,
+      "faults": []
+    },
+    {
+      "case": "opaque-forward",
+      "result": 7,
+      "faults": []
+    },
+    {
+      "case": "shared-reborrow-clone",
+      "result": 31,
+      "faults": []
+    },
+    {
+      "case": "exclusive-reborrow-push",
+      "result": 41,
+      "faults": []
+    },
+    {
+      "case": "generic-replace",
+      "result": 43,
+      "faults": [
+        {
+          "kind": 2,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 2,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 3,
+          "trapCategory": 2
+        },
+        {
+          "kind": 6,
+          "ordinal": 1,
+          "trapCategory": 2
+        }
+      ]
+    },
+    {
+      "case": "static-disjoint",
+      "result": 44,
+      "faults": []
+    },
+    {
+      "case": "branch-cleanup",
+      "result": 53,
+      "faults": []
+    },
+    {
+      "case": "fallible-cleanup",
+      "result": 59,
+      "faults": [
+        {
+          "kind": 2,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 2,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 3,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 4,
+          "trapCategory": 2
+        },
+        {
+          "kind": 6,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 6,
+          "ordinal": 2,
+          "trapCategory": 2
+        }
+      ]
+    },
+    {
+      "case": "referent-catalogue",
+      "result": 97,
+      "faults": []
+    },
+    {
+      "case": "local-observation",
+      "result": 17,
+      "faults": [
+        {
+          "kind": 2,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 2,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 3,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 4,
+          "trapCategory": 2
+        },
+        {
+          "kind": 6,
+          "ordinal": 1,
+          "trapCategory": 2
+        }
+      ]
+    },
+    {
+      "case": "same-source",
+      "result": 19,
+      "faults": [
+        {
+          "kind": 2,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 2,
+          "trapCategory": 2
+        }
+      ]
+    },
+    {
+      "case": "nested-temporaries",
+      "result": 23,
+      "faults": [
+        {
+          "kind": 2,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 2,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 3,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 4,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 5,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 6,
+          "trapCategory": 2
+        },
+        {
+          "kind": 6,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 6,
+          "ordinal": 2,
+          "trapCategory": 2
+        }
+      ]
+    },
+    {
+      "case": "formal-observation",
+      "result": 29,
+      "faults": [
+        {
+          "kind": 2,
+          "ordinal": 1,
+          "trapCategory": 2
+        },
+        {
+          "kind": 2,
+          "ordinal": 2,
+          "trapCategory": 2
+        }
+      ]
+    }
+  ]
+}

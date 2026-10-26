@@ -1,0 +1,8 @@
+interface Mixed extends ZrynaStruct { text: String; items: FixedArray<i32, 2>; }
+export function entry(index: i32): i32 {
+  let owner: Mixed = Mixed({ text: "old", items: FixedArray<i32, 2>([1, 2]) });
+  const previous: Mixed = owner;
+  owner.items[0] = 11;
+  owner.text = "new";
+  return owner.items[index];
+}

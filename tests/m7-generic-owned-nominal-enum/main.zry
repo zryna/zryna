@@ -1,0 +1,11 @@
+export function none(input:i32):i32 {return read<String>(Choice.none<String,i32>())+input;}
+export function left(input:i32):i32 {return read<String>(make<String>("left"))+input;}
+export function right(input:i32):i32 {return read<String>(Choice.right<String,i32>(23))+input;}
+export function nestedNone(input:i32):i32 {return read<String>(Choice.nested<String,i32>(Option.none<Result<String,i32>>()))+input;}
+export function nestedOk(input:i32):i32 {return read<String>(Choice.nested<String,i32>(Option.some<Result<String,i32>>(Result.ok<String,i32>("nested"))))+input;}
+export function nestedErr(input:i32):i32 {return read<String>(Choice.nested<String,i32>(Option.some<Result<String,i32>>(Result.err<String,i32>(29))))+input;}
+export function phantom(input:i32):i32 {const first:Marker<String> =Marker.code<String>(31); const next:Marker<String> =first; match(first,{"Marker.none":()=>0,"Marker.code":(code)=>code}); return match(next,{"Marker.none":()=>0,"Marker.code":(code)=>code})+input;}
+export function scoreFixed(input:i32):i32 {const value:Fixed<i32> =Fixed.none<i32>(); return match(value,{"Fixed.none":()=>37,"Fixed.text":(text)=>discard<String>(text)})+input;}
+export function scorePlain(input:i32):i32 {return plainValue<String>(Plain.text("plain"))+input;}
+export function fixedText(input:i32):i32 {const value:Fixed<i32> =Fixed.text<i32>("fixed"); return match(value,{"Fixed.none":()=>37,"Fixed.text":(text)=>discard<String>(text)})+input;}
+export function plainNone(input:i32):i32 {return plainValue<String>(Plain.none())+input;}

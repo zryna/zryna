@@ -1,39 +1,39 @@
 //! Validate raw ELF ranges, section roles and record framing before any record iteration.
 
-use super::{Diagnostic, MAX_RELOCATIONS, MAX_SECTIONS, MAX_SYMBOLS, error, limit};
+use super::{Failure, MAX_RELOCATIONS, MAX_SECTIONS, MAX_SYMBOLS, error, limit};
 use std::collections::BTreeSet;
 
-pub(super) struct Section<'a> {
-    pub(super) name: &'a str,
-    pub(super) size: u64,
-    pub(super) data: &'a [u8],
+pub(in crate::native) struct Section<'a> {
+    pub(in crate::native) name: &'a str,
+    pub(in crate::native) size: u64,
+    pub(in crate::native) data: &'a [u8],
 }
 
-pub(super) struct Tables<'a> {
-    pub(super) sections: Vec<Section<'a>>,
-    pub(super) symbols: &'a [u8],
-    pub(super) strings: &'a [u8],
-    pub(super) first_global: usize,
-    pub(super) text_index: usize,
-    pub(super) relocations: &'a [u8],
+pub(in crate::native) struct Tables<'a> {
+    pub(in crate::native) sections: Vec<Section<'a>>,
+    pub(in crate::native) symbols: &'a [u8],
+    pub(in crate::native) strings: &'a [u8],
+    pub(in crate::native) first_global: usize,
+    pub(in crate::native) text_index: usize,
+    pub(in crate::native) relocations: &'a [u8],
 }
 
-pub(super) fn number(bytes: &[u8], offset: usize, width: usize) -> Result<u64, Diagnostic> {
+pub(in crate::native) fn number(bytes: &[u8], offset: usize, width: usize) -> Result<u64, Failure> {
     let data = bytes.get(offset..offset.checked_add(width).ok_or_else(error)?).ok_or_else(error)?;
     let mut word = [0; 8];
     word.get_mut(..width).ok_or_else(error)?.copy_from_slice(data);
     Ok(u64::from_le_bytes(word))
 }
 
-fn index(value: u64) -> Result<usize, Diagnostic> {
+fn index(value: u64) -> Result<usize, Failure> {
     usize::try_from(value).map_err(|_| error())
 }
 
-fn range(bytes: &[u8], offset: u64, size: u64) -> Result<&[u8], Diagnostic> {
+fn range(bytes: &[u8], offset: u64, size: u64) -> Result<&[u8], Failure> {
     bytes.get(index(offset)?..index(offset.checked_add(size).ok_or_else(error)?)?).ok_or_else(error)
 }
 
-pub(super) fn string(bytes: &[u8], offset: u64) -> Result<&str, Diagnostic> {
+pub(in crate::native) fn string(bytes: &[u8], offset: u64) -> Result<&str, Failure> {
     let tail = bytes.get(index(offset)?..).ok_or_else(error)?;
     let length = tail.iter().position(|byte| *byte == 0).ok_or_else(error)?;
     if length > 128 {
@@ -42,7 +42,7 @@ pub(super) fn string(bytes: &[u8], offset: u64) -> Result<&str, Diagnostic> {
     std::str::from_utf8(&tail[..length]).map_err(|_| error())
 }
 
-pub(super) fn read(bytes: &[u8]) -> Result<Tables<'_>, Diagnostic> {
+pub(in crate::native) fn read(bytes: &[u8]) -> Result<Tables<'_>, Failure> {
     if bytes.get(..16) != Some(&[0x7f, b'E', b'L', b'F', 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         || number(bytes, 16, 2)? != 1
         || number(bytes, 18, 2)? != 62
@@ -124,7 +124,7 @@ fn read_sections<'a>(
     headers: &[u8],
     names: &'a [u8],
     offset: u64,
-) -> Result<Vec<Section<'a>>, Diagnostic> {
+) -> Result<Vec<Section<'a>>, Failure> {
     let mut sections = Vec::new();
     let mut seen = BTreeSet::new();
     let mut allocated = 0u64;

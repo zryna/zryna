@@ -1,0 +1,926 @@
+{
+  "status": "FROZEN independent source/spec runtime projection BEFORE target emission or runtime output; no execution claim",
+  "domain": "generic.execution.v1",
+  "source_expected_sha256": "11e464145623e7d56ce9be7cc9b7e6a496ed07c34e4497038e66076d90ab14a2",
+  "basis": "DATA_OWNERSHIP_V1 sections5-7 and9; exact active Enum/Option payload only; left-to-right preparation; RHS successful commit drops old referent; owned argument consumed exactly once; pending root order preserved. No Struct is traversed in these literal executions.",
+  "target_projection": {
+    "javascript": "ordinary private authority plus distinct private-observed actual handle identities, status-before-unpublished-output, Clone/allocator faults and pristine retry",
+    "native17": "unchanged canonical C runtime; actual malloc NULL at each reachable allocation plus declared StringClone faults, physical source/free base/UTF8 checks, SIGILL after cleanup, pristine retry",
+    "webassembly": "ordinary core plus distinct current observed kind2 allocation/kind6 StringClone only; exact active String pointer/UTF8/clone source/release interleaving/category2+retry; no new protocol or memory export"
+  },
+  "cases": [
+    {
+      "case": "nominal-shared-copy",
+      "source_sha256": "73339bf9809102794700a9ffb752dded5cba69864f8fb85af802b6b155d3209a",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [],
+          "pristine": {
+            "scalar_result": 8,
+            "language_string_allocations": 0,
+            "string_clone_calls": 0,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [],
+            "events": []
+          },
+          "faults": []
+        }
+      ]
+    },
+    {
+      "case": "nominal-shared-clone",
+      "source_sha256": "f3892005f8561c175f025286ee1dfb73b6acc63db144b676e12a9d81ac696662",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6e6f6d696e616c",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6e6f6d696e616c",
+              "source_ids": [
+                1
+              ]
+            },
+            {
+              "utf8_hex": "6e6f6d696e616c",
+              "source_ids": [
+                1
+              ]
+            }
+          ],
+          "pristine": {
+            "scalar_result": 5,
+            "language_string_allocations": 3,
+            "string_clone_calls": 2,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              2,
+              3,
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:2",
+              "acquire:3",
+              "release:3",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 3,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:2",
+                "failure:allocation:3",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                2,
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 1,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:stringClone:1",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 2,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:2",
+                "failure:stringClone:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                2,
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "nominal-exclusive-copy",
+      "source_sha256": "918f6e8464bbe61dbe71341b9c6401a5a583523ddf81d170d064da64f9f55a2b",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [],
+          "pristine": {
+            "scalar_result": 18,
+            "language_string_allocations": 0,
+            "string_clone_calls": 0,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [],
+            "events": []
+          },
+          "faults": []
+        }
+      ]
+    },
+    {
+      "case": "nominal-exclusive-replace",
+      "source_sha256": "f4a181075b503c55abcdfad93dd06e52762bc8f7c04bd5eca29ec7bdd2213f07",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6f6c64",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6f6c64",
+              "source_ids": [
+                1
+              ]
+            },
+            {
+              "utf8_hex": "6e6577",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6e6577",
+              "source_ids": [
+                3
+              ]
+            }
+          ],
+          "pristine": {
+            "scalar_result": 18,
+            "language_string_allocations": 4,
+            "string_clone_calls": 2,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              1,
+              2,
+              4,
+              3
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:1",
+              "acquire:3",
+              "release:2",
+              "acquire:4",
+              "release:4",
+              "release:3"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 3,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:1",
+                "failure:allocation:3",
+                "release:2"
+              ],
+              "release_acquisition_ids": [
+                1,
+                2
+              ],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 4,
+              "successful_acquisitions": 3,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:1",
+                "acquire:3",
+                "release:2",
+                "failure:allocation:4",
+                "release:3"
+              ],
+              "release_acquisition_ids": [
+                1,
+                2,
+                3
+              ],
+              "unchanged_source_ids": [
+                3
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 1,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:stringClone:1",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 2,
+              "successful_acquisitions": 3,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:1",
+                "acquire:3",
+                "release:2",
+                "failure:stringClone:2",
+                "release:3"
+              ],
+              "release_acquisition_ids": [
+                1,
+                2,
+                3
+              ],
+              "unchanged_source_ids": [
+                3
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "option-shared-both",
+      "source_sha256": "361f5296a92b19b175229bc66f49b9a7f71b01cc158c97e1406ba2acbfd90bb4",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6f7074",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6f7074",
+              "source_ids": [
+                1
+              ]
+            }
+          ],
+          "pristine": {
+            "scalar_result": 7,
+            "language_string_allocations": 2,
+            "string_clone_calls": 1,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              2,
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:2",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 1,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:stringClone:1",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "result-shared-opaque-bound",
+      "source_sha256": "1ae313d428bac6dc15c98098f0e0f389fd123a94d137fe4fcb44a21a6201c814",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6f6b",
+              "source_ids": []
+            }
+          ],
+          "pristine": {
+            "scalar_result": 6,
+            "language_string_allocations": 1,
+            "string_clone_calls": 0,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "result-exclusive-both",
+      "source_sha256": "fbbe204192a13d0fbce590f9c90e282bcbaf59ea1bc665687d63f91fee733026",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6f6c64",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6e6577",
+              "source_ids": []
+            }
+          ],
+          "pristine": {
+            "scalar_result": 14,
+            "language_string_allocations": 2,
+            "string_clone_calls": 0,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              1,
+              2
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:1",
+              "release:2"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "opaque-payload-forward",
+      "source_sha256": "2f1177a38f710756056d5940e31b7bfe8d94a6504e701ae7dbbafd56757083b1",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6f7061717565",
+              "source_ids": []
+            }
+          ],
+          "pristine": {
+            "scalar_result": 3,
+            "language_string_allocations": 1,
+            "string_clone_calls": 0,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "nested-exclusive-result",
+      "source_sha256": "bab91322a3a7c7e56a5f93583ebe01827625156fa5439d31f0d7e2f30d9cbd28",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [],
+          "pristine": {
+            "scalar_result": 9,
+            "language_string_allocations": 0,
+            "string_clone_calls": 0,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [],
+            "events": []
+          },
+          "faults": []
+        }
+      ]
+    },
+    {
+      "case": "branch-arm-cleanup",
+      "source_sha256": "8f83f60797464ecadb36e4ff07794307284610f764c0125d806e7ed38d87154b",
+      "runs": [
+        {
+          "label": "true",
+          "arguments": [
+            true
+          ],
+          "acquisitions": [
+            {
+              "utf8_hex": "6272616e6368",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6272616e6368",
+              "source_ids": [
+                1
+              ]
+            },
+            {
+              "utf8_hex": "7461696c",
+              "source_ids": []
+            }
+          ],
+          "pristine": {
+            "scalar_result": 5,
+            "language_string_allocations": 3,
+            "string_clone_calls": 1,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              2,
+              3,
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:2",
+              "acquire:3",
+              "release:3",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 3,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:2",
+                "failure:allocation:3",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                2,
+                1
+              ],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 1,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:stringClone:1",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "label": "false",
+          "arguments": [
+            false
+          ],
+          "acquisitions": [
+            {
+              "utf8_hex": "6272616e6368",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6272616e6368",
+              "source_ids": [
+                1
+              ]
+            },
+            {
+              "utf8_hex": "7461696c",
+              "source_ids": []
+            }
+          ],
+          "pristine": {
+            "scalar_result": 5,
+            "language_string_allocations": 3,
+            "string_clone_calls": 1,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              2,
+              3,
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:2",
+              "acquire:3",
+              "release:3",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 3,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:2",
+                "failure:allocation:3",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                2,
+                1
+              ],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 1,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:stringClone:1",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "shared-reborrow-from-exclusive",
+      "source_sha256": "32983791871b6f2a7511abb50f170b555277caef627a973f8274e10fc3c58076",
+      "runs": [
+        {
+          "label": "no-arguments",
+          "arguments": [],
+          "acquisitions": [
+            {
+              "utf8_hex": "6e6573746564",
+              "source_ids": []
+            },
+            {
+              "utf8_hex": "6e6573746564",
+              "source_ids": [
+                1
+              ]
+            },
+            {
+              "utf8_hex": "6e6573746564",
+              "source_ids": [
+                1
+              ]
+            }
+          ],
+          "pristine": {
+            "scalar_result": 5,
+            "language_string_allocations": 3,
+            "string_clone_calls": 2,
+            "string_concat_calls": 0,
+            "release_acquisition_ids": [
+              2,
+              3,
+              1
+            ],
+            "events": [
+              "acquire:1",
+              "acquire:2",
+              "release:2",
+              "acquire:3",
+              "release:3",
+              "release:1"
+            ]
+          },
+          "faults": [
+            {
+              "kind": "allocation",
+              "ordinal": 1,
+              "successful_acquisitions": 0,
+              "events": [
+                "failure:allocation:1"
+              ],
+              "release_acquisition_ids": [],
+              "unchanged_source_ids": []
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 2,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:allocation:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "allocation",
+              "ordinal": 3,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:2",
+                "failure:allocation:3",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                2,
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 1,
+              "successful_acquisitions": 1,
+              "events": [
+                "acquire:1",
+                "failure:stringClone:1",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            },
+            {
+              "kind": "stringClone",
+              "ordinal": 2,
+              "successful_acquisitions": 2,
+              "events": [
+                "acquire:1",
+                "acquire:2",
+                "release:2",
+                "failure:stringClone:2",
+                "release:1"
+              ],
+              "release_acquisition_ids": [
+                2,
+                1
+              ],
+              "unchanged_source_ids": [
+                1
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

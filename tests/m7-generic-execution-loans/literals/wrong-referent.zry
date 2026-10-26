@@ -1,0 +1,2 @@
+function read(loan: Borrow<bool>): bool { return loan; }
+export function entry(): i32 { const root: i32 = 1; const loan: Borrow<i32> = borrow(root); const result: bool = read(loan); return 0; }

@@ -1,0 +1,3 @@
+interface Duo<T extends ZrynaValue> extends ZrynaStruct { first: T; second: T; }
+interface Nest extends ZrynaStruct { inner: Duo<String>; sibling: String; }
+export function entry(): i32 { const owner: Nest = Nest({ inner: Duo<String>({ first: "a", second: "b" }), sibling: "c" }); const first: String = owner.inner.first; const last: String = owner.sibling; return 19; }

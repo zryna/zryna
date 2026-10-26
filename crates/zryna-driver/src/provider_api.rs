@@ -2,6 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
+mod v5;
+
 use zryna_abi::ScalarValue;
 use zryna_frontend::{
     VerifiedFrontendProvider, VerifiedFrontendProviderV3, VerifiedFrontendProviderV4,
@@ -37,6 +39,8 @@ pub enum CompilationProfile {
     ControlFlow,
     /// Existing data-ownership syntax protocol v4.
     DataOwnership,
+    /// Explicit source-checkout bounded generics, Option and Result using syntax protocol v5.
+    BoundedGenericsV1,
 }
 
 impl CompilationProfile {
@@ -45,6 +49,7 @@ impl CompilationProfile {
             Self::I32 => "i32-v1",
             Self::ControlFlow => "control-flow-v1",
             Self::DataOwnership => "data-ownership-v1",
+            Self::BoundedGenericsV1 => "bounded-generics-v1",
         }
     }
 }
@@ -94,6 +99,8 @@ pub enum ProviderCommandSuccess {
     Scalar(CommandSuccess),
     /// Existing data-ownership manifest.
     Ownership(PublishedOwnershipBundle),
+    /// Separately versioned bounded-generics build or completed run.
+    Generic(crate::PublishedGenericBundle),
 }
 
 /// Compiles using one exact driver-selected provider without requiring a target runtime.

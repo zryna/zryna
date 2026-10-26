@@ -1,0 +1,15 @@
+{
+  "format": "m416.native-vec-held-oracle-metadata-correction.v1",
+  "original_path": "/tmp/m416-native-accounting-vec-held-oracles-v1/HELD_COUNTER_EXPECTED_FREEZE.json",
+  "original_sha256": "5c6cbfc840dd06b29a409b5994002c294bf7436dd7d6be7a0abddede76f632f0",
+  "classification": "Author metadata error; all18 fixed numeric rows and runtime/source oracles remain unchanged",
+  "incorrect_field": "limits.H=0",
+  "correct_interpretation": {
+    "H": "exact outstanding mandatory logical cleanup debt, not an independent zero quota",
+    "coupling": "S + H <= 4194304",
+    "derived_maximum": 4194304
+  },
+  "authority": "Shared accounting law freeze a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d; original18 rows already explicitly require H1..5",
+  "execution_basis": "Authority-based correction before Vec production or successful target accounting output; genuine pre-production first-extra owning RED is not an H oracle",
+  "preservation": "Original oracle bytes remain immutable. No pre/post/cleanup row or expected diagnostic/event changes."
+}

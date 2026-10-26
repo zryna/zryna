@@ -1,8 +1,29 @@
 use super::*;
 
 #[test]
-fn native_provider_capability_selects_only_the_running_image_and_exact_protocols() {
-    let capability = NativeProviderCapability::capture_current().expect("retain current image");
+fn native_provider_current_image_enforces_byte_limit_and_exact_protocols() {
+    let executable = std::env::current_exe().expect("actual running test image");
+    let image_bytes = fs::metadata(&executable).expect("actual running image metadata").len();
+    println!("[native-provider-current-image] bytes={image_bytes} ceiling={MAX_COMPILER_BYTES}");
+    let captured = NativeProviderCapability::capture_current();
+    if image_bytes > MAX_COMPILER_BYTES {
+        let Err(error) = captured else {
+            panic!(
+                "oversized running image must grant no capability: {image_bytes} bytes exceeds {MAX_COMPILER_BYTES}"
+            );
+        };
+        assert_eq!(
+            error.code(),
+            "ZRYNA-F1101",
+            "running image has {image_bytes} bytes; admission ceiling is {MAX_COMPILER_BYTES}"
+        );
+        return;
+    }
+    let capability = captured.unwrap_or_else(|error| {
+        panic!(
+            "retain bounded current image: {image_bytes} bytes; admission ceiling is {MAX_COMPILER_BYTES}: {error:?}"
+        )
+    });
     assert_eq!(capability.compiler_sha256().len(), 64);
     assert!(capability.compiler_sha256().bytes().all(|byte| byte.is_ascii_hexdigit()));
     capability.revalidate().expect("unchanged current image");

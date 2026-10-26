@@ -1,0 +1,59 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "control-birth-call-loop",
+      "provider": "native",
+      "packet": "control-birth-call-loop-native.json",
+      "packetSha256": "db394059b9b47c385875157063df40055987e6743c8a1cc1c39009ff374ef157",
+      "packetBytes": 21108,
+      "exactSourceSha256": "9c0343747b1740d75792d5dc9497da4342fee63f93afb3626e8b1a6918cfc622",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "control-birth-call-loop",
+      "provider": "typescript",
+      "packet": "control-birth-call-loop-typescript.json",
+      "packetSha256": "960e4a98212d9b8eaae3e0148dd8396670d14b4a0839c8185b6f32908dcc67e6",
+      "packetBytes": 21108,
+      "exactSourceSha256": "9c0343747b1740d75792d5dc9497da4342fee63f93afb3626e8b1a6918cfc622",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "control-live-count-call-loop",
+      "provider": "native",
+      "packet": "control-live-count-call-loop-native.json",
+      "packetSha256": "2f199acf619c03dc21bd554524ded4a2adfab4415908dd3c418c3cb7706be883",
+      "packetBytes": 39572,
+      "exactSourceSha256": "ff7b7ad9de9b82975912dc1801306f23a9f7edddba3cd57e370afc9d1cc8e6ec",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "control-live-count-call-loop",
+      "provider": "typescript",
+      "packet": "control-live-count-call-loop-typescript.json",
+      "packetSha256": "b3836bb1eaf5ec923f9e3dbca4552a8eb35ace78ac5e7a6da7102d2513a354dd",
+      "packetBytes": 39572,
+      "exactSourceSha256": "ff7b7ad9de9b82975912dc1801306f23a9f7edddba3cd57e370afc9d1cc8e6ec",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "control-expired-call-loop",
+      "provider": "native",
+      "packet": "control-expired-call-loop-native.json",
+      "packetSha256": "d7d62487aaacdf5c0004938a03d0de85dff8761a9cb4444b36d21d4f2b88ecf9",
+      "packetBytes": 31664,
+      "exactSourceSha256": "bd59155d3aa751749a7ac30958ad46528edc652a952925572d540073c0736b35",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "control-expired-call-loop",
+      "provider": "typescript",
+      "packet": "control-expired-call-loop-typescript.json",
+      "packetSha256": "7942762a1c4ece93d2b3d2db88b669d048a218630f8d17cc65a408d31ed528ab",
+      "packetBytes": 31664,
+      "exactSourceSha256": "bd59155d3aa751749a7ac30958ad46528edc652a952925572d540073c0736b35",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

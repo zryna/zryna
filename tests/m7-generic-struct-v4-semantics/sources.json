@@ -1,0 +1,14 @@
+{
+  "construction": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function score(): i32 { const box: Box<i32> = Box<i32>({ value: 7 }); return box.value; }",
+  "fault-declaration-order": "interface Pair<T extends ZrynaValue> extends ZrynaStruct { left: T; right: T; } function score(): i32 { const earlierRoot: String = \"earlier-root\"; const pair: Pair<String> = Pair<String>({ left: \"left\", right: clone(earlierRoot) }); return 7; }",
+  "fault-reordered-spelling": "interface Pair<T extends ZrynaValue> extends ZrynaStruct { left: T; right: T; } function score(): i32 { const earlierRoot: String = \"earlier-root\"; const pair: Pair<String> = Pair<String>({ right: clone(earlierRoot), left: \"left\" }); return 7; }",
+  "fixed-copy": "interface Fixed<T extends ZrynaValue> extends ZrynaStruct { owned: String; code: i32; } export function score(input: i32): i32 { const item: Fixed<i32> = Fixed<i32>({ code: input, owned: \"owner\" }); return item.code; }",
+  "moved-copy": "interface Fixed<T extends ZrynaValue> extends ZrynaStruct { owned: String; code: i32; } export function score(input: i32): i32 { const item: Fixed<i32> = Fixed<i32>({ code: input, owned: \"owner\" }); const moved: Fixed<i32> = item; return moved.code; }",
+  "use-after-move": "interface Fixed<T extends ZrynaValue> extends ZrynaStruct { owned: String; code: i32; } export function score(input: i32): i32 { const item: Fixed<i32> = Fixed<i32>({ code: input, owned: \"owner\" }); const moved: Fixed<i32> = item; return item.code; }",
+  "shared-copy": "interface Fixed<T extends ZrynaValue> extends ZrynaStruct { owned: String; code: i32; } export function score(input: i32): i32 { const item: Fixed<i32> = Fixed<i32>({ code: input, owned: \"owner\" }); const loan: Borrow<Fixed<i32>> = borrow(item); return item.code; }",
+  "exclusive-copy": "interface Fixed<T extends ZrynaValue> extends ZrynaStruct { owned: String; code: i32; } export function score(input: i32): i32 { const item: Fixed<i32> = Fixed<i32>({ code: input, owned: \"owner\" }); const loan: BorrowMut<Fixed<i32>> = borrowMut(item); return item.code; }",
+  "opaque-projection": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function unused<T extends ZrynaValue>(input: Box<T>): T { return input.value; } export function score(input: i32): i32 { return input; }",
+  "opaque-identity": "interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function unused<T extends ZrynaValue>(input: Box<T>): Box<T> { return input; } export function score(input: i32): i32 { return input; }",
+  "nested-unused": "interface Inner extends ZrynaEnum { none: ZrynaNone; code: i32; } interface Wrapper extends ZrynaStruct { value: Inner; } export function score(input: i32): i32 { return input; }",
+  "plain-enum": "interface Inner extends ZrynaEnum { none: ZrynaNone; code: i32; } export function score(input: i32): i32 { return input; }"
+}

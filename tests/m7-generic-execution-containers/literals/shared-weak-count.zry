@@ -1,0 +1,7 @@
+export function entry(): i32 {
+  const owner: Shared<String> = shared("L");
+  const copied: Shared<String> = clone(owner);
+  const weak: Weak<String> = downgrade(owner);
+  const copiedWeak: Weak<String> = clone(weak);
+  return 7;
+}

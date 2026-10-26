@@ -1,0 +1,10 @@
+[
+  {
+    "path": "main.zry",
+    "text": "import { Box as Alias } from \"./values.zry\"; function score(): i32 { const box: Alias<i32> = Alias<i32>({ value: 7 }); return box.value; }"
+  },
+  {
+    "path": "values.zry",
+    "text": "export interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }"
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+    "/tmp/m416-nominal-transport-candidate/adapters/typescript-6/src/worker-v5.mjs"
+  ],
+  "source_sha256": "66445d391e2f77bb30bb663f3888b01ef9a8247ff64e4714c4c35e2edd39e47a",
+  "source_bytes": 430,
+  "packet_sha256": "90092efe0d66a4b7f53e85f0e0ba464b7de27fc6887dbaf1c32bf839eed289df",
+  "packet_bytes": 11417,
+  "provider": {
+    "provider": "typescript-6",
+    "provider_version": "6.0.3",
+    "protocol_version": 5,
+    "capabilities": {
+      "module_resolution": false,
+      "semantic_diagnostics": false,
+      "control_flow_v1": true,
+      "data_ownership_syntax_v1": true,
+      "bounded_generics_syntax_v1": true
+    }
+  },
+  "exit": 0,
+  "stderr_bytes": 0,
+  "elapsed_seconds": 0.7132854269875679,
+  "limits": "ActualfreshTS6protocol5; exactidentityauthenticatedBEFOREanalysis,20sunchanged,1MiBresponsecap. NativeDTO/source/semantic/NEWowner/objectqualificationnext, notyetPASS."
+}

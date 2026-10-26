@@ -1,0 +1,8 @@
+interface Wrap extends ZrynaStruct { value: Option<String>; code: i32; }
+export function entry(): i32 {
+  const absent: Wrap = Wrap({ code: 7, value: Option.none<String>() });
+  const absentCopy: Wrap = clone(absent);
+  const active: Wrap = Wrap({ code: 7, value: Option.some<String>("L") });
+  const activeCopy: Wrap = clone(active);
+  return absentCopy.code;
+}

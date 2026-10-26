@@ -1,0 +1,2 @@
+function transfer(first: String, middle: String, last: String): i32 { const moved: String = first; return 7; }
+export function entry(): i32 { return transfer("first", "middle", "last"); }

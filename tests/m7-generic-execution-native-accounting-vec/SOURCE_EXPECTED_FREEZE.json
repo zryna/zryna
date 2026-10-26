@@ -1,0 +1,65 @@
+{
+  "format": "m416.native-vec-accounting-source.v1",
+  "timing": "Frozen before provider authentication, target output or Vec accounting implementation",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "nonempty-vec-call-loop",
+      "source": "literals/nonempty-vec-call-loop.zry",
+      "bytes": 335,
+      "sha256": "ecdddbb1190e65271668a1efbf3a33c6c2af0c1a9c22f01cf2ba29cf029c952f",
+      "expect": "whole-seal",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "entry": "entry",
+      "parameters": [
+        {
+          "name": "trips",
+          "type": "i32"
+        }
+      ],
+      "return": "i32"
+    },
+    {
+      "case": "empty-vec-call-loop",
+      "source": "literals/empty-vec-call-loop.zry",
+      "bytes": 327,
+      "sha256": "23dcebee3570be9ed67a56fa986c557d63ecbfab45bf35986f2627c00dcbb891",
+      "expect": "whole-seal",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "entry": "entry",
+      "parameters": [
+        {
+          "name": "trips",
+          "type": "i32"
+        }
+      ],
+      "return": "i32"
+    },
+    {
+      "case": "reserve-vec-call-loop",
+      "source": "literals/reserve-vec-call-loop.zry",
+      "bytes": 384,
+      "sha256": "997fcea3f00647e2c9cd502c85338b29f5370c595ac627f330128581f0fc67eb",
+      "expect": "whole-seal",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "entry": "entry",
+      "parameters": [
+        {
+          "name": "trips",
+          "type": "i32"
+        }
+      ],
+      "return": "i32"
+    }
+  ],
+  "unchanged_language_forms": "Existing Vec constructors, mutable push, static Copy index, source calls and While; no source capacity API/new syntax/profile"
+}

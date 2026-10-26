@@ -1,0 +1,9 @@
+function resize(root: BorrowMut<Vec<Vec<i32>>>): i32 {
+  push(root, Vec<i32>([99]));
+  return 7;
+}
+export function entry(index: i32): i32 {
+  let root: Vec<Vec<i32>> = Vec<Vec<i32>>([Vec<i32>([11]), Vec<i32>([19])]);
+  push(root[index], resize(borrowMut(root)));
+  return 0;
+}

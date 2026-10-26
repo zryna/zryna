@@ -1,0 +1,117 @@
+{
+  "freshProviderProcesses": 32,
+  "cases": [
+    {
+      "case": "struct-survivor",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "struct-refill-whole",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "partial-root-replacement",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "nested-disjoint",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "array-survivor",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "array-refill",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "opaque-child",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "sibling-loan",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "failure-after-hole",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "branch-same-hole",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "loop-refill",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "double-field",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "whole-after-hole",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "write-borrowed-field",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "unrestored-loop-field",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "wrong-field-rhs",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

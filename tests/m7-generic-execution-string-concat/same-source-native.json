@@ -1,0 +1,312 @@
+{
+  "diagnostics": [],
+  "files": [
+    {
+      "data_declarations": [],
+      "functions": [
+        {
+          "body": {
+            "blocks": [
+              {
+                "close_brace_span": {
+                  "end": 118,
+                  "file": 0,
+                  "start": 117
+                },
+                "open_brace_span": {
+                  "end": 30,
+                  "file": 0,
+                  "start": 29
+                },
+                "span": {
+                  "end": 118,
+                  "file": 0,
+                  "start": 29
+                },
+                "statements": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            ],
+            "expressions": [
+              {
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"same\""
+                },
+                "span": {
+                  "end": 59,
+                  "file": 0,
+                  "start": 53
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 96,
+                      "file": 0,
+                      "start": 91
+                    },
+                    "text": "value"
+                  }
+                },
+                "span": {
+                  "end": 96,
+                  "file": 0,
+                  "start": 91
+                }
+              },
+              {
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "span": {
+                      "end": 103,
+                      "file": 0,
+                      "start": 98
+                    },
+                    "text": "value"
+                  }
+                },
+                "span": {
+                  "end": 103,
+                  "file": 0,
+                  "start": 98
+                }
+              },
+              {
+                "kind": {
+                  "arguments": [
+                    1,
+                    2
+                  ],
+                  "callee": {
+                    "span": {
+                      "end": 90,
+                      "file": 0,
+                      "start": 84
+                    },
+                    "text": "concat"
+                  },
+                  "close_paren_span": {
+                    "end": 104,
+                    "file": 0,
+                    "start": 103
+                  },
+                  "kind": "call",
+                  "open_paren_span": {
+                    "end": 91,
+                    "file": 0,
+                    "start": 90
+                  },
+                  "type_arguments": null
+                },
+                "span": {
+                  "end": 104,
+                  "file": 0,
+                  "start": 84
+                }
+              },
+              {
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "19"
+                },
+                "span": {
+                  "end": 115,
+                  "file": 0,
+                  "start": 113
+                }
+              }
+            ],
+            "root_block": 0,
+            "span": {
+              "end": 118,
+              "file": 0,
+              "start": 29
+            },
+            "statements": [
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 52,
+                    "file": 0,
+                    "start": 51
+                  },
+                  "initializer": 0,
+                  "keyword_span": {
+                    "end": 36,
+                    "file": 0,
+                    "start": 31
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 42,
+                      "file": 0,
+                      "start": 37
+                    },
+                    "text": "value"
+                  },
+                  "semicolon_span": {
+                    "end": 60,
+                    "file": 0,
+                    "start": 59
+                  },
+                  "type_syntax": 1
+                },
+                "span": {
+                  "end": 60,
+                  "file": 0,
+                  "start": 31
+                }
+              },
+              {
+                "kind": {
+                  "equals_span": {
+                    "end": 83,
+                    "file": 0,
+                    "start": 82
+                  },
+                  "initializer": 3,
+                  "keyword_span": {
+                    "end": 66,
+                    "file": 0,
+                    "start": 61
+                  },
+                  "kind": "local-declaration",
+                  "mutable": false,
+                  "name": {
+                    "span": {
+                      "end": 73,
+                      "file": 0,
+                      "start": 67
+                    },
+                    "text": "joined"
+                  },
+                  "semicolon_span": {
+                    "end": 105,
+                    "file": 0,
+                    "start": 104
+                  },
+                  "type_syntax": 2
+                },
+                "span": {
+                  "end": 105,
+                  "file": 0,
+                  "start": 61
+                }
+              },
+              {
+                "kind": {
+                  "keyword_span": {
+                    "end": 112,
+                    "file": 0,
+                    "start": 106
+                  },
+                  "kind": "return",
+                  "semicolon_span": {
+                    "end": 116,
+                    "file": 0,
+                    "start": 115
+                  },
+                  "value": 4
+                },
+                "span": {
+                  "end": 116,
+                  "file": 0,
+                  "start": 106
+                }
+              }
+            ]
+          },
+          "export_span": {
+            "end": 6,
+            "file": 0,
+            "start": 0
+          },
+          "function_span": {
+            "end": 15,
+            "file": 0,
+            "start": 7
+          },
+          "name": {
+            "span": {
+              "end": 21,
+              "file": 0,
+              "start": 16
+            },
+            "text": "entry"
+          },
+          "parameters": [],
+          "result_type": 0,
+          "span": {
+            "end": 118,
+            "file": 0,
+            "start": 0
+          },
+          "type_parameters": null
+        }
+      ],
+      "id": 0,
+      "imports": [],
+      "path": "main.zry",
+      "type_syntax": [
+        {
+          "kind": {
+            "kind": "named",
+            "name": {
+              "span": {
+                "end": 28,
+                "file": 0,
+                "start": 25
+              },
+              "text": "i32"
+            }
+          },
+          "span": {
+            "end": 28,
+            "file": 0,
+            "start": 25
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 50,
+              "file": 0,
+              "start": 44
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 50,
+            "file": 0,
+            "start": 44
+          }
+        },
+        {
+          "kind": {
+            "keyword_span": {
+              "end": 81,
+              "file": 0,
+              "start": 75
+            },
+            "kind": "string"
+          },
+          "span": {
+            "end": 81,
+            "file": 0,
+            "start": 75
+          }
+        }
+      ]
+    }
+  ],
+  "schema_version": 5
+}

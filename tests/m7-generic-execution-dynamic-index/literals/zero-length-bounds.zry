@@ -1,0 +1,10 @@
+export function entry(index: i32, vector: bool): i32 {
+  if (vector) {
+    const root: Vec<i32> = Vec<i32>([]);
+    { const slot: Borrow<i32> = borrow(root[index]); const result: i32 = slot; }
+  } else {
+    const root: FixedArray<i32, 0> = FixedArray<i32, 0>([]);
+    { const slot: Borrow<i32> = borrow(root[index]); const result: i32 = slot; }
+  }
+  return 0;
+}

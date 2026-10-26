@@ -1,0 +1,624 @@
+{
+  "schema_version": 5,
+  "files": [
+    {
+      "id": 0,
+      "path": "main.zry",
+      "imports": [],
+      "type_syntax": [
+        {
+          "span": {
+            "file": 0,
+            "start": 25,
+            "end": 28
+          },
+          "kind": {
+            "kind": "named",
+            "name": {
+              "text": "i32",
+              "span": {
+                "file": 0,
+                "start": 25,
+                "end": 28
+              }
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 53,
+            "end": 59
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 53,
+              "end": 59
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 42,
+            "end": 63
+          },
+          "kind": {
+            "kind": "fixed-array",
+            "keyword_span": {
+              "file": 0,
+              "start": 42,
+              "end": 52
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 52,
+              "end": 53
+            },
+            "element": 1,
+            "comma_span": {
+              "file": 0,
+              "start": 59,
+              "end": 60
+            },
+            "length_span": {
+              "file": 0,
+              "start": 61,
+              "end": 62
+            },
+            "length": 2,
+            "length_spelling": "2",
+            "greater_than_span": {
+              "file": 0,
+              "start": 62,
+              "end": 63
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 77,
+            "end": 83
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 77,
+              "end": 83
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 66,
+            "end": 87
+          },
+          "kind": {
+            "kind": "fixed-array",
+            "keyword_span": {
+              "file": 0,
+              "start": 66,
+              "end": 76
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 76,
+              "end": 77
+            },
+            "element": 3,
+            "comma_span": {
+              "file": 0,
+              "start": 83,
+              "end": 84
+            },
+            "length_span": {
+              "file": 0,
+              "start": 85,
+              "end": 86
+            },
+            "length": 2,
+            "length_spelling": "2",
+            "greater_than_span": {
+              "file": 0,
+              "start": 86,
+              "end": 87
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 114,
+            "end": 120
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 114,
+              "end": 120
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 173,
+            "end": 179
+          },
+          "kind": {
+            "kind": "string",
+            "keyword_span": {
+              "file": 0,
+              "start": 173,
+              "end": 179
+            }
+          }
+        },
+        {
+          "span": {
+            "file": 0,
+            "start": 162,
+            "end": 183
+          },
+          "kind": {
+            "kind": "fixed-array",
+            "keyword_span": {
+              "file": 0,
+              "start": 162,
+              "end": 172
+            },
+            "less_than_span": {
+              "file": 0,
+              "start": 172,
+              "end": 173
+            },
+            "element": 6,
+            "comma_span": {
+              "file": 0,
+              "start": 179,
+              "end": 180
+            },
+            "length_span": {
+              "file": 0,
+              "start": 181,
+              "end": 182
+            },
+            "length": 2,
+            "length_spelling": "2",
+            "greater_than_span": {
+              "file": 0,
+              "start": 182,
+              "end": 183
+            }
+          }
+        }
+      ],
+      "data_declarations": [],
+      "functions": [
+        {
+          "span": {
+            "file": 0,
+            "start": 0,
+            "end": 205
+          },
+          "export_span": {
+            "file": 0,
+            "start": 0,
+            "end": 6
+          },
+          "function_span": {
+            "file": 0,
+            "start": 7,
+            "end": 15
+          },
+          "name": {
+            "text": "entry",
+            "span": {
+              "file": 0,
+              "start": 16,
+              "end": 21
+            }
+          },
+          "type_parameters": null,
+          "parameters": [],
+          "result_type": 0,
+          "body": {
+            "span": {
+              "file": 0,
+              "start": 29,
+              "end": 205
+            },
+            "root_block": 0,
+            "blocks": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 29,
+                  "end": 205
+                },
+                "open_brace_span": {
+                  "file": 0,
+                  "start": 29,
+                  "end": 30
+                },
+                "statements": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "close_brace_span": {
+                  "file": 0,
+                  "start": 204,
+                  "end": 205
+                }
+              }
+            ],
+            "statements": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 31,
+                  "end": 100
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 31,
+                    "end": 34
+                  },
+                  "mutable": true,
+                  "name": {
+                    "text": "items",
+                    "span": {
+                      "file": 0,
+                      "start": 35,
+                      "end": 40
+                    }
+                  },
+                  "type_syntax": 2,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 64,
+                    "end": 65
+                  },
+                  "initializer": 2,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 99,
+                    "end": 100
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 101,
+                  "end": 132
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 101,
+                    "end": 106
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "taken",
+                    "span": {
+                      "file": 0,
+                      "start": 107,
+                      "end": 112
+                    }
+                  },
+                  "type_syntax": 5,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 121,
+                    "end": 122
+                  },
+                  "initializer": 5,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 131,
+                    "end": 132
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 133,
+                  "end": 148
+                },
+                "kind": {
+                  "kind": "assignment",
+                  "target": 8,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 142,
+                    "end": 143
+                  },
+                  "value": 9,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 147,
+                    "end": 148
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 149,
+                  "end": 192
+                },
+                "kind": {
+                  "kind": "local-declaration",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 149,
+                    "end": 154
+                  },
+                  "mutable": false,
+                  "name": {
+                    "text": "whole",
+                    "span": {
+                      "file": 0,
+                      "start": 155,
+                      "end": 160
+                    }
+                  },
+                  "type_syntax": 7,
+                  "equals_span": {
+                    "file": 0,
+                    "start": 184,
+                    "end": 185
+                  },
+                  "initializer": 10,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 191,
+                    "end": 192
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 193,
+                  "end": 203
+                },
+                "kind": {
+                  "kind": "return",
+                  "keyword_span": {
+                    "file": 0,
+                    "start": 193,
+                    "end": 199
+                  },
+                  "value": 11,
+                  "semicolon_span": {
+                    "file": 0,
+                    "start": 202,
+                    "end": 203
+                  }
+                }
+              }
+            ],
+            "expressions": [
+              {
+                "span": {
+                  "file": 0,
+                  "start": 89,
+                  "end": 92
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"a\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 94,
+                  "end": 97
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"b\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 66,
+                  "end": 99
+                },
+                "kind": {
+                  "kind": "fixed-array-construction",
+                  "type_syntax": 4,
+                  "open_paren_span": {
+                    "file": 0,
+                    "start": 87,
+                    "end": 88
+                  },
+                  "open_bracket_span": {
+                    "file": 0,
+                    "start": 88,
+                    "end": 89
+                  },
+                  "elements": [
+                    0,
+                    1
+                  ],
+                  "close_bracket_span": {
+                    "file": 0,
+                    "start": 97,
+                    "end": 98
+                  },
+                  "close_paren_span": {
+                    "file": 0,
+                    "start": 98,
+                    "end": 99
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 123,
+                  "end": 128
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "items",
+                    "span": {
+                      "file": 0,
+                      "start": 123,
+                      "end": 128
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 129,
+                  "end": 130
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "1"
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 123,
+                  "end": 131
+                },
+                "kind": {
+                  "kind": "index",
+                  "base": 3,
+                  "open_bracket_span": {
+                    "file": 0,
+                    "start": 128,
+                    "end": 129
+                  },
+                  "index": 4,
+                  "close_bracket_span": {
+                    "file": 0,
+                    "start": 130,
+                    "end": 131
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 133,
+                  "end": 138
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "items",
+                    "span": {
+                      "file": 0,
+                      "start": 133,
+                      "end": 138
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 139,
+                  "end": 140
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "1"
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 133,
+                  "end": 141
+                },
+                "kind": {
+                  "kind": "index",
+                  "base": 6,
+                  "open_bracket_span": {
+                    "file": 0,
+                    "start": 138,
+                    "end": 139
+                  },
+                  "index": 7,
+                  "close_bracket_span": {
+                    "file": 0,
+                    "start": 140,
+                    "end": 141
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 144,
+                  "end": 147
+                },
+                "kind": {
+                  "kind": "string-literal",
+                  "spelling": "\"c\""
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 186,
+                  "end": 191
+                },
+                "kind": {
+                  "kind": "reference",
+                  "name": {
+                    "text": "items",
+                    "span": {
+                      "file": 0,
+                      "start": 186,
+                      "end": 191
+                    }
+                  }
+                }
+              },
+              {
+                "span": {
+                  "file": 0,
+                  "start": 200,
+                  "end": 202
+                },
+                "kind": {
+                  "kind": "i32-literal",
+                  "spelling": "29"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

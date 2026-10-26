@@ -1,0 +1,316 @@
+{
+  "format": "m416.native-private-same-object-string-probes.v1",
+  "timing": "Seeded private ABI expectations frozen from accepted accounting law and existing held oracle BEFORE this harness/compiler output/implementation observations",
+  "law": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "scope": "Finite String actual generated private function effect/status proof; eight probes per provider; other13roles open",
+  "source_inputs": "Existing authenticated String V2 three originals, unchanged source/runtime oracles and packets; no new source literals/providers",
+  "trust_boundary": "Linux x86-64 SystemV; local/private symbol and ordinary public wrapper in identical .text input section; checked signed object-relative delta; trusted unchanged linker preserves intra-section offsets. No object/symbol rewrite, alias, newexport, publicFFI or fabricatedseal.",
+  "counts": "Step delta counts exclude explicit parent setup and subsequent held cleanup. Seed counters are private model prestates, not actual historical million-event observations.",
+  "records_fields": [
+    "phase",
+    "status",
+    "out",
+    "A",
+    "L",
+    "S",
+    "H",
+    "fault_armed",
+    "from",
+    "clone",
+    "release",
+    "attempts",
+    "allocations",
+    "frees",
+    "live",
+    "owners",
+    "high",
+    "zero_checks"
+  ],
+  "cases": [
+    {
+      "id": "positive-attempt-exact",
+      "case": "nonempty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        1048575,
+        0,
+        1048575,
+        0
+      ],
+      "allocation_fault_armed": false,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 0,
+        "out": 1,
+        "post": [
+          1048576,
+          0,
+          1048577,
+          0
+        ],
+        "step_delta": {
+          "from": 1,
+          "clone": 0,
+          "release": 1,
+          "attempts": 1,
+          "allocations": 1,
+          "frees": 1
+        },
+        "fault_armed_after": false,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "positive-attempt-extra",
+      "case": "nonempty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        1048576,
+        0,
+        2097152,
+        0
+      ],
+      "allocation_fault_armed": false,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          1048576,
+          0,
+          2097152,
+          0
+        ],
+        "step_delta": {
+          "from": 0,
+          "clone": 0,
+          "release": 0,
+          "attempts": 0,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": false,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "valid-allocation-failure",
+      "case": "nonempty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "allocation_fault_armed": true,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 1,
+        "out": 0,
+        "post": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "step_delta": {
+          "from": 1,
+          "clone": 0,
+          "release": 0,
+          "attempts": 1,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": false,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "potential-fault-debt-denied-first",
+      "case": "nonempty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        0,
+        0,
+        4194303,
+        0
+      ],
+      "allocation_fault_armed": true,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          0,
+          0,
+          4194303,
+          0
+        ],
+        "step_delta": {
+          "from": 0,
+          "clone": 0,
+          "release": 0,
+          "attempts": 0,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": true,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "empty-at-attempt-ceiling",
+      "case": "empty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        1048576,
+        0,
+        2097152,
+        0
+      ],
+      "allocation_fault_armed": false,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 0,
+        "out": 1,
+        "post": [
+          1048576,
+          0,
+          2097154,
+          0
+        ],
+        "step_delta": {
+          "from": 1,
+          "clone": 0,
+          "release": 1,
+          "attempts": 0,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": false,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "empty-status-exact",
+      "case": "empty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        0,
+        0,
+        4194302,
+        0
+      ],
+      "allocation_fault_armed": false,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 0,
+        "out": 1,
+        "post": [
+          0,
+          0,
+          4194304,
+          0
+        ],
+        "step_delta": {
+          "from": 1,
+          "clone": 0,
+          "release": 1,
+          "attempts": 0,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": false,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "empty-prospective-debt-extra",
+      "case": "empty-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        0,
+        0,
+        4194303,
+        0
+      ],
+      "allocation_fault_armed": false,
+      "physical_parent_setup": false,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          0,
+          0,
+          4194303,
+          0
+        ],
+        "step_delta": {
+          "from": 0,
+          "clone": 0,
+          "release": 0,
+          "attempts": 0,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": false,
+        "boundary_live": 0,
+        "boundary_owners": 0,
+        "cleanup_post": null
+      }
+    },
+    {
+      "id": "callee-attempt-denial-held-parent",
+      "case": "retained-clone-call-loop",
+      "evidence_kind": "private seeded ABI of same ordinary unchanged object; not actual million-event source execution",
+      "pre": [
+        1048576,
+        1,
+        2097151,
+        1
+      ],
+      "allocation_fault_armed": false,
+      "physical_parent_setup": true,
+      "expected": {
+        "status": 2,
+        "out": 0,
+        "post": [
+          1048576,
+          1,
+          2097151,
+          1
+        ],
+        "step_delta": {
+          "from": 0,
+          "clone": 0,
+          "release": 0,
+          "attempts": 0,
+          "allocations": 0,
+          "frees": 0
+        },
+        "fault_armed_after": false,
+        "boundary_live": 1,
+        "boundary_owners": 1,
+        "cleanup_post": [
+          1048576,
+          0,
+          2097152,
+          0
+        ]
+      }
+    }
+  ]
+}

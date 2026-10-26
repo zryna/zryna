@@ -1,0 +1,1 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } export function entry(): i32 { const original: Box<Box<String>> = Box<Box<String>>({ value: Box<String>({ value: "L" }) }); const loan: Borrow<Box<Box<String>>> = borrow(original); const moved: Box<Box<String>> = original; return 7; }

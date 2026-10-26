@@ -1,0 +1,6 @@
+function overwrite(value: BorrowMut<String>): i32 { value = clone(value); value = "new"; return 13; }
+export function entry(index: i32): i32 {
+  let root: Vec<Option<String>> = Vec<Option<String>>([Option.none<String>(), Option.some<String>("old")]);
+  const result: i32 = match(borrowMut(root[index]), { "Option.none": () => 2, "Option.some": (payload) => overwrite(payload) });
+  return result;
+}

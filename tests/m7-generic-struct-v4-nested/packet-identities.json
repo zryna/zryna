@@ -1,0 +1,188 @@
+{
+  "status": "Packet identity subset of frozen syntax-only provider receipts; no semantic qualification.",
+  "originalReceiptsSha256": "20ee03cca97b76e525f873970a2b33e37f1ab7015f77a827c1da013e9804509b",
+  "records": [
+    {
+      "case": "nested-copy",
+      "provider": "native",
+      "packet": "nested-copy-native.json",
+      "packetBytes": 18410,
+      "packetSha256": "d6c11b66d331f1e11319e08d3d8bca61af7e4966cc5834b2814b9facffa3fc9e"
+    },
+    {
+      "case": "nested-copy",
+      "provider": "typescript",
+      "packet": "nested-copy-typescript.json",
+      "packetBytes": 18410,
+      "packetSha256": "f24e79312c0704489990509630df493555f9e7b7f1afa10524fe40c96094cd97"
+    },
+    {
+      "case": "nested-owned-call",
+      "provider": "native",
+      "packet": "nested-owned-call-native.json",
+      "packetBytes": 30194,
+      "packetSha256": "c9d79dac13cf2972c1cfdfba7667bd9d152a095c93887e318f845f44c1a657b7"
+    },
+    {
+      "case": "nested-owned-call",
+      "provider": "typescript",
+      "packet": "nested-owned-call-typescript.json",
+      "packetBytes": 30194,
+      "packetSha256": "76e1eb812378b9b1daa5e8f58704dc98c01d3e264531769d0cb0414a391b5153"
+    },
+    {
+      "case": "option-box-root",
+      "provider": "native",
+      "packet": "option-box-root-native.json",
+      "packetBytes": 22318,
+      "packetSha256": "f469a6506ee3cf0dda347df0f1dd0e0efcd17225f5b9062e5e53b0f3b90cb526"
+    },
+    {
+      "case": "option-box-root",
+      "provider": "typescript",
+      "packet": "option-box-root-typescript.json",
+      "packetBytes": 22318,
+      "packetSha256": "68ce47dd1c51f985db552eacc2cebac0a90bdb001a82b1490f45655189901423"
+    },
+    {
+      "case": "box-option-root",
+      "provider": "native",
+      "packet": "box-option-root-native.json",
+      "packetBytes": 25295,
+      "packetSha256": "ed21e495619ec1fe4057c85e9c711ca8bd3c22be3f036a4bb3b898fe24cf941d"
+    },
+    {
+      "case": "box-option-root",
+      "provider": "typescript",
+      "packet": "box-option-root-typescript.json",
+      "packetBytes": 25295,
+      "packetSha256": "afc4f1165327d89b417a6088e472e9eff7d21e213eee237c6edd355c4eeae5f4"
+    },
+    {
+      "case": "plain-and-reversed-arguments",
+      "provider": "native",
+      "packet": "plain-and-reversed-arguments-native.json",
+      "packetBytes": 37634,
+      "packetSha256": "a8f6e4f8125ce93dd4860d3ad0a65762d6641fb633f020190567616297361bf1"
+    },
+    {
+      "case": "plain-and-reversed-arguments",
+      "provider": "typescript",
+      "packet": "plain-and-reversed-arguments-typescript.json",
+      "packetBytes": 37634,
+      "packetSha256": "abf91bc73791ded1982630936030c67f9310a9f7d77ea7b393a8761b13baa3a3"
+    },
+    {
+      "case": "phantom-remains-copy",
+      "provider": "native",
+      "packet": "phantom-remains-copy-native.json",
+      "packetBytes": 25467,
+      "packetSha256": "ac8d8eed0c9ed98b7e6ec267326cdf4046588ddfb3cc36a6f0d4cb9f5b0f2f48"
+    },
+    {
+      "case": "phantom-remains-copy",
+      "provider": "typescript",
+      "packet": "phantom-remains-copy-typescript.json",
+      "packetBytes": 25467,
+      "packetSha256": "08fe6dccd2d2593ce51544ae95832f214d197c637482163e2b636f1d975f409b"
+    },
+    {
+      "case": "fixed-member-remains-affine",
+      "provider": "native",
+      "packet": "fixed-member-remains-affine-native.json",
+      "packetBytes": 22398,
+      "packetSha256": "a75659819d863bbb78a78a4e60d1efb210ad8dcdd18d2e94033db61089d0088a"
+    },
+    {
+      "case": "fixed-member-remains-affine",
+      "provider": "typescript",
+      "packet": "fixed-member-remains-affine-typescript.json",
+      "packetBytes": 22398,
+      "packetSha256": "050d455c2988a7f0a225384a6c95ff519a8ecdbb9cc7dd768bb59386b052b3f2"
+    },
+    {
+      "case": "nested-prefix-faults",
+      "provider": "native",
+      "packet": "nested-prefix-faults-native.json",
+      "packetBytes": 28112,
+      "packetSha256": "49dcee3945e0522ea1b93798bf68ca8e929a9dc67a4339797f6d4f3c7eacf14b"
+    },
+    {
+      "case": "nested-prefix-faults",
+      "provider": "typescript",
+      "packet": "nested-prefix-faults-typescript.json",
+      "packetBytes": 28112,
+      "packetSha256": "9f4fb6c13a539806f35e5859e105b6c85cd799de83e0a3cd322a4ffb54b93c71"
+    },
+    {
+      "case": "moved-whole-twice",
+      "provider": "native",
+      "packet": "moved-whole-twice-native.json",
+      "packetBytes": 24152,
+      "packetSha256": "83a90d80a1c03bd99d315ba8ce07d445fd7f6b1d636188299edaf92c3756ee2c"
+    },
+    {
+      "case": "moved-whole-twice",
+      "provider": "typescript",
+      "packet": "moved-whole-twice-typescript.json",
+      "packetBytes": 24152,
+      "packetSha256": "120fef0f8d46d971e7e9648cb4e0b4572a8a8a521a753639b56e7979c39c5d3c"
+    },
+    {
+      "case": "loaned-whole-consumed",
+      "provider": "native",
+      "packet": "loaned-whole-consumed-native.json",
+      "packetBytes": 25484,
+      "packetSha256": "5453a459424c61056cb65316d16c6a4b6d66bf9931d219a50639f6640b01e832"
+    },
+    {
+      "case": "loaned-whole-consumed",
+      "provider": "typescript",
+      "packet": "loaned-whole-consumed-typescript.json",
+      "packetBytes": 25484,
+      "packetSha256": "4a6907c25bf1dc0345bcb784ea54ac52b493b443d2da6f19b528c24ef62bbcb3"
+    },
+    {
+      "case": "affine-field-projection",
+      "provider": "native",
+      "packet": "affine-field-projection-native.json",
+      "packetBytes": 13177,
+      "packetSha256": "742af30305f8ac41fdac42420c45094dafac2ad1a1c057660eb40deae4bd70cd"
+    },
+    {
+      "case": "affine-field-projection",
+      "provider": "typescript",
+      "packet": "affine-field-projection-typescript.json",
+      "packetBytes": 13177,
+      "packetSha256": "422aa759c520ced99e8658d442b70f9f2026a26f034c9ecddc06a040a0233e15"
+    },
+    {
+      "case": "opaque-copy-assumption",
+      "provider": "native",
+      "packet": "opaque-copy-assumption-native.json",
+      "packetBytes": 14265,
+      "packetSha256": "1ee6de7ba4caf686d07f5fa7f5fcbbe4badee696b630b8d20ad77e481eb5138a"
+    },
+    {
+      "case": "opaque-copy-assumption",
+      "provider": "typescript",
+      "packet": "opaque-copy-assumption-typescript.json",
+      "packetBytes": 14265,
+      "packetSha256": "e51375ca2bc737b53b9816b4230c45e4682786276733950ed05f84474c10531d"
+    },
+    {
+      "case": "exclusive-copy-observation",
+      "provider": "native",
+      "packet": "exclusive-copy-observation-native.json",
+      "packetBytes": 23560,
+      "packetSha256": "aeb6b25c2dff590245286d20feecdcceee376b86e706a9e85adc6459730bec01"
+    },
+    {
+      "case": "exclusive-copy-observation",
+      "provider": "typescript",
+      "packet": "exclusive-copy-observation-typescript.json",
+      "packetBytes": 23560,
+      "packetSha256": "88e2a31da06d115882d4dee42dd57301828fbfa1ffba2bafb9abfd112b9b3f79"
+    }
+  ]
+}

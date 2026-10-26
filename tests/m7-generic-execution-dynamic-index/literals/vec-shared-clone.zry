@@ -1,0 +1,8 @@
+function copy(value: Borrow<String>): String { return clone(value); }
+function consume(value: String): i32 { return 31; }
+export function entry(index: i32): i32 {
+  const root: Vec<String> = Vec<String>(["left", "right"]);
+  let result: i32 = 0;
+  { const slot: Borrow<String> = borrow(root[index]); result = consume(copy(slot)); }
+  return result;
+}

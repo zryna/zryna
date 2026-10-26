@@ -100,5 +100,5 @@ pub(super) fn manifest_name_is_supported(name: &str) -> bool {
             | crate::COMMAND_H1_MANIFEST_NAME
             | "zryna-wasi-server-manifest-v1.json"
             | "zryna-wasi-server-manifest-v2.json"
-    )
+    ) || name == crate::generic_manifest::MANIFEST_NAME
 }

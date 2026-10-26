@@ -1,0 +1,41 @@
+{
+  "status": "Named packets are actual process outputs, not source/semantic/ownership authority.",
+  "records": [
+    {
+      "case": "move-text-read-copy",
+      "provider": "native",
+      "packet": "move-text-read-copy-native.json",
+      "packetSha256": "6d076d7f7b615803a9ad69bed3801a4890a83ca690f1dff68365fc9c840d3364",
+      "packetBytes": 14418,
+      "exactSourceSha256": "b7785ad7f8faa26d46e775c0dcdc1f60611ca6a3100ebeb2b2f6e6b08e2a6b45",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "move-text-read-copy",
+      "provider": "typescript",
+      "packet": "move-text-read-copy-typescript.json",
+      "packetSha256": "ec526995728754a3ee18e44030555393089d0366ff64194b235ae1e2de566e91",
+      "packetBytes": 14418,
+      "exactSourceSha256": "b7785ad7f8faa26d46e775c0dcdc1f60611ca6a3100ebeb2b2f6e6b08e2a6b45",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "refill-text-whole-move",
+      "provider": "native",
+      "packet": "refill-text-whole-move-native.json",
+      "packetSha256": "02cf2286fd4c5b4123e26231ceeabf653c3f1d0f3bbd89e7a7a9757bc9b38385",
+      "packetBytes": 18476,
+      "exactSourceSha256": "838b5041bf53f844d005169431818d7f59591fd24ace25f90264b714611c06d5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "refill-text-whole-move",
+      "provider": "typescript",
+      "packet": "refill-text-whole-move-typescript.json",
+      "packetSha256": "ce8654cd0320535981ce2ea0fa01588cd33d0da0d103e010b4a435af51f89852",
+      "packetBytes": 18476,
+      "exactSourceSha256": "838b5041bf53f844d005169431818d7f59591fd24ace25f90264b714611c06d5",
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

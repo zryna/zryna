@@ -1,0 +1,337 @@
+{
+  "status": "FROZEN V2 before providers/production/output; supersedes unpublished draft V1 unadmitted Clone bound with only admitted ZrynaValue and exact opaque forwarding. V1 retained unchanged; no actual output informed correction.",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "nominal-shared-copy",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 8,
+          "string_acquisitions": [],
+          "release_acquisition_ids": []
+        }
+      ],
+      "basis": "Both actual variants; shared payload is Borrow<i32> and only Copy observation is implicit.",
+      "source": "literals/nominal-shared-copy.zry",
+      "bytes": 379,
+      "sha256": "73339bf9809102794700a9ffb752dded5cba69864f8fb85af802b6b155d3209a"
+    },
+    {
+      "case": "nominal-shared-clone",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 5,
+          "string_acquisitions": [
+            "nominal",
+            "nominal",
+            "nominal"
+          ],
+          "release_acquisition_ids": [
+            2,
+            3,
+            1
+          ]
+        }
+      ],
+      "basis": "Shared arm loan ends before parent shared loan is cloned; owner stays live.",
+      "source": "literals/nominal-shared-clone.zry",
+      "bytes": 462,
+      "sha256": "f3892005f8561c175f025286ee1dfb73b6acc63db144b676e12a9d81ac696662"
+    },
+    {
+      "case": "nominal-exclusive-copy",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 18,
+          "string_acquisitions": [],
+          "release_acquisition_ids": []
+        }
+      ],
+      "basis": "Exclusive payload arm writes then ends; same parent exclusive loan can match again.",
+      "source": "literals/nominal-exclusive-copy.zry",
+      "bytes": 480,
+      "sha256": "918f6e8464bbe61dbe71341b9c6401a5a583523ddf81d170d064da64f9f55a2b"
+    },
+    {
+      "case": "nominal-exclusive-replace",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 18,
+          "string_acquisitions": [
+            "old",
+            "old",
+            "new",
+            "new"
+          ],
+          "release_acquisition_ids": [
+            1,
+            2,
+            4,
+            3
+          ]
+        }
+      ],
+      "basis": "Clone RHS and literal replacement preserve old payload until prepare succeeds; second match sees new payload.",
+      "source": "literals/nominal-exclusive-replace.zry",
+      "bytes": 640,
+      "sha256": "f4a181075b503c55abcdfad93dd06e52762bc8f7c04bd5eca29ec7bdd2213f07"
+    },
+    {
+      "case": "option-shared-both",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 7,
+          "string_acquisitions": [
+            "opt",
+            "opt"
+          ],
+          "release_acquisition_ids": [
+            2,
+            1
+          ]
+        }
+      ],
+      "basis": "Formal shared loan, payload-free arm and actual owned-payload arm; parent lexical loans end only at their original scope.",
+      "source": "literals/option-shared-both.zry",
+      "bytes": 488,
+      "sha256": "361f5296a92b19b175229bc66f49b9a7f71b01cc158c97e1406ba2acbfd90bb4"
+    },
+    {
+      "case": "result-shared-opaque-bound",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 6,
+          "string_acquisitions": [
+            "ok"
+          ],
+          "release_acquisition_ids": [
+            1
+          ]
+        }
+      ],
+      "basis": "Both Result variants; two original ZrynaValue bounds grant exact opaque Borrow forwarding, no Copy or Clone. The only admitted generic bound is ZrynaValue.",
+      "source": "literals/result-shared-opaque-bound.zry",
+      "bytes": 614,
+      "sha256": "1ae313d428bac6dc15c98098f0e0f389fd123a94d137fe4fcb44a21a6201c814"
+    },
+    {
+      "case": "result-exclusive-both",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 14,
+          "string_acquisitions": [
+            "old",
+            "new"
+          ],
+          "release_acquisition_ids": [
+            1,
+            2
+          ]
+        }
+      ],
+      "basis": "Both active Result payload types mutated through exact exclusive arm loans; opaque reset assumes neither Copy nor Clone.",
+      "source": "literals/result-exclusive-both.zry",
+      "bytes": 596,
+      "sha256": "fbbe204192a13d0fbce590f9c90e282bcbaf59ea1bc665687d63f91fee733026"
+    },
+    {
+      "case": "opaque-payload-forward",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 3,
+          "string_acquisitions": [
+            "opaque"
+          ],
+          "release_acquisition_ids": [
+            1
+          ]
+        }
+      ],
+      "basis": "Opaque payload grants only forwarding of exact Borrow<T>; no closed-layout Copy/Clone inference.",
+      "source": "literals/opaque-payload-forward.zry",
+      "bytes": 505,
+      "sha256": "2f1177a38f710756056d5940e31b7bfe8d94a6504e701ae7dbbafd56757083b1"
+    },
+    {
+      "case": "nested-exclusive-result",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 9,
+          "string_acquisitions": [],
+          "release_acquisition_ids": []
+        }
+      ],
+      "basis": "Nested exclusive payload loan inherits access. All arm/temporary scrutinee loans end before owner Clone and move; actual err payload is Copy.",
+      "source": "literals/nested-exclusive-result.zry",
+      "bytes": 595,
+      "sha256": "bab91322a3a7c7e56a5f93583ebe01827625156fa5439d31f0d7e2f30d9cbd28"
+    },
+    {
+      "case": "branch-arm-cleanup",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            true
+          ],
+          "i32": 5,
+          "string_acquisitions": [
+            "branch",
+            "branch",
+            "tail"
+          ],
+          "release_acquisition_ids": [
+            2,
+            3,
+            1
+          ]
+        },
+        {
+          "arguments": [
+            false
+          ],
+          "i32": 5,
+          "string_acquisitions": [
+            "branch",
+            "branch",
+            "tail"
+          ],
+          "release_acquisition_ids": [
+            2,
+            3,
+            1
+          ]
+        }
+      ],
+      "basis": "Each selected arm ends child and temporary parent before branch join; clone failure ends loans before owner cleanup.",
+      "source": "literals/branch-arm-cleanup.zry",
+      "bytes": 553,
+      "sha256": "8f83f60797464ecadb36e4ff07794307284610f764c0125d806e7ed38d87154b"
+    },
+    {
+      "case": "shared-reborrow-from-exclusive",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [],
+          "i32": 5,
+          "string_acquisitions": [
+            "nested",
+            "nested",
+            "nested"
+          ],
+          "release_acquisition_ids": [
+            2,
+            3,
+            1
+          ]
+        }
+      ],
+      "basis": "Explicit shared reborrow of exclusive payload; shared child ends, then exclusive payload arm loan ends, then original exclusive parent is readable again.",
+      "source": "literals/shared-reborrow-from-exclusive.zry",
+      "bytes": 597,
+      "sha256": "32983791871b6f2a7511abb50f170b555277caef627a973f8274e10fc3c58076"
+    },
+    {
+      "case": "shared-payload-move",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 321,
+        "end": 328,
+        "token": "payload"
+      },
+      "basis": "Invalid affine consuming value token through shared arm loan; borrowed payload cannot become owned implicitly.",
+      "source": "literals/shared-payload-move.zry",
+      "bytes": 336,
+      "sha256": "855ae69190c176911a9b2c4028418020d24b45c6e6877c2b0d3b89eecc0fd6a5"
+    },
+    {
+      "case": "shared-to-exclusive-call",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7006",
+      "primary": {
+        "file": 0,
+        "start": 374,
+        "end": 381,
+        "token": "payload"
+      },
+      "basis": "Exact Borrow<String> arm argument cannot match BorrowMut<String>; primary is invalid argument value token.",
+      "source": "literals/shared-to-exclusive-call.zry",
+      "bytes": 389,
+      "sha256": "763c5288dad1dc1c37e9ac091e35f65c79a4c1b3f233cce26554a72c3a2f32a0"
+    },
+    {
+      "case": "exclusive-parent-frozen",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 377,
+        "end": 382,
+        "token": "touch"
+      },
+      "basis": "An overlapping exclusive parent cannot be forwarded for mutation while its selected payload child is live; conflict belongs to call callee token.",
+      "source": "literals/exclusive-parent-frozen.zry",
+      "bytes": 395,
+      "sha256": "cf0e529cceffa1acf024051cb61f27d958290736bfe820ad5f4ff990d9fcd2b5"
+    },
+    {
+      "case": "opaque-payload-clone",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7002",
+      "primary": {
+        "file": 0,
+        "start": 314,
+        "end": 319,
+        "token": "clone"
+      },
+      "basis": "Unused original template payload T has only ZrynaValue; a closed String use cannot invent Clone. Invalid clone keyword is primary.",
+      "source": "literals/opaque-payload-clone.zry",
+      "bytes": 379,
+      "sha256": "b25096c3a916db3f0092688ae64d10a9270b66d2e771144abc92d8ee073bd535"
+    },
+    {
+      "case": "arm-loan-result-escape",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 174,
+        "end": 181,
+        "token": "payload"
+      },
+      "basis": "The first declaration-ordered selected arm returns its payload loan as a match result; binding cannot survive arm exit or function return. Invalid arm result value token is primary.",
+      "source": "literals/arm-loan-result-escape.zry",
+      "bytes": 268,
+      "sha256": "61b4d663d5e50c6238f899eb5ebfa57f6b12d900e22268ca78511d747d9c9873"
+    }
+  ],
+  "positive_cases": 11,
+  "hostile_cases": 5,
+  "syntax_basis": [
+    "legacy tests/m7-generic-owned-fixtures/main.zry match(borrow(...)) and match(borrowMut(...)) forms",
+    "BOUNDED_GENERICS_DECISIONS_V1 borrowed match payload roles and arm lexical ending"
+  ],
+  "fault_obligation": "Every reachable fallible Clone/owned RHS ordinal must preserve enclosing payload/root, end selected arm and temporary parent loans before exact initialized-owner cleanup, exclude unpublished destination, and replay pristine. Freeze a separate full fault projection before runtime output.",
+  "scope": "Source/checker/core dependency checkpoint; existing raw MatchMode variants and Loan binding records are not implemented borrowed-match authority. No old-seal casts, fake Borrow SSA, new syntax, or full profile closure. General affine result anchors, indexed operations and recursive target traversal remain accepted open obligations."
+}

@@ -1,0 +1,3 @@
+interface Duo<T extends ZrynaValue> extends ZrynaStruct { first: T; second: T; }
+function rebuild<T extends ZrynaValue>(value: Duo<T>, replacement: T): Duo<T> { let owner: Duo<T> = value; const taken: T = owner.first; owner.first = replacement; return owner; }
+export function entry(): i32 { const strings: Duo<String> = rebuild<String>(Duo<String>({ first: "a", second: "b" }), "c"); const copies: Duo<i32> = rebuild<i32>(Duo<i32>({ first: 1, second: 2 }), 3); return 31; }

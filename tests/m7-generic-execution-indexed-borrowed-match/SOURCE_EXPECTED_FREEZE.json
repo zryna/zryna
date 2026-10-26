@@ -1,0 +1,196 @@
+{
+  "format": "m416.indexed-borrowed-match-source-first.v1",
+  "scope": "Additive accepted dynamic Indexed plus borrowed enum Match continuation, no edits to prior fixtures/oracles and no new syntax/cap/edge waiver",
+  "cases": [
+    {
+      "case": "indexed-nominal-shared-join",
+      "source": "literals/indexed-nominal-shared-join.zry",
+      "sha256": "28d6e3635e81fda91f6da9f95e1b63469257e9488db536bee009ac107e756d2e",
+      "bytes": 384,
+      "expectedSyntax": "accepted without diagnostics; actual both-provider complete DTO/schema authentication required",
+      "expectedOriginal": "accepted",
+      "expectedWholeSourceSeal": "accepted",
+      "scalarByArguments": {
+        "0": 3,
+        "1": 7
+      },
+      "boundsArguments": [
+        [
+          -1
+        ],
+        [
+          2
+        ]
+      ],
+      "boundsTrap": "zryna.trap.bounds-v1",
+      "ownership": "Copy-only nominal enum FixedArray; existing lexical indexed parent stays exact identity/order across selected arm to its own join, selected payload ends per arm, parent ends original block, no allocations or drops."
+    },
+    {
+      "case": "indexed-option-exclusive-join",
+      "source": "literals/indexed-option-exclusive-join.zry",
+      "sha256": "0b0f1d8236559f71dcc71a7c4c48ff661528df859142ad998a1ac1886c0352b0",
+      "bytes": 399,
+      "expectedSyntax": "accepted without diagnostics; actual both-provider complete DTO/schema authentication required",
+      "expectedOriginal": "accepted",
+      "expectedWholeSourceSeal": "accepted",
+      "scalarByArguments": {
+        "0": 2,
+        "1": 13
+      },
+      "boundsArguments": [
+        [
+          -1
+        ],
+        [
+          2
+        ]
+      ],
+      "boundsTrap": "zryna.trap.bounds-v1",
+      "ownership": "Inline Exclusive indexed parent and reborrow stay live through own borrowed Match join; selected child ends before parent chain and root. Clone/RHS prepares before old referent release; no by-value enum payload binding.",
+      "acquisitionsByArguments": {
+        "0": [
+          "String old",
+          "Vec storage"
+        ],
+        "1": [
+          "String old",
+          "Vec storage",
+          "String clone from owner1 old",
+          "String new"
+        ]
+      },
+      "releasesByArguments": {
+        "0": [
+          1,
+          2
+        ],
+        "1": [
+          1,
+          3,
+          4,
+          2
+        ]
+      },
+      "boundsAcquisitions": [
+        "String old",
+        "Vec storage"
+      ],
+      "boundsReleases": [
+        1,
+        2
+      ],
+      "allocationFailures": [
+        {
+          "ordinal": 1,
+          "releases": []
+        },
+        {
+          "ordinal": 2,
+          "releases": [
+            1
+          ]
+        },
+        {
+          "ordinal": 3,
+          "arguments": [
+            1
+          ],
+          "releases": [
+            1,
+            2
+          ]
+        },
+        {
+          "ordinal": 4,
+          "arguments": [
+            1
+          ],
+          "releases": [
+            1,
+            3,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "case": "indexed-chain-nominal-shared-join",
+      "source": "literals/indexed-chain-nominal-shared-join.zry",
+      "sha256": "d94021e3e36f7ded9fe97ae0bfe8a28c3dfcd6cde654f23b81b6cfbbc025b1e9",
+      "bytes": 403,
+      "expectedSyntax": "accepted without diagnostics; actual both-provider complete DTO/schema authentication required",
+      "expectedOriginal": "accepted",
+      "expectedWholeSourceSeal": "accepted",
+      "scalarByArguments": {
+        "0,0": 3,
+        "0,1": 7,
+        "1,0": 11,
+        "1,1": 3
+      },
+      "boundsArguments": [
+        [
+          -1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "boundsTrap": "zryna.trap.bounds-v1",
+      "ownership": "Vec row Indexed parent plus FixedArray column Indexed child plus inline shared enum reborrow. Exact entire live prefix/issuance order retained only across this selected arm join; arm child first, then anonymous parents child-first. One Vec storage owner releases once on normal/bounds, failed initial allocation releases none.",
+      "physicalAcquisitions": 1,
+      "releases": [
+        1
+      ]
+    },
+    {
+      "case": "indexed-selected-arm-escape",
+      "source": "literals/indexed-selected-arm-escape.zry",
+      "sha256": "a28b766f47b8c2266e067de9a918d9c6d439358a933e97477a8fa610c4c147f0",
+      "bytes": 312,
+      "expectedSyntax": "accepted without diagnostics; actual both-provider complete DTO/schema authentication required",
+      "expectedOriginal": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "indexed-selected-arm-escape",
+        "sourceSha256": "a28b766f47b8c2266e067de9a918d9c6d439358a933e97477a8fa610c4c147f0",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 218,
+          "end": 225
+        },
+        "primaryText": "payload",
+        "reason": "First declaration-ordered selected arm result cannot escape its lexical payload loan as Borrow<String>."
+      }
+    },
+    {
+      "case": "indexed-match-loan-loop-edge",
+      "source": "literals/indexed-match-loan-loop-edge.zry",
+      "sha256": "d4846ea0b2399c8b55a23ca8060147443392f6a3efec0967103b96fb8a8120ae",
+      "bytes": 344,
+      "expectedSyntax": "accepted without diagnostics; actual both-provider complete DTO/schema authentication required",
+      "expectedOriginal": "rejected before closed discovery/layout/claim/target",
+      "diagnostic": {
+        "case": "indexed-match-loan-loop-edge",
+        "sourceSha256": "d4846ea0b2399c8b55a23ca8060147443392f6a3efec0967103b96fb8a8120ae",
+        "code": "ZRYNA-M7007",
+        "primary": {
+          "path": "main.zry",
+          "start": 307,
+          "end": 312
+        },
+        "primaryText": "while",
+        "reason": "Lexical indexed loan remains live at the loop header; exact scoped match join permission must not authorize header/backedge transport. No fuel/termination claim."
+      }
+    }
+  ]
+}

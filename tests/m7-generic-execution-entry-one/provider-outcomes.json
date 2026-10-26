@@ -1,0 +1,11 @@
+{
+  "status": "Actual syntax-only observations; frozen sources/oracle unchanged",
+  "freshProcesses": 2,
+  "acceptedWithoutDiagnostics": 2,
+  "completeDTOParity": true,
+  "sourcePaths": [
+    "a.zry",
+    "main.zry"
+  ],
+  "declaredEntryModule": 1
+}

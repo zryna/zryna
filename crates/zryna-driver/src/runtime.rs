@@ -1,9 +1,11 @@
 //! Bounded, direct Node.js execution for sealed JavaScript and WebAssembly artifacts.
 mod admission;
+mod capability;
 mod identity;
 pub(crate) use identity::{open_runtime_identity, same_file_state, stable_invocation_path};
 mod inline;
 pub(crate) use admission::ExpectedRuntime;
+mod generic_invocation;
 mod ownership;
 #[cfg(test)]
 mod timeout_observation;
@@ -52,41 +54,6 @@ pub(crate) struct NodeRuntimeCapability {
 }
 
 impl NodeRuntimeCapability {
-    pub(crate) fn discover(
-        executable: &Path,
-        working_directory: &Path,
-    ) -> Result<Self, Diagnostic> {
-        admission::discover(executable, working_directory, None)
-    }
-
-    pub(crate) fn discover_authenticated(
-        executable: &Path,
-        working_directory: &Path,
-        expected: ExpectedRuntime,
-    ) -> Result<Self, Diagnostic> {
-        admission::discover(executable, working_directory, Some(expected))
-    }
-
-    pub(crate) fn executable(&self) -> Result<&Path, Diagnostic> {
-        self.revalidate()?;
-        Ok(&self.invocation_path)
-    }
-
-    pub(crate) fn revalidate(&self) -> Result<(), Diagnostic> {
-        let (current, state) = open_runtime_identity(&self.executable)?;
-        if let Some(expected) = &self.expected {
-            admission::authenticate(&current, expected)?;
-        }
-        if current != self.identity || !same_file_state(&self.state, &state) {
-            return Err(runtime_error(
-                "ZRYNA-R3001",
-                "Node.js runtime identity changed after validation",
-                "stop concurrent replacement and retry with the pinned Node.js executable",
-            ));
-        }
-        Ok(())
-    }
-
     #[cfg(test)]
     pub(crate) fn run_module(
         &self,

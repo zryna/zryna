@@ -14,6 +14,13 @@ repository root; use [Standalone source projects](STANDALONE_PROJECTS.md) to kee
 in a separate project tree.
 You do not need to run the contributor regression suite after every program edit.
 
+For the separate #416 candidate, [Your first bounded generic programs](M7_GETTING_STARTED.md)
+provides complete source files for explicit `--profile bounded-generics-v1`. It uses syntax
+protocol v5 and a separate manifest, keeps only `bool`/`i32` at the host boundary, and is
+source-checkout-only. It does not extend the standalone-project or installed-distribution
+contracts in this walkthrough. See the [candidate host/evidence matrix](M7_SUPPORT.md);
+hosted Windows qualification remains pending.
+
 ## Prepare the checkout
 
 With Git installed, clone into a new directory and enter it. If you already have this checkout,

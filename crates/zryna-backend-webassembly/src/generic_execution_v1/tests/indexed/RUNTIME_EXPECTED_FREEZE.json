@@ -1,0 +1,433 @@
+{
+  "format": "m416.js-indexed-ordinary-source-runtime.v1",
+  "scope": "Twelve genuine corrected original positives; exact pre-output scalars/bounds from retained immutable source expectations. Ordinary kernel live-owner exit and pristine repeat only, no observed identity/release-trace or full-profile claim.",
+  "repeats": 2,
+  "cases": [
+    {
+      "case": "array-exclusive-copy",
+      "sourceSha256": "fc1006341f970c79e1843b1496e10ae76a043715e7b7bfba35cbd36392788361",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 51
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 46
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "array-indexed-rhs-match",
+      "sourceSha256": "c0dca781637a5e4b8d05530051f41fc047633b33d7fe275e5ffc27f7f27554cc",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "result": 17
+        },
+        {
+          "arguments": [
+            1,
+            false
+          ],
+          "result": 17
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "result": 17
+        },
+        {
+          "arguments": [
+            1,
+            true
+          ],
+          "result": 17
+        },
+        {
+          "arguments": [
+            -1,
+            false
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2,
+            true
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "array-shared-copy",
+      "sourceSha256": "ff07d0fd8de57c072f2c2564e861afb16eb838521be3e38b1015f47f95e5ccb5",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 11
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 19
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "chained-shared-copy",
+      "sourceSha256": "583f53870fea708dc7d5bcc04ff0f053a512b8476f324f45d7573037f90ac736",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0,
+            0
+          ],
+          "result": 3
+        },
+        {
+          "arguments": [
+            0,
+            1
+          ],
+          "result": 5
+        },
+        {
+          "arguments": [
+            1,
+            0
+          ],
+          "result": 7
+        },
+        {
+          "arguments": [
+            1,
+            1
+          ],
+          "result": 11
+        },
+        {
+          "arguments": [
+            -1,
+            0
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2,
+            0
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            0,
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            0,
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "copy-read-control",
+      "sourceSha256": "48848c9f2c022b0954fefe54e6502629aa30601d77896ea66d4918b1821e899c",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 13
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 22
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "index-once-before-rhs",
+      "sourceSha256": "4701b03baee9b27da87f8b8a2afbe6bd0bd9c763edea7010d5ec8cf151026433",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 1
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 1
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "vec-exclusive-replace",
+      "sourceSha256": "970e88245af983bbad70574d130d44b6e3d95983af8977b97e52350e82a363f8",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 23
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 23
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "vec-indexed-replace",
+      "sourceSha256": "30cb737e3e91e46a9c23dba596610318feb52f2bb97565acfdec67794c577e67",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 7
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 7
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "vec-shared-clone",
+      "sourceSha256": "b5cbfcb4772f116e2c07bb49919567a970caf4e8274b1fbfc1b997f2bdd15ada",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 31
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 31
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "zero-length-bounds",
+      "sourceSha256": "868a9fc7d5111fd92cd61b37e1081635f9d0861e4709f2dbff7b086ee514170a",
+      "sourceGroup": "dynamic16V2",
+      "observations": [
+        {
+          "arguments": [
+            0,
+            false
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            0,
+            true
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            -1,
+            false
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            -1,
+            true
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "called-indexed-shared-copy",
+      "sourceSha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "sourceGroup": "caller",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 11
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 19
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    },
+    {
+      "case": "indexed-push-copy",
+      "sourceSha256": "b46ff330872d036351bdfb49e9bd416b66a392ec27cf9f7d9d087e5ef259f766",
+      "sourceGroup": "push",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "result": 18
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "result": 26
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ]
+    }
+  ]
+}

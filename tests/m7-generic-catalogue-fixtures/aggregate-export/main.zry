@@ -1,0 +1,1 @@
+export function value(): Option<i32> { return Option.none<i32>(); }

@@ -32,6 +32,7 @@ zryna-backend-webassembly = { path = "../zryna-backend-webassembly" }
 zryna-diagnostics = { path = "../zryna-diagnostics" }
 zryna-frontend = { path = "../zryna-frontend" }
 zryna-ir = { path = "../zryna-ir" }
+zryna-layout = { path = "../zryna-layout" }
 zryna-native-c-ir = { path = "../zryna-native-c-ir" }
 zryna-native-mir = { path = "../zryna-native-mir" }
 zryna-ownership-runtime-abi = { path = "../zryna-ownership-runtime-abi" }
@@ -68,3 +69,7 @@ path = "src/server_runtime/harness.rs"
 name = "native_public_ir_parity"
 path = "src/native_public_ir_parity.rs"
 required-features = ["native-provider-qualification"]
+
+[[test]]
+name = "generic_owned_nominal_enum"
+path = "src/generic_owned_nominal_enum.rs"

@@ -1,0 +1,1 @@
+interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; } function transport(input: Box<Box<String>>): Box<Box<String>> { return input; } export function entry(): i32 { const earlierRoot: String = "E"; const outer: Box<Box<String>> = Box<Box<String>>({ value: Box<String>({ value: "L" }) }); const moved: Box<Box<String>> = transport(outer); return 7; }

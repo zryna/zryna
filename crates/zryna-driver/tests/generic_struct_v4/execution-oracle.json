@@ -1,0 +1,14 @@
+{
+  "status": "Independent expected observations authored before target compilation; no runtime result claimed",
+  "scalar": 7,
+  "construction": [],
+  "success": ["alloc:1:earlier-root", "alloc:2:left", "alloc:3:earlier-root", "drop:3:earlier-root", "drop:2:left", "drop:1:earlier-root"],
+  "failures": [
+    ["fail:1"],
+    ["alloc:1:earlier-root", "fail:2", "drop:1:earlier-root"],
+    ["alloc:1:earlier-root", "alloc:2:left", "fail:3", "drop:2:left", "drop:1:earlier-root"]
+  ],
+  "identity": "Each alloc/drop number is its actual allocation role, so the right clone remains distinct from equal-content earlier-root",
+  "source_derivative": "Exact frozen source bytes, then newline and export function entry(): i32 { return score(); }",
+  "native_failure": "The separately spawned native executable must terminate with SIGILL after printing exactly the fixed successful-prefix cleanup trace"
+}

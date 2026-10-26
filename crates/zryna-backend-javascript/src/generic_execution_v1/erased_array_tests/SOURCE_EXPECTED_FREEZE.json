@@ -1,0 +1,133 @@
+{
+  "status": "FROZEN exact original sources and independently source-derived observations BEFORE any provider authentication or target output; no execution claim",
+  "domain": "generic.execution.v1",
+  "cases": [
+    {
+      "case": "erased-parent-fixed-array-bounds",
+      "source": "literals/erased-parent-fixed-array-bounds.zry",
+      "bytes": 334,
+      "sha256": "30531c18b1cc9241aa14ed76c5d6d0cd9b123b5fec170eb65590bab790a0471f",
+      "expect": "whole-seal",
+      "observations": [
+        {
+          "arguments": [
+            0
+          ],
+          "logical_releases": [
+            "new",
+            "old"
+          ],
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "i32": 11
+        },
+        {
+          "arguments": [
+            1
+          ],
+          "logical_releases": [
+            "new",
+            "old"
+          ],
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "i32": 13
+        },
+        {
+          "arguments": [
+            2
+          ],
+          "logical_releases": [
+            "new",
+            "old"
+          ],
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        },
+        {
+          "arguments": [
+            -1
+          ],
+          "logical_releases": [
+            "new",
+            "old"
+          ],
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "trap": "zryna.trap.bounds-v1"
+        }
+      ],
+      "acquisitions": [
+        {
+          "id": 1,
+          "utf8_hex": "6f6c64",
+          "logical": "old"
+        },
+        {
+          "id": 2,
+          "utf8_hex": "6e6577",
+          "logical": "new"
+        }
+      ],
+      "allocation_faults": [
+        {
+          "ordinal": 1,
+          "successful_acquisitions": 0,
+          "release_acquisition_ids": [],
+          "logical_releases": []
+        },
+        {
+          "ordinal": 2,
+          "successful_acquisitions": 1,
+          "release_acquisition_ids": [
+            1
+          ],
+          "logical_releases": [
+            "old"
+          ]
+        }
+      ],
+      "string_clone_calls": 0,
+      "string_concat_calls": 0
+    },
+    {
+      "case": "partly-refilled-array-read",
+      "source": "literals/partly-refilled-array-read.zry",
+      "bytes": 311,
+      "sha256": "ca52f08be5bfc6d9001dc13ae2fe88b45d6974aee6dcf054cfdb0debda95795e",
+      "expect": "owning-diagnostic",
+      "code": "ZRYNA-M7007",
+      "primary": {
+        "file": 0,
+        "start": 289,
+        "end": 300,
+        "token": "owner.items"
+      },
+      "basis": "Dynamic IndexCopy observes the whole FixedArray base. Index1 remains uninitialized after only index0 was installed; rebuilding a physical wrapper grants no availability."
+    }
+  ],
+  "authority": [
+    {
+      "file": "spec/language/DATA_OWNERSHIP_V1.md",
+      "section": "4",
+      "rule": "FixedArray has exact N; negative i32 or unsigned index>=N produces zryna.trap.bounds-v1 regardless of target representation."
+    },
+    {
+      "file": "spec/language/DATA_OWNERSHIP_V1.md",
+      "sections": "5-7",
+      "rule": "Whole move transfers pending root obligation. Reinitialization tracks each actual child; Copy sibling initialization cannot initialize an absent sibling. Reverse root obligations and recursive declaration order remain exact."
+    }
+  ],
+  "cleanup_derivation": "previous keeps the original old root obligation after owner moves out. Rebuilding owner through Copy elements and new text creates a later pending root. Success and the later Bounds failure release rebuilt new before previous old. The second String allocation fails before new is published; only previous old is released.",
+  "critical_discriminator": "Return indexes owner.items directly with entry i32. There is no intervening whole read, Copy array transport, clone, or constructor that could normalize a sparse physical array representation before IndexCopy. Firstextra2 and negative-1 must Bounds; indices0/1 read11/13.",
+  "qualification": "One positive source with four scalar runs and one independent original-ownership hostile. Fresh native/TypeScript packets, original/new whole-seal owning controls and actual target outputs remain root-owned later gates."
+}

@@ -1,0 +1,14 @@
+function consume(value: Vec<i32>): i32 { return value[0]; }
+function step(): i32 {
+  const value: Vec<i32> = Vec<i32>([7]);
+  return consume(value);
+}
+export function entry(trips: i32): i32 {
+  let count: i32 = 0;
+  let total: i32 = 0;
+  while (count < trips) {
+    total = total + step();
+    count = count + 1;
+  }
+  return total;
+}

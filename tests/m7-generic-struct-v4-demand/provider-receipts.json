@@ -1,0 +1,61 @@
+{
+  "status": "Actual raw candidates, pending original compiler authentication; no expected claims derived from these producers",
+  "records": [
+    {
+      "case": "plain-struct",
+      "provider": "native",
+      "bytes": 2074,
+      "sha256": "333105906400356a520712d3f02e8b21e3175fbba7efd9ab1887bc89f27e2d38",
+      "sourceSha256": "105531f8a8bbf206a20d7b025286582c061d21d321ababb833f0c851b49a4316"
+    },
+    {
+      "case": "plain-struct",
+      "provider": "typescript",
+      "bytes": 2074,
+      "sha256": "30c9fc977d79f0d9b9d395229c77a96538a42b1343f55a037d950750f957bff7",
+      "sourceSha256": "105531f8a8bbf206a20d7b025286582c061d21d321ababb833f0c851b49a4316"
+    },
+    {
+      "case": "closed-template",
+      "provider": "native",
+      "bytes": 6567,
+      "sha256": "dc88b0ad2462f869a4e022b4d59305314bf539ae0db23175d343761ed04d45cc",
+      "sourceSha256": "f9f1f3c9ff4c297d7236506c4f951fdbfa567f1e42da394008e8b7e3252092c8"
+    },
+    {
+      "case": "closed-template",
+      "provider": "typescript",
+      "bytes": 6567,
+      "sha256": "04d923ec252a88e1fca09235bd8cc0add9296287745fe1ead6bce15f60ed9ae5",
+      "sourceSha256": "f9f1f3c9ff4c297d7236506c4f951fdbfa567f1e42da394008e8b7e3252092c8"
+    },
+    {
+      "case": "open-parent",
+      "provider": "native",
+      "bytes": 4482,
+      "sha256": "b64aa931824ad35d69cb55f0bf7019c3d4a782b2ef1d9357119f7235f1432a53",
+      "sourceSha256": "d0350c5b007318b157862d5728ca1e016682233c0a3ce3295f208bd98a047ec8"
+    },
+    {
+      "case": "open-parent",
+      "provider": "typescript",
+      "bytes": 4482,
+      "sha256": "d0cb24dc2f79386d0087f3c7b97bc6a2bf25edf6434413e42931523d313de225",
+      "sourceSha256": "d0350c5b007318b157862d5728ca1e016682233c0a3ce3295f208bd98a047ec8"
+    },
+    {
+      "case": "borrow-parent",
+      "provider": "native",
+      "bytes": 3657,
+      "sha256": "d5a6ba37210dc67c7197edc0bfe500f2d7b5dfb492baf03063b6a25b678117a3",
+      "sourceSha256": "4c25a8cfe53b8c608ae59f8650b02086ac3d8dee24ab20ef9c3ea1a684d77c8d"
+    },
+    {
+      "case": "borrow-parent",
+      "provider": "typescript",
+      "bytes": 3657,
+      "sha256": "85427a8b4856e4db3e001383be06ea9dcc3f47ea37d833469c23463189f7b1c1",
+      "sourceSha256": "4c25a8cfe53b8c608ae59f8650b02086ac3d8dee24ab20ef9c3ea1a684d77c8d"
+    }
+  ]
+}

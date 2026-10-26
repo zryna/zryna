@@ -1,0 +1,42 @@
+{
+  "format": "m416.indexed-caller-source-expected.v1",
+  "scope": "Additive source-derived called indexed loan check; not an alteration of corrected dynamic16 source/oracles",
+  "cases": [
+    {
+      "case": "called-indexed-shared-copy",
+      "sha256": "e56c5d860a29a533cb6fa535e92aaf6c5809682f0dc2888c6006040ca9f119da",
+      "bytes": 418,
+      "syntaxAccepted": true,
+      "originalAccepted": true,
+      "wholeSourceSealAccepted": true,
+      "values": [
+        {
+          "index": 0,
+          "result": 11
+        },
+        {
+          "index": 1,
+          "result": 19
+        }
+      ],
+      "bounds": [
+        {
+          "index": -1,
+          "trap": "Bounds"
+        },
+        {
+          "index": 2,
+          "trap": "Bounds"
+        }
+      ],
+      "obligations": [
+        "read has a formal Borrow<FixedArray<i32,2>> argument; its Indexed BeginLoan carries fallible bounds",
+        "the original caller SourceCall must retain failureSome even though both source functions have Copy-only values and perform no allocation",
+        "callee bounds failure excludes its unpublished indexed child; caller failure ends its live outer lexical loan before owner cleanup",
+        "successful read copies selected i32, ends child before returning, caller outer lexical loan ends at block exit",
+        "no Borrow SSA or escape; dynamic selected access remains conservatively whole-array"
+      ],
+      "physicalAllocations": 0
+    }
+  ]
+}

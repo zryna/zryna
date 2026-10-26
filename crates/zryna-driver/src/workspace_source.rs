@@ -191,7 +191,7 @@ impl<'root> WorkspaceSourceSession<'root> {
         let final_name = final_name.ok_or_else(|| unsafe_path(path))?;
         let parent = self.directories.get(&parent_key).ok_or_else(|| unsafe_path(path))?;
         parent.entries.require_exact(&final_name).map_err(|kind| child_error(path, kind))?;
-        let parent_index = parent.entries.clone();
+        let parent_index = &parent.entries;
         let mut opened =
             open_regular_nofollow(&parent.dir, &final_name).map_err(|_| unreadable(path))?;
         let metadata = opened.as_file().metadata().map_err(|_| unreadable(path))?;
@@ -217,7 +217,7 @@ impl<'root> WorkspaceSourceSession<'root> {
                 stable: stable.clone(),
             },
         );
-        self.revalidate_source_with_index(path, &parent_index)?;
+        self.revalidate_source_with_index(path, parent_index)?;
         Ok(stable)
     }
 
@@ -256,11 +256,11 @@ impl<'root> WorkspaceSourceSession<'root> {
     }
 
     fn revalidate_source_with_index(
-        &mut self,
+        &self,
         path: &NormalizedSourcePath,
         index: &DirectoryIndex,
     ) -> Result<(), Diagnostic> {
-        let source = self.sources.get_mut(path).ok_or_else(|| changed(path))?;
+        let source = self.sources.get(path).ok_or_else(|| changed(path))?;
         index.require_exact(&source.name).map_err(|_| changed(path))?;
         let parent = self.directories.get(&source.parent).ok_or_else(|| changed(path))?;
         crate::source_identity::validate(

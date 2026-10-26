@@ -1,0 +1,9 @@
+function calculate<T extends ZrynaValue>(value: T, left: i32, right: i32): i32 {
+  const difference: i32 = left - right;
+  const result: i32 = -difference * right;
+  if (result >= 0) { return result; }
+  return -result;
+}
+export function entry(): i32 {
+  return calculate<i32>(19, 7, 3);
+}

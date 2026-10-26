@@ -1,0 +1,117 @@
+{
+  "freshProviderProcesses": 32,
+  "cases": [
+    {
+      "case": "array-exclusive-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "array-indexed-rhs-match",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "array-shared-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "chained-shared-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "copy-read-control",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "dynamic-array-overlap",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "index-once-before-rhs",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "indexed-rhs-moves-owner",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "opaque-indexed-consume",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "owner-move-while-indexed",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "shared-element-write",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "vec-exclusive-replace",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "vec-indexed-replace",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "vec-shared-clone",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "vector-constant-overlap",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "zero-length-bounds",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

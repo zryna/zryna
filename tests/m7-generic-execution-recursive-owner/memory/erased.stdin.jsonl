@@ -1,0 +1,2 @@
+{"id":1,"method":"handshake"}
+{"id":2,"method":"analyze","params":{"schema_version":5,"files":[{"path":"main.zry","text":"interface Node<T extends ZrynaValue> extends ZrynaEnum { leaf: T; branch: Vec<Node<T>>; }\nexport function entry(): i32 {\n  const erased: FixedArray<Node<String>, 0> = FixedArray<Node<String>, 0>([]);\n  return 7;\n}\n"}]}}

@@ -1,0 +1,46 @@
+{
+  "status": "FROZEN supplemental actual-pointer/UTF8 observer expectations BEFORE execution; original runtime oracle unchanged",
+  "cases": {
+    "generic-replace": {
+      "acquisitions": [
+        {
+          "utf8_hex": "6f6c64",
+          "source_id": 0
+        },
+        {
+          "utf8_hex": "6f6c64",
+          "source_id": 1
+        },
+        {
+          "utf8_hex": "6e6577",
+          "source_id": 0
+        }
+      ]
+    },
+    "static-disjoint": {
+      "acquisitions": []
+    },
+    "fallible-cleanup": {
+      "acquisitions": [
+        {
+          "utf8_hex": "726f6f74",
+          "source_id": 0
+        },
+        {
+          "utf8_hex": "6f75746572",
+          "source_id": 0
+        },
+        {
+          "utf8_hex": "6f75746572",
+          "source_id": 2
+        },
+        {
+          "utf8_hex": "726f6f74",
+          "source_id": 1
+        }
+      ]
+    }
+  },
+  "pointer_reuse": "Allowed after exact prior owner/free; identities are successful acquisitions, not globally unique numeric addresses",
+  "allocation_failure": "Real canonical malloc returns NULL at actual String payload allocation ordinal; injected clone routes remain separately named"
+}

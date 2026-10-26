@@ -1,0 +1,2 @@
+function unused<T extends ZrynaValue>(input: T): T { return clone(input); }
+export function entry(): i32 { return 7; }

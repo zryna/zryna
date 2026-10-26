@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "frozen_before_provider_or_target_output_utc": "2026-10-25T15:43:19.829793+00:00",
+  "scope": "native Drop+lifecycle only; actual C malloc/free identity, no host recursive heap traversal; pending native iterative Clone explicit",
+  "original_source_oracle_preserved": {
+    "path": "/tmp/m416-nominal-transport-candidate/tests/m7-generic-execution-recursive-owner/SOURCE_EXPECTED_FREEZE.json",
+    "sha256": "eb01f8297eb221c683d264fa35ab4f046f1a3ca3f7b561637090d77fd9b6ee24"
+  },
+  "canonical_runtime_sha256": "df9be4eee10a50225414335502f6b8153874b8d6d4b9ea0903932f505d77f980",
+  "cases": [
+    {
+      "case": "drop-only",
+      "depths": [
+        0,
+        1,
+        8192,
+        65536
+      ],
+      "ordinary_result": 7,
+      "ordinary_repeats": 2,
+      "retry_after_fault": "pristine ordinary repeat; separate child unless explicit private step source boundary is implemented",
+      "source": "/tmp/m416-nominal-transport-candidate/tests/m7-generic-execution-recursive-owner/literals/drop-only.zry",
+      "source_bytes": 419,
+      "source_sha256": "3d097ad3baedcc0f192bac0f5681bd2b0f92ec94d7091d9d30dcd260d96de8dd",
+      "positive_allocations": "D+1",
+      "release_ids": "[1,2,...,D+1]",
+      "faults": []
+    },
+    {
+      "case": "controlled-cleanup",
+      "depths": [
+        0,
+        1,
+        8192,
+        65536
+      ],
+      "ordinary_result": 7,
+      "ordinary_repeats": 2,
+      "retry_after_fault": "pristine ordinary repeat; separate child unless explicit private step source boundary is implemented",
+      "source": "/tmp/m416-nominal-transport-candidate/tests/m7-generic-execution-recursive-owner/literals/controlled-cleanup.zry",
+      "source_bytes": 489,
+      "source_sha256": "236b36609cc05fe40965a5b784ce191a9e406d6bb1f4217286bde5c30e645b33",
+      "positive_allocations": "D+3",
+      "release_ids": "[D+3,D+2,1,2,...,D+1]",
+      "faults": [
+        {
+          "kind": "StringCloneOrdinal",
+          "ordinal": 1,
+          "status": 1,
+          "trap": "allocation-v1",
+          "positive_allocations": "D+2",
+          "release_ids": "[D+2,1,2,...,D+1]"
+        }
+      ]
+    },
+    {
+      "case": "shared-weak-recursive",
+      "depths": [
+        0,
+        1,
+        8192,
+        65536
+      ],
+      "ordinary_result": 7,
+      "ordinary_repeats": 2,
+      "retry_after_fault": "pristine ordinary repeat; separate child unless explicit private step source boundary is implemented",
+      "source": "/tmp/m416-native-iterative-drop-tests-v1/literals/shared-weak-recursive.zry",
+      "source_bytes": 630,
+      "source_sha256": "4c4e4fb55e2f3da28eef188eed56d38fcf0cd70bd2e503d3f82abf164f757393",
+      "positive_allocations": "D+2",
+      "release_ids": "[1,2,...,D+2]",
+      "count_cleanup": [
+        "copiedWeak release nonlast",
+        "originalWeak release nonlast while strong live",
+        "alias StrongBegin false",
+        "owner StrongBegin true",
+        "deep payload release",
+        "owner StrongFinish physical free"
+      ],
+      "clone_scope": "SharedCount terminal; no deep Clone claim",
+      "faults": []
+    }
+  ],
+  "lifecycle": {
+    "during_actual_canonical_call": {
+      "busy": 1,
+      "owner": "nonnull exact invocation identity once captured",
+      "used": "within existing L bound; completed source allocation calls have used0, release calls may retain older distinct live frames"
+    },
+    "after_ordinary_return": {
+      "used": 0,
+      "busy": 0,
+      "owner": 0
+    },
+    "hostile_entry": [
+      {
+        "used": 1,
+        "busy": 0,
+        "owner": 0
+      },
+      {
+        "used": 0,
+        "busy": 1,
+        "owner": 0
+      },
+      {
+        "used": 0,
+        "busy": 0,
+        "owner": 1
+      }
+    ],
+    "hostile_result": "SIGILL ABI rejection before any canonical event; no source controlled-trap relabel"
+  },
+  "new_source": {
+    "path": "/tmp/m416-native-iterative-drop-tests-v1/literals/shared-weak-recursive.zry",
+    "bytes": 630,
+    "sha256": "4c4e4fb55e2f3da28eef188eed56d38fcf0cd70bd2e503d3f82abf164f757393",
+    "provider_authentication": "pending root, no fabricated packet or positive seal"
+  },
+  "no_guest_execution_by_author": true
+}

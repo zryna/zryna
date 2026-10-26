@@ -29,3 +29,12 @@ cross-distribution portable artifact.
 at mode `0755` inside its atomic run bundle. Native run is supported only on Linux x86-64; the CLI
 is not an arbitrary native program runner. A DataOwnershipV1 candidate route remains internal
 until its public selector and release gate are completed.
+
+The existing legacy/default driver keeps the exact `ownership_runtime_v1.c` implementation.
+The private `generic_execution_v1/` parts preserve a separate allocation-registry implementation
+for the new verified GenericExecutionV1 test domain; its 17-operation ABI, header, allocation
+geometry and resource ceilings are unchanged. Test rendering requires the actual new execution
+owner, concatenates those exact parts and substitutes only its authenticated element cases.
+`generic_execution_v1.c` aggregates the parts for raw registry controls. Neither material adds a
+public profile selector or host execution authority; future public generic driver selection
+requires its own admission and release gate.

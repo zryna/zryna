@@ -1,0 +1,6 @@
+interface Mixed extends ZrynaStruct { text: String; count: i32; }
+export function entry(): i32 {
+  const owner: Mixed = Mixed({ text: "old", count: 53 });
+  const taken: String = owner.text;
+  return owner.count;
+}

@@ -1,0 +1,7 @@
+function take<T extends ZrynaValue>(values: Vec<T>, value: T): T { return value; }
+function bad<T extends ZrynaValue>(values: Vec<T>, index: i32, value: T): i32 {
+  let root: Vec<T> = values;
+  root[index] = take<T>(root, value);
+  return 0;
+}
+export function entry(index: i32): i32 { return bad<i32>(Vec<i32>([1, 2]), index, 3); }

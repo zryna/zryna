@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-25T15:44:42.932025+00:00",
+  "exit_code": 0,
+  "stderr_bytes": 0,
+  "source_sha256": "4c4e4fb55e2f3da28eef188eed56d38fcf0cd70bd2e503d3f82abf164f757393",
+  "stdout_sha256": "b3ae6cce97ea7ba4b6f1a11106d466bd5e5034872b3c8e7c8ea0cd4d89a0e6b7",
+  "limits": "Actual TSsyntax only; nativeparity/semantic/NEW owner/emission/runtimepending.",
+  "diagnostics": [],
+  "packet_sha256": "a24fedf036b4e98a026aad5430884b481e9088c99d55d6296f0392786ca11e43"
+}

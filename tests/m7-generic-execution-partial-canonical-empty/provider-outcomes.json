@@ -1,0 +1,12 @@
+{
+  "freshProviderProcesses": 2,
+  "cases": [
+    {
+      "case": "whole-vs-fields",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

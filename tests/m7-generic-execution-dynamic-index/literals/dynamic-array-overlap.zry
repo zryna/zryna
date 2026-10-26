@@ -1,0 +1,6 @@
+function bad<T extends ZrynaValue>(values: FixedArray<T, 2>, index: i32): i32 {
+  let root: FixedArray<T, 2> = values;
+  { const first: BorrowMut<T> = borrowMut(root[index]); const second: Borrow<T> = borrow(root[1]); }
+  return 0;
+}
+export function entry(index: i32): i32 { return bad<i32>(FixedArray<i32, 2>([1, 2]), index); }

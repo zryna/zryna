@@ -1,0 +1,224 @@
+{
+  "schema": "m416-wasm-packed-five-private-test-v1",
+  "freeze": "before any actual test/compiler/guest output",
+  "scope": "Private controlled failure transport; Bounds predicate is seeded. Exact first/last String release payload+release count only; no complete String ledger or Vec/control order claim.",
+  "logical_rows": 5,
+  "logical_call_census": 15,
+  "physical_provider_instances": 9,
+  "physical_packed_calls": 27,
+  "fuel_per_instance": 10000000,
+  "fuel_refill": false,
+  "rows": [
+    {
+      "name": "bounds",
+      "logical_status": 1,
+      "canonical_status": null,
+      "role": "authenticated indexed comparison",
+      "source": "vec-shared-clone",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "pristine_value": 31,
+      "pristine_release_count": 3,
+      "pristine_first": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "pristine_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "fault_release_count": 2,
+      "fault_first": [
+        114,
+        105,
+        103,
+        104,
+        116
+      ],
+      "fault_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "calls_per_instance": [
+        "pristine",
+        "controlled-failure",
+        "pristine-retry"
+      ]
+    },
+    {
+      "name": "allocation",
+      "logical_status": 2,
+      "canonical_status": 1,
+      "role": "StringClone",
+      "source": "vec-shared-clone",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "pristine_value": 31,
+      "pristine_release_count": 3,
+      "pristine_first": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "pristine_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "fault_release_count": 2,
+      "fault_first": [
+        114,
+        105,
+        103,
+        104,
+        116
+      ],
+      "fault_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "calls_per_instance": [
+        "pristine",
+        "controlled-failure",
+        "pristine-retry"
+      ]
+    },
+    {
+      "name": "capacity",
+      "logical_status": 3,
+      "canonical_status": 2,
+      "role": "StringClone",
+      "source": "vec-shared-clone",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "pristine_value": 31,
+      "pristine_release_count": 3,
+      "pristine_first": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "pristine_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "fault_release_count": 2,
+      "fault_first": [
+        114,
+        105,
+        103,
+        104,
+        116
+      ],
+      "fault_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "calls_per_instance": [
+        "pristine",
+        "controlled-failure",
+        "pristine-retry"
+      ]
+    },
+    {
+      "name": "refcount",
+      "logical_status": 4,
+      "canonical_status": 3,
+      "role": "raw strongClone",
+      "source": "mixed-catalogue",
+      "providers": [
+        "typescript"
+      ],
+      "pristine_value": 97,
+      "pristine_release_count": 20,
+      "pristine_first": [
+        116,
+        101,
+        120,
+        116
+      ],
+      "pristine_last": [
+        110
+      ],
+      "fault_release_count": 18,
+      "fault_first": [
+        116,
+        101,
+        120,
+        116
+      ],
+      "fault_last": [
+        110
+      ],
+      "calls_per_instance": [
+        "pristine",
+        "controlled-failure",
+        "pristine-retry"
+      ]
+    },
+    {
+      "name": "utf8",
+      "logical_status": 5,
+      "canonical_status": 4,
+      "role": "second StringFromUtf8Copy",
+      "source": "vec-shared-clone",
+      "providers": [
+        "native",
+        "typescript"
+      ],
+      "pristine_value": 31,
+      "pristine_release_count": 3,
+      "pristine_first": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "pristine_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "fault_release_count": 1,
+      "fault_first": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "fault_last": [
+        108,
+        101,
+        102,
+        116
+      ],
+      "calls_per_instance": [
+        "pristine",
+        "controlled-failure",
+        "pristine-retry"
+      ]
+    }
+  ]
+}

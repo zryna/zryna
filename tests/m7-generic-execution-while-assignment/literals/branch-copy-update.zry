@@ -1,0 +1,6 @@
+export function entry(flag: bool): i32 {
+  let count: i32 = 0;
+  if (flag) { count = 3; } else { count = 5; }
+  count = count + 1;
+  return count;
+}

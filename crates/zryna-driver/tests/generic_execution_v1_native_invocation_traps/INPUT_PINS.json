@@ -1,0 +1,146 @@
+{
+  "cases": {
+    "concat": {
+      "source": {
+        "path": "tests/m7-generic-execution-string-concat/literals/nested-temporaries.zry",
+        "sha256": "0c1b2550e658940cb91bf128b735d40f46776ca7951b6bbb21d355f80c0584c6",
+        "bytes": 140
+      },
+      "packets": {
+        "native": {
+          "path": "tests/m7-generic-execution-string-concat/nested-temporaries-native.json",
+          "sha256": "685d49d2f0fd9da970284d45167bb07303678c6c9b03f07e2459cd54355f0ad8",
+          "bytes": 10591
+        },
+        "typescript": {
+          "path": "tests/m7-generic-execution-string-concat/nested-temporaries-typescript.json",
+          "sha256": "6772b0cffd0bcc822dfc78b10059659c5290c50c34ccfc5e65434efa7f093e15",
+          "bytes": 10591
+        }
+      },
+      "packet_census": {
+        "path": "tests/m7-generic-execution-string-concat/packet-identities.json",
+        "sha256": "e44e39a379147597d2d1a2e018313b458e8096fb03348bc70f45e06389613f09"
+      }
+    },
+    "control": {
+      "source": {
+        "path": "tests/m7-generic-execution-containers/literals/shared-weak-count.zry",
+        "sha256": "e3426c8ef974e30d090ce09f6a70e9274a38b366be408c4dbb12c5e4bb610867",
+        "bytes": 232
+      },
+      "packets": {
+        "native": {
+          "path": "tests/m7-generic-execution-containers/shared-weak-count-native.json",
+          "sha256": "9aeace1bf73d01b149a63c1fc5acbfb7c44fcd12e98cfd81a3ceac1eae208af4",
+          "bytes": 15547
+        },
+        "typescript": {
+          "path": "tests/m7-generic-execution-containers/shared-weak-count-typescript.json",
+          "sha256": "26db15b1e5647e881d03d2c2d9e85f3f8c943164f7ae9ff3522a8abf1d2b3912",
+          "bytes": 15547
+        }
+      },
+      "packet_census": {
+        "path": "tests/m7-generic-execution-containers/packet-identities.json",
+        "sha256": "4d0ba93b5bb937b686136c3c686f75c0e9b4e4067d0cc42f93c8403352dfa2a5"
+      }
+    },
+    "index": {
+      "source": {
+        "path": "tests/m7-generic-execution-dynamic-index/literals/vec-shared-clone.zry",
+        "sha256": "b5cbfcb4772f116e2c07bb49919567a970caf4e8274b1fbfc1b997f2bdd15ada",
+        "bytes": 351
+      },
+      "packets": {
+        "native": {
+          "path": "tests/m7-generic-execution-dynamic-index/vec-shared-clone-native.json",
+          "sha256": "1c393326805aab0fbdf1891b07d230747b3def24a9f0beac9ed92a3d3d28e43c",
+          "bytes": 26816
+        },
+        "typescript": {
+          "path": "tests/m7-generic-execution-dynamic-index/vec-shared-clone-typescript.json",
+          "sha256": "df71faa96032eabc4adf2099760b65f456ab05e7a4452fa6f033f5b7404b093d",
+          "bytes": 26816
+        }
+      },
+      "packet_census": {
+        "path": "tests/m7-generic-execution-dynamic-index/packet-identities.json",
+        "sha256": "08c2c7ce0ebd09f219ee605b0844b64f18618f5e9264ea6497625ce883c0c506"
+      }
+    }
+  },
+  "roles": {
+    "concat": {
+      "pristine": [
+        3,
+        4,
+        3,
+        4,
+        5,
+        6,
+        6,
+        5,
+        6,
+        6,
+        6,
+        6
+      ],
+      "fault": [
+        3,
+        4,
+        3,
+        6,
+        6
+      ]
+    },
+    "control": {
+      "pristine": [
+        3,
+        0,
+        10,
+        11,
+        12,
+        16,
+        16,
+        14,
+        14,
+        6,
+        15
+      ],
+      "fault": [
+        3,
+        0,
+        10,
+        11,
+        12,
+        16,
+        14,
+        14,
+        6,
+        15
+      ]
+    },
+    "index": {
+      "pristine": [
+        3,
+        3,
+        7,
+        4,
+        6,
+        6,
+        6,
+        9
+      ],
+      "fault": [
+        3,
+        3,
+        7,
+        6,
+        6,
+        9
+      ]
+    }
+  },
+  "timing": "before any target output/execution; additive source-derived input/role freeze; original expectations unchanged"
+}

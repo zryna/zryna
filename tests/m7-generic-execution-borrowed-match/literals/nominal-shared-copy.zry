@@ -1,0 +1,7 @@
+interface Signal extends ZrynaEnum { off: ZrynaNone; on: i32; }
+export function entry(): i32 {
+  const off: Signal = Signal.off(); const on: Signal = Signal.on(7);
+  const a: i32 = match(borrow(off), { "Signal.off": () => 1, "Signal.on": (payload) => payload });
+  const b: i32 = match(borrow(on), { "Signal.off": () => 1, "Signal.on": (payload) => payload });
+  return a + b;
+}

@@ -1,3 +1,5 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
+import { withoutM7Workflow } from './m7-workflow-legacy-cases.mjs';
 import { withoutM4Workflow } from './m4-workflow-cases.mjs';
 import { withoutInstalledEditorWorkflow, withoutOrdinarySanitizerPrefix, withoutPreflightBudgets } from './preflight-prefix-workflow-cases.mjs';
 import assert from 'node:assert/strict';
@@ -14,7 +16,7 @@ import { withoutNativeRecipeTests } from './native-recipe-test-selection.test.mj
 const document = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(document.errors, []);
 const budgetWorkflow = withoutBootstrapTiming(withoutPortableSetup(withoutNativeSourceResources(
-  withoutStabilityTests(withoutNativeRecipeTests(withoutM4Workflow(withoutOrdinarySanitizerPrefix(document.toJS())))))));
+  withoutStabilityTests(withoutNativeRecipeTests(withoutM4Workflow(withoutOrdinarySanitizerPrefix(withoutDriverTransfer(document.toJS()))))))));
 const packageDocument = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const bootstrapJobs = ['fast-contracts', 'owned-data-quick', 'preflight', 'rust', 'adapter-platform', 'm2-platform', 'm3-platform'];
 const nodeStep = {
@@ -455,7 +457,7 @@ test('M0 aggregate checks out the pinned verifier before execution', () => {
 
 test('routing preserves all other pinned workflow authority', () => {
   bootstrapOrder(workflow, packageDocument);
-  const original = withoutPlaygroundContracts(withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow)));
+  const original = withoutM7Workflow(withoutPlaygroundContracts(withoutWindowsProviderBudget(withoutWindowsRustBudget(workflow))));
   const editorIndex = original.jobs.rust.steps.findIndex(step => step.name === "Verify and package editor client");
   const packageSteps = original.jobs['package-release-contract'].steps;
   const buildPlanIndex = packageSteps.findIndex(step => step.run === 'pnpm package:contract') + 1;

@@ -1,0 +1,3 @@
+function accept<T extends ZrynaValue>(loan: Borrow<T>): i32 { return 7; }
+function forward<T extends ZrynaValue>(loan: Borrow<T>): i32 { return accept<T>(loan); }
+export function entry(): i32 { const root: String = "opaque"; const loan: Borrow<String> = borrow(root); return forward<String>(loan); }

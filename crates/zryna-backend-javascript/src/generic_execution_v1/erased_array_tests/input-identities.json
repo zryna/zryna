@@ -1,0 +1,26 @@
+{
+  "partly-refilled-array-read-typescript.json": {
+    "bytes": 24298,
+    "sha256": "5fefd5f35e64dee9ee38f855f76ec3a197138828bf9a14b91e543c73e05f9939"
+  },
+  "partly-refilled-array-read-native.json": {
+    "bytes": 24298,
+    "sha256": "3ad9297e45c2a9cdacdf61d99264fc6ed22a6b02616a0e51a37fdf336c2367bb"
+  },
+  "erased-parent-fixed-array-bounds-typescript.json": {
+    "bytes": 27302,
+    "sha256": "b3424b6e05ad103e6c5be52de5973e5ed22242b2da8c163346b79fe653ca7db6"
+  },
+  "erased-parent-fixed-array-bounds-native.json": {
+    "bytes": 27302,
+    "sha256": "e74bd7befce8305cfd3a686cd019cfb0ecc6f2e94620e5f7d8ae1ea2af484a81"
+  },
+  "packet-identities.json": {
+    "bytes": 1772,
+    "sha256": "33dcfc9c1440143825714b32b9a5f23874f9dbb87882964e96d1ade3d56c6af5"
+  },
+  "SOURCE_EXPECTED_FREEZE.json": {
+    "bytes": 4348,
+    "sha256": "de7308f2600e480618f98c32713ba96ae9c571a396be39a33a8184ec27c3769e"
+  }
+}

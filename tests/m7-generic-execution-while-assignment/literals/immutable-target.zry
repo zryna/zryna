@@ -1,0 +1,1 @@
+export function entry(): i32 { const fixed: i32 = 1; fixed = 2; return fixed; }

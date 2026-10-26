@@ -1,5 +1,9 @@
 //! Closed dynamic-tag interpretation; preserve entries without claiming relocation safety.
-use super::{image::*, *};
+use super::{
+    Diagnostic,
+    image::{Image, MAX_ROWS, MAX_STRINGS, MAX_SYMBOLS, string, word},
+    rejected, symbols,
+};
 use std::collections::BTreeMap;
 
 pub(super) struct Dynamic<'a> {

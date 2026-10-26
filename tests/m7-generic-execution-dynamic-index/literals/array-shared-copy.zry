@@ -1,0 +1,7 @@
+function read(value: Borrow<i32>): i32 { return value; }
+export function entry(index: i32): i32 {
+  const root: FixedArray<i32, 2> = FixedArray<i32, 2>([11, 19]);
+  let result: i32 = 0;
+  { const slot: Borrow<i32> = borrow(root[index]); result = read(slot); }
+  return result;
+}

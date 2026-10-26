@@ -1,0 +1,74 @@
+{
+  "SOURCE_EXPECTED_FREEZE.json": {
+    "bytes": 8278,
+    "sha256": "caa7f8f33bb01dd4df3599066c0b09037209cb17f7ed16ec282511a74f581adf"
+  },
+  "literals/body-loan-cleanup.zry": {
+    "bytes": 242,
+    "sha256": "70f8ee120976a6ba78cb142daf98ec7ef9eb9f6c1dc51b10969328ec39802332"
+  },
+  "literals/branch-copy-update.zry": {
+    "bytes": 149,
+    "sha256": "641c1d2fc04448489f1fbb57163b05b5043c321e8f8f6f1f2e8bb7a713b89411"
+  },
+  "literals/copy-assignment.zry": {
+    "bytes": 172,
+    "sha256": "cfdac5ccb5c1f2faaa6fdc28d6a5764e69d74d5731b55cd5e8ce09b27b8446e4"
+  },
+  "literals/early-return.zry": {
+    "bytes": 242,
+    "sha256": "053b7bd400662862ea7cc1d135fc2ba490f51d9a05379588291d57c00348cc3e"
+  },
+  "literals/immutable-target.zry": {
+    "bytes": 80,
+    "sha256": "ef3b7276c370d8f187f6e53606a6e4d74a13533e81f6892593a51e8f906f5e46"
+  },
+  "literals/match-condition.zry": {
+    "bytes": 209,
+    "sha256": "6bcf96efeae92268147cb280b6d8358cf42d393ebedfc1dee7ffdda435809281"
+  },
+  "literals/nested-lexical.zry": {
+    "bytes": 280,
+    "sha256": "e275bf8922f4f88c393e1cef9722dc652f315eb2cc545529beda78154e5e9950"
+  },
+  "literals/opaque-retained.zry": {
+    "bytes": 341,
+    "sha256": "e05087932c9ed29948d6b3762365be340b173725d005b983ef6e84ff54180ba2"
+  },
+  "literals/owned-root-replacement.zry": {
+    "bytes": 156,
+    "sha256": "2c2729c8f5e470b86958c97c68cfa58f659bff08e1eb0d422c540e69f81be2e9"
+  },
+  "literals/unrestored-owner.zry": {
+    "bytes": 182,
+    "sha256": "833e3fb6560b1c968f6bb44adb53ff7e8a1d217c7723e2d9321215c0c53f3ffd"
+  },
+  "literals/write-live-shared.zry": {
+    "bytes": 118,
+    "sha256": "84e97ddc0be71501229bc8e60f626b455b8b74f832fc527f13c9aefb29356b72"
+  },
+  "literals/wrong-rhs.zry": {
+    "bytes": 81,
+    "sha256": "4e3aa2838d5521bb3d49f5395f8d3f4019b8ddd492b37f7e7becc842a578bc2e"
+  },
+  "literals/zero-multiple.zry": {
+    "bytes": 183,
+    "sha256": "fb01a614bdb8597661cb317e4371549219f94996c1206c506069643556d37bcc"
+  },
+  "provider-receipts.json": {
+    "bytes": 38731,
+    "sha256": "4adbfad00ffb236a17e20cb385f58ca90bd3979c8e94faae0808e8907f655f10"
+  },
+  "provider-outcomes.json": {
+    "bytes": 2422,
+    "sha256": "5dc42f60bb40764348773c42204d93315ac2cb78f24d13eca24c121f6136e79f"
+  },
+  "schema-validation.json": {
+    "bytes": 228,
+    "sha256": "1bdefbdff691a36265b98de8c4e2c3aa70a937f644eaa26e06ddc4e4f67fe6f3"
+  },
+  "packet-identities.json": {
+    "bytes": 10138,
+    "sha256": "5fc81cfbc4b34be1c9c0acf8a1570cc64cd054c458fccf45de27009ee3c331dc"
+  }
+}

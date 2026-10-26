@@ -20,6 +20,9 @@ pub(super) fn execute(
 ) -> ExitCode {
     let command = if run.is_some() { CommandKind::Run } else { CommandKind::Build };
     let json = options.json;
+    if options.profile == Some(CliProfile::BoundedGenericsV1) {
+        return render_cli_failure(command, json, 2, &[generic_unavailable()]);
+    }
     let installation = match InstalledCompiler::capture_current() {
         Ok(installation) => installation,
         Err(error) => return render_cli_failure(command, json, 2, &[error]),
@@ -70,6 +73,9 @@ pub(super) fn execute(
 }
 
 fn request(options: CompileOptions) -> Result<InstalledBuildRequest, Diagnostic> {
+    if options.profile == Some(CliProfile::BoundedGenericsV1) {
+        return Err(generic_unavailable());
+    }
     if matches!(options.profile, Some(CliProfile::BrowserComponentV1 | CliProfile::CommandH1V1)) {
         return Err(Diagnostic::error(
             "ZRYNA-C2001",
@@ -97,11 +103,24 @@ fn request(options: CompileOptions) -> Result<InstalledBuildRequest, Diagnostic>
             None => InstalledProfile::I32,
             Some(CliProfile::ControlFlowV1) => InstalledProfile::ControlFlow,
             Some(CliProfile::DataOwnershipV1) => InstalledProfile::DataOwnership,
-            Some(CliProfile::BrowserComponentV1 | CliProfile::CommandH1V1) => {
+            Some(
+                CliProfile::BrowserComponentV1
+                | CliProfile::CommandH1V1
+                | CliProfile::BoundedGenericsV1,
+            ) => {
                 unreachable!("rejected before request construction")
             }
         },
     })
+}
+
+fn generic_unavailable() -> Diagnostic {
+    Diagnostic::error(
+        "ZRYNA-C2001",
+        None,
+        "bounded-generics-v1 currently requires a source checkout",
+        "use the repository-local compiler; existing package and distribution profiles retain their published contracts",
+    )
 }
 
 #[cfg(test)]

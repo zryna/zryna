@@ -1,0 +1,7 @@
+function reset<T extends ZrynaValue>(target: BorrowMut<T>, value: T): i32 { target = value; return 7; }
+export function entry(): i32 {
+  let ok: Result<String, i32> = Result.ok<String, i32>("old"); let err: Result<String, i32> = Result.err<String, i32>(3);
+  const first: i32 = match(borrowMut(ok), { "Result.ok": (payload) => reset<String>(payload, "new"), "Result.err": (payload) => reset<i32>(payload, 9) });
+  const second: i32 = match(borrowMut(err), { "Result.ok": (payload) => reset<String>(payload, "new"), "Result.err": (payload) => reset<i32>(payload, 9) });
+  return first + second;
+}

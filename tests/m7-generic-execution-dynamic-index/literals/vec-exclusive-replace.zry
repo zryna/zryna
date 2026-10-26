@@ -1,0 +1,7 @@
+function put<T extends ZrynaValue>(target: BorrowMut<T>, value: T): i32 { target = value; return 1; }
+function consume(value: Vec<String>): i32 { return 23; }
+export function entry(index: i32): i32 {
+  let root: Vec<String> = Vec<String>(["left", "right"]);
+  { const slot: BorrowMut<String> = borrowMut(root[index]); const changed: i32 = put<String>(slot, "new"); }
+  return consume(root);
+}

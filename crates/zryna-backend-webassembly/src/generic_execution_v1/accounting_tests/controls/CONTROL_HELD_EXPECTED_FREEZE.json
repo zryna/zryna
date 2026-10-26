@@ -1,0 +1,1031 @@
+{
+  "format": "m416.native-control-held-arithmetic-oracle.v1",
+  "law_sha256": "a26930cac42fb7018313d23cd2ea3ea07fecb083b8fd793ec5440d6844b6ae2d",
+  "scope": "Seeded arithmetic/model only; no execution/effect authority or actual million-event/count-overflow source claim",
+  "units_order": [
+    "A",
+    "L",
+    "S",
+    "H"
+  ],
+  "limits": {
+    "A": 1048576,
+    "L": 1048576,
+    "S": 4194304,
+    "HMaximum": 4194304,
+    "coupling": "L<=A and S+H<=Smax; H is exact cleanup debt, not an independent zero allowance"
+  },
+  "canonical_statuses": {
+    "OK": 0,
+    "ALLOCATION": 1,
+    "CAPACITY": 2,
+    "REFCOUNT": 3,
+    "EXPIRED": 5
+  },
+  "cases": [
+    {
+      "id": "control-birth-exact-debt-and-last-strong",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "RawAllocate-control",
+          "request": {
+            "attempt": true,
+            "new_hold": 2,
+            "temporary_live": true
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1,
+            0,
+            1,
+            2
+          ],
+          "after": [
+            1,
+            1,
+            1,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            2,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            3,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "One control birth owes exactly one Begin and one one-time Finish; internal physical free adds no extra S."
+    },
+    {
+      "id": "control-birth-allocation-fault-refunds-provisional-two",
+      "pre": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "RawAllocate-control",
+          "request": {
+            "attempt": true,
+            "new_hold": 2,
+            "temporary_live": true
+          },
+          "canonical_status": 1,
+          "success": false,
+          "reserved": [
+            1,
+            0,
+            1,
+            2
+          ],
+          "after": [
+            1,
+            0,
+            1,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Valid positive backing attempt remains A1/S1 on canonical ALLOCATION1; provisional H2 is canceled."
+    },
+    {
+      "id": "control-birth-total-exact",
+      "pre": [
+        0,
+        0,
+        4194301,
+        0
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "RawAllocate-control",
+          "request": {
+            "attempt": true,
+            "new_hold": 2,
+            "temporary_live": true
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1,
+            0,
+            4194302,
+            2
+          ],
+          "after": [
+            1,
+            1,
+            4194302,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4194303,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "S+H exact ceiling admits acquisition and guarantees both cleanup events."
+    },
+    {
+      "id": "control-birth-total-first-extra",
+      "pre": [
+        0,
+        0,
+        4194302,
+        0
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "RawAllocate-control",
+          "request": {
+            "attempt": true,
+            "new_hold": 2,
+            "temporary_live": true
+          },
+          "canonical_status": null,
+          "success": null,
+          "reserved": null,
+          "after": [
+            0,
+            0,
+            4194302,
+            0
+          ],
+          "fault": "Denied"
+        }
+      ],
+      "basis": "Prospective H2 must fit before allocator/fault; global denial admits no canonical status or attempt."
+    },
+    {
+      "id": "control-birth-attempt-exact",
+      "pre": [
+        1048575,
+        0,
+        0,
+        0
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "RawAllocate-control",
+          "request": {
+            "attempt": true,
+            "new_hold": 2,
+            "temporary_live": true
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1048576,
+            0,
+            1,
+            2
+          ],
+          "after": [
+            1048576,
+            1,
+            1,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1048576,
+            1,
+            2,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1048576,
+            0,
+            3,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Last positive attempt may succeed and exact cleanup spends held credit."
+    },
+    {
+      "id": "control-birth-attempt-first-extra",
+      "pre": [
+        1048576,
+        0,
+        0,
+        0
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "RawAllocate-control",
+          "request": {
+            "attempt": true,
+            "new_hold": 2,
+            "temporary_live": true
+          },
+          "canonical_status": null,
+          "success": null,
+          "reserved": null,
+          "after": [
+            1048576,
+            0,
+            0,
+            0
+          ],
+          "fault": "Denied"
+        }
+      ],
+      "basis": "No further positive request is admitted at A ceiling even with L0."
+    },
+    {
+      "id": "strong-clone-adds-only-begin-debt",
+      "pre": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "StrongClone",
+          "request": {
+            "attempt": false,
+            "new_hold": 1,
+            "temporary_live": false
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1,
+            1,
+            2,
+            3
+          ],
+          "after": [
+            1,
+            1,
+            2,
+            3
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-nonlast",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            3,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            5,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Additional strong owner owes one Begin; one-time Finish is not duplicated."
+    },
+    {
+      "id": "downgrade-explicit-weak-debt",
+      "pre": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "WeakDowngrade",
+          "request": {
+            "attempt": false,
+            "new_hold": 1,
+            "temporary_live": false
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1,
+            1,
+            2,
+            3
+          ],
+          "after": [
+            1,
+            1,
+            2,
+            3
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            3,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-retained-weak",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-last-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            5,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Explicit Weak adds one release; implicit Weak contributes no separate event."
+    },
+    {
+      "id": "weak-clone-additional-explicit-debt",
+      "pre": [
+        1,
+        1,
+        2,
+        3
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "WeakClone",
+          "request": {
+            "attempt": false,
+            "new_hold": 1,
+            "temporary_live": false
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1,
+            1,
+            3,
+            4
+          ],
+          "after": [
+            1,
+            1,
+            3,
+            4
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-nonlast",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4,
+            3
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            5,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-retained-weak",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            6,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-last-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            7,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "WeakClone owes one explicit WeakRelease; control block remains until the actual last explicit weak."
+    },
+    {
+      "id": "weak-upgrade-live-adds-strong-begin-debt",
+      "pre": [
+        1,
+        1,
+        2,
+        3
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "WeakUpgrade-live",
+          "request": {
+            "attempt": false,
+            "new_hold": 1,
+            "temporary_live": false
+          },
+          "canonical_status": 0,
+          "success": true,
+          "reserved": [
+            1,
+            1,
+            3,
+            4
+          ],
+          "after": [
+            1,
+            1,
+            3,
+            4
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-upgraded-nonlast",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4,
+            3
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-original-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            5,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-retained-weak",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            6,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-last-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            7,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Successful upgrade transfers a new strong owner debt; weak handle debt stays independent."
+    },
+    {
+      "id": "known-expired-boundary-no-false-owner-reservation",
+      "pre": [
+        1,
+        1,
+        4194302,
+        1
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "WeakUpgrade-known-expired",
+          "request": {
+            "attempt": false,
+            "new_hold": 0,
+            "temporary_live": false
+          },
+          "canonical_status": 5,
+          "success": false,
+          "reserved": [
+            1,
+            1,
+            4194303,
+            1
+          ],
+          "after": [
+            1,
+            1,
+            4194303,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-last-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Synthetic validated count-state: EXPIRED5 has S1/H0; impossible success debt must not preempt this admitted result."
+    },
+    {
+      "id": "known-refcount-boundary-no-false-owner-reservation",
+      "pre": [
+        1,
+        1,
+        4194301,
+        2
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "StrongClone-known-refcount",
+          "request": {
+            "attempt": false,
+            "new_hold": 0,
+            "temporary_live": false
+          },
+          "canonical_status": 3,
+          "success": false,
+          "reserved": [
+            1,
+            1,
+            4194302,
+            2
+          ],
+          "after": [
+            1,
+            1,
+            4194302,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4194303,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Synthetic validated count-state: REFCOUNT3 has S1/H0; this is not a naturally reached billion-owner source claim."
+    },
+    {
+      "id": "last-strong-distinct-payload-weak-cleanup-before-finish",
+      "pre": [
+        2,
+        2,
+        5,
+        3
+      ],
+      "events": [
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-outer-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            2,
+            2,
+            6,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-payload-distinct-expired-control-last",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            2,
+            1,
+            7,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-outer-free-post-payload",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            2,
+            0,
+            8,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Outer Shared holds Weak of a DISTINCT expired control. Payload release frees that inner block; then actual outer Finish weak==1 is sampled after payload cleanup. Same pending control WeakRelease is rejected by pinned C and is NOT a positive sequence here."
+    },
+    {
+      "id": "expired-two-weak-last-physical-free",
+      "pre": [
+        1,
+        1,
+        5,
+        2
+      ],
+      "events": [
+        {
+          "kind": "release",
+          "role": "WeakRelease-nonlast",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            6,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-last-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            7,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "Only actual last WeakRelease frees physical control; both releases each spend their own held event."
+    },
+    {
+      "id": "exhausted-forward-budget-keeps-exact-cleanup-infallible",
+      "pre": [
+        1,
+        1,
+        4194301,
+        3
+      ],
+      "events": [
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-last",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4194302,
+            2
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "StrongReleaseFinish-retained-weak",
+          "positive": false,
+          "canonical_status": 0,
+          "after": [
+            1,
+            1,
+            4194303,
+            1
+          ],
+          "fault": null
+        },
+        {
+          "kind": "release",
+          "role": "WeakRelease-last-free",
+          "positive": true,
+          "canonical_status": 0,
+          "after": [
+            1,
+            0,
+            4194304,
+            0
+          ],
+          "fault": null
+        }
+      ],
+      "basis": "S+H already equals ceiling: no forward credit remains, all exact held release events must still succeed."
+    },
+    {
+      "id": "invalid-missing-held-control-release",
+      "pre": [
+        1,
+        1,
+        1,
+        0
+      ],
+      "events": [
+        {
+          "kind": "release",
+          "role": "StrongReleaseBegin-unfunded",
+          "positive": false,
+          "canonical_status": null,
+          "after": [
+            1,
+            1,
+            1,
+            0
+          ],
+          "fault": "Invariant"
+        }
+      ],
+      "basis": "Missing owner debt is ABI invariant failure, never capacity denial or a successful canonical call."
+    },
+    {
+      "id": "invalid-free-without-live-block",
+      "pre": [
+        1,
+        0,
+        1,
+        1
+      ],
+      "events": [
+        {
+          "kind": "release",
+          "role": "WeakRelease-claims-free-without-block",
+          "positive": true,
+          "canonical_status": null,
+          "after": [
+            1,
+            0,
+            1,
+            1
+          ],
+          "fault": "Invariant"
+        }
+      ],
+      "basis": "A physical-free transition cannot decrement L0; no state publication or wrap."
+    },
+    {
+      "id": "prospective-debt-add-overflow-is-atomic-denial",
+      "pre": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "invalid-overflow-prospective-debt",
+          "request": {
+            "attempt": false,
+            "new_hold": 18446744073709551615,
+            "temporary_live": false
+          },
+          "canonical_status": null,
+          "success": null,
+          "reserved": null,
+          "after": [
+            1,
+            1,
+            1,
+            2
+          ],
+          "fault": "Denied"
+        }
+      ],
+      "basis": "Checked H arithmetic denies before event; seeded request gives no real effect authority."
+    },
+    {
+      "id": "corrupt-spent-plus-held-state-is-invariant",
+      "pre": [
+        1,
+        1,
+        4194304,
+        1
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "corrupt-private-context",
+          "request": {
+            "attempt": false,
+            "new_hold": 0,
+            "temporary_live": false
+          },
+          "canonical_status": null,
+          "success": null,
+          "reserved": null,
+          "after": [
+            1,
+            1,
+            4194304,
+            1
+          ],
+          "fault": "Invariant"
+        }
+      ],
+      "basis": "Invalid incoming S+H is invariant before traversal/admission, not a source capacity result."
+    },
+    {
+      "id": "possible-clone-debt-first-extra-before-canonical",
+      "pre": [
+        1,
+        1,
+        4194301,
+        2
+      ],
+      "events": [
+        {
+          "kind": "forward",
+          "role": "StrongClone-potential-success",
+          "request": {
+            "attempt": false,
+            "new_hold": 1,
+            "temporary_live": false
+          },
+          "canonical_status": null,
+          "success": null,
+          "reserved": null,
+          "after": [
+            1,
+            1,
+            4194301,
+            2
+          ],
+          "fault": "Denied"
+        }
+      ],
+      "basis": "Same arithmetic seed as known REFCOUNT row, but validated potentially successful count increment must reserve H1 and is denied before C."
+    }
+  ]
+}

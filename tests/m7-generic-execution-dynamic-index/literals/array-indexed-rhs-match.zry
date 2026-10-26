@@ -1,0 +1,10 @@
+function choose(flag: bool): Option<i32> {
+  if (flag) { return Option.some<i32>(1); } else { return Option.none<i32>(); }
+}
+export function entry(index: i32, flag: bool): i32 {
+  let root: FixedArray<String, 2> = FixedArray<String, 2>(["left", "right"]);
+  const first: String = "first";
+  const second: String = "second";
+  root[index] = match(choose(flag), { "Option.none": () => clone(first), "Option.some": (number) => clone(second) });
+  return 17;
+}

@@ -1,0 +1,14 @@
+{
+  "SOURCE_EXPECTED.json": {
+    "bytes": 1201,
+    "sha256": "2f65bce97ba9ee5ef79377818c9335db9dfeb6d2c8a2aa0963d81c238fec455d"
+  },
+  "SOURCE_EXPECTED_FREEZE.json": {
+    "bytes": 426,
+    "sha256": "daa1145192b12225ab16f2cdee607e9b122a4ab183eb05e3e1088590b94c8f7f"
+  },
+  "packet-identities.json": {
+    "bytes": 916,
+    "sha256": "d86295406f60ae9aa05ad6382b2d5377a11f57b3244afad0b756321faed10161"
+  }
+}

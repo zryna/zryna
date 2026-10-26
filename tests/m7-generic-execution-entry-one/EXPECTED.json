@@ -1,0 +1,68 @@
+{
+  "status": "independently frozen source/auth/IR/runtime requirements BEFORE either provider; no observed execution claimed",
+  "case": "imported-generic-entry-one",
+  "contract": "zryna.bounded-generics-option-result.v1",
+  "sources": [
+    {
+      "path": "a.zry",
+      "literal": "literals/a.zry",
+      "module_id": 0,
+      "bytes": 80,
+      "sha256": "b0b189e867c2bbdac4fd226e525636bdb3a37496213d4ce913593f0f69c3615b"
+    },
+    {
+      "path": "main.zry",
+      "literal": "literals/main.zry",
+      "module_id": 1,
+      "bytes": 96,
+      "sha256": "cef91934e0bb7437b845b0a83ea950da5111f56e49ec657d694ae432c45c9b55"
+    }
+  ],
+  "entry_path": "main.zry",
+  "entry_module": 1,
+  "semantic": "accept",
+  "observation": "i32:7",
+  "allocations": 0,
+  "releases": [],
+  "clone_calls": 0,
+  "faults": [],
+  "executable_exports": [
+    {
+      "module": 1,
+      "function": 0,
+      "name": "entry",
+      "parameters": [],
+      "result": "i32"
+    }
+  ],
+  "imported_template": {
+    "module": 0,
+    "function": 0,
+    "name": "identity",
+    "export_visibility": "compile-time import visibility only; no executable export",
+    "type_parameters": [
+      "T extends ZrynaValue"
+    ]
+  },
+  "generic_function_instances": [
+    {
+      "module": 0,
+      "function": 0,
+      "argument_type_keys_hex": [
+        "01"
+      ],
+      "complete_instance_key_hex": "400000000000000000010000000100000001"
+    }
+  ],
+  "source_root_key_hex": "410100000000000000",
+  "negative_controls": [
+    "same actual sources and entry1: claim.entry_module=0 rejects",
+    "FileId obtained from an independent SourceMap rejects; no fake IDs or tokens"
+  ],
+  "authority_path": [
+    "actual provider complete DTO -> verify_snapshot against exact SourceMap",
+    "semantic input retains actual FileId for main.zry (module1)",
+    "source original-body check -> closed discovery -> both layouts -> NEW execution issuer with explicit FileId entry",
+    "semantic bridge passes retained DeclarationContext.entry()"
+  ]
+}

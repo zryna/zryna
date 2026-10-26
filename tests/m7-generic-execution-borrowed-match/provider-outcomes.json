@@ -1,0 +1,117 @@
+{
+  "freshProviderProcesses": 32,
+  "cases": [
+    {
+      "case": "nominal-shared-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "nominal-shared-clone",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "nominal-exclusive-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "nominal-exclusive-replace",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "option-shared-both",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "result-shared-opaque-bound",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "result-exclusive-both",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "opaque-payload-forward",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "nested-exclusive-result",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "branch-arm-cleanup",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "shared-reborrow-from-exclusive",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "shared-payload-move",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "shared-to-exclusive-call",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "exclusive-parent-frozen",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "opaque-payload-clone",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "arm-loan-result-escape",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { LIMITS, bytes, exactKeys, parseCanonical, requireValue, sha256 } from '
 import { digestValue, roleFor, targetPaths, validateTuples } from './inventory.mjs';
 
 export const NATIVE_FORMAT = 'zryna.native-distribution.v2';
-export const NATIVE_RECIPE_SHA256 = '1dd148410ee06fbb00ef3c07fa28a55c14977c70b6f34797d935cc12ffc82558';
+export const NATIVE_RECIPE_SHA256 = 'fbc5eb291f8e878e07d3385f5a17c4f29d4bf1542c8ca5f918dea9514702416e';
 const rawRecipe = readFileSync(new URL('./native-recipe-v2.json', import.meta.url));
 requireValue(sha256(rawRecipe) === NATIVE_RECIPE_SHA256, 'native recipe identity');
 export const nativeRecipe = parseCanonical(rawRecipe);
@@ -20,9 +20,10 @@ const METADATA = ['metadata/materials.json', 'metadata/architecture-receipt.json
 
 export function nativeSourceRef(value) {
   if (value === 'refs/heads/main') return true;
-  if (typeof value !== 'string' || !value.startsWith('refs/heads/codex/')
-    || value.length > 200 || value.split('/').length > 12) return false;
-  return value.slice('refs/heads/codex/'.length).split('/').every(part =>
+  if (typeof value !== 'string' || value.length > 200 || value.split('/').length > 12) return false;
+  const prefix = ['refs/heads/codex/', 'refs/heads/fix/'].find(candidate => value.startsWith(candidate));
+  if (prefix === undefined) return false;
+  return value.slice(prefix.length).split('/').every(part =>
     /^[a-z0-9][a-z0-9._-]{0,63}$/.test(part) && !part.includes('..')
     && !part.endsWith('.') && !part.endsWith('.lock'));
 }

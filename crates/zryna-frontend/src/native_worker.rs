@@ -179,6 +179,9 @@ fn candidate(protocol: u32, input: Analysis) -> Result<Value, NativeWorkerError>
         4 => native_parser::v4::parse_v4_candidate(&sources, &lexed)
             .map(serde_json::to_value)
             .map_err(|error| rejection(error.diagnostic())),
+        5 => native_parser::v5::parse_v5_candidate(&sources, &lexed)
+            .map(serde_json::to_value)
+            .map_err(|error| rejection(error.diagnostic())),
         _ => return Err(NativeWorkerError("native worker protocol is unsupported")),
     };
     match raw {
@@ -197,7 +200,22 @@ fn candidate(protocol: u32, input: Analysis) -> Result<Value, NativeWorkerError>
 /// # Errors
 /// Rejects unknown versions, requests, source maps, framing, output overflow and I/O failures.
 pub fn run_native_worker_stdio(protocol: u32) -> Result<(), NativeWorkerError> {
+    if !matches!(protocol, 2..=4) {
+        return Err(NativeWorkerError("native worker protocol is unsupported"));
+    }
     run(protocol, &mut io::stdin().lock(), &mut io::stdout().lock())
+}
+
+/// Serves the private protocol-v5 syntax candidate without registering a driver or CLI route.
+///
+/// The caller must consume this untrusted DTO through `WorkerFrontendV5`, which authenticates
+/// the process and verifies complete source correspondence. No semantic authority is emitted.
+/// The owning process supplies the established wall-time and cleanup bounds.
+///
+/// # Errors
+/// Rejects malformed requests, source maps, framing, output overflow and I/O failures.
+pub fn run_native_worker_v5_stdio() -> Result<(), NativeWorkerError> {
+    run(5, &mut io::stdin().lock(), &mut io::stdout().lock())
 }
 
 fn run(
@@ -208,7 +226,8 @@ fn run(
     let maximum = match protocol {
         2 => syntax_v2::MAX_RESPONSE_BYTES,
         3 => syntax_v3::MAX_RESPONSE_BYTES,
-        4 => syntax_v4::MAX_RESPONSE_BYTES,
+        // V5 deliberately inherits the v4 byte cap, exactly as `WorkerFrontendV5` does.
+        4 | 5 => syntax_v4::MAX_RESPONSE_BYTES,
         _ => return Err(NativeWorkerError("native worker protocol is unsupported")),
     };
     if !matches!(request(reader, MAX_WORKER_REQUEST_BYTES)?, Some(Request::Handshake { id: 1 })) {
@@ -218,8 +237,11 @@ fn run(
     if protocol >= 3 {
         capabilities["control_flow_v1"] = json!(true);
     }
-    if protocol == 4 {
+    if protocol >= 4 {
         capabilities["data_ownership_syntax_v1"] = json!(true);
+    }
+    if protocol == 5 {
+        capabilities["bounded_generics_syntax_v1"] = json!(true);
     }
     respond(
         writer,
@@ -242,3 +264,6 @@ fn run(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod v5_tests;

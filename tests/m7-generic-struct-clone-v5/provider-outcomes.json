@@ -1,0 +1,92 @@
+{
+  "status": "Actual syntax-only observations, independently frozen sources/oracles unchanged",
+  "cases": [
+    {
+      "case": "nested-prefix",
+      "exactSourceSha256": "1e7d452d2bee1ee6d1cca8222df1535008fc4de2958e86539d0d9fa8db20e9e8",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "repeat-source",
+      "exactSourceSha256": "3397bb5e977a41c50d2ec98fc9da003149e5e3fb2ff1b2be11c90afeac0c29c6",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "shared-owner",
+      "exactSourceSha256": "90771ab350b5bfe1e69a5b861bc067bf802a8d765bb99f82267e8c7ca0b08704",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "phantom-opaque",
+      "exactSourceSha256": "dcd0de993297df0ab9a8568467d82303b1431914e0812864cf7a3fd4a4e127c9",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "fixed-member",
+      "exactSourceSha256": "a58d2c3bcfbbc2544f60acb9eb039742d5395ef7a30bdb1ca98689076ce50686",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "family-fields",
+      "exactSourceSha256": "23e41f4694354984bdbcf7ad8b88ec61a2f07698e718b303503adc3d66add670",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "copy-struct",
+      "exactSourceSha256": "11f92e90a8d12a2b275f262bed778cb40f4daa0200f9bdfb24be40b6fdac12c4",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "opaque-direct",
+      "exactSourceSha256": "df8a92762b0b222bb86cb80d3d2356b964fa30a2ad5b6398765b21a0ed8e2301",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "opaque-stored",
+      "exactSourceSha256": "b45401f32648033f2db0e42a2462afe613743a0d644e1d1aaae665883a9f5478",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "opaque-inactive",
+      "exactSourceSha256": "ac593fcb994742c637a3d0c202c9b7e24a3fb5f9423839cf02484c5f94fa620e",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "moved-source",
+      "exactSourceSha256": "b8f418314fe27be5fa71c6a6f4935d63a9ea5af1e82fe63ffb61688830d912c2",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    },
+    {
+      "case": "exclusive-source",
+      "exactSourceSha256": "b2a880d53ebe6f94570ef00a53517aba74779b814779d50f6a5d4502d4569ece",
+      "nativeSyntaxAccepted": true,
+      "typescriptSyntaxAccepted": true,
+      "completeDTOParity": true
+    }
+  ],
+  "freshProcesses": 24,
+  "acceptedWithoutDiagnostics": 24,
+  "completeDTOParityCases": 12
+}

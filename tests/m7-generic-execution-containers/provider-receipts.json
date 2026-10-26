@@ -1,0 +1,653 @@
+{
+  "status": "Actual fresh syntax-only processes; complete local stdin/stdout/stderr retained, every failure preserved. No compiler source/semantic/seal/runtime claim.",
+  "records": [
+    {
+      "case": "opaque-count-unused",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "f463f16e0ac0eec0d313c2bc63e3a52532cec0cbf531b7e49c5ab77e0a6bf39e",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "633b5aa482ea3baf955090c42e4d50ce21014e21d7d77de68547dab9b6ef9dbc",
+      "stdoutSha256": "f40ae427b9e3ef769c7dcc98fd06b0945fd1775f4d47c4be51fb88f65a6d25c0",
+      "stderrBytes": 0,
+      "packet": "opaque-count-unused-native.json",
+      "packetSha256": "f99a22dabadacf72f74e3d890419c9592f5111ac9324c41a1e6060c8264b4cfa",
+      "packetBytes": 22431,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-count-unused",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "f463f16e0ac0eec0d313c2bc63e3a52532cec0cbf531b7e49c5ab77e0a6bf39e",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "633b5aa482ea3baf955090c42e4d50ce21014e21d7d77de68547dab9b6ef9dbc",
+      "stdoutSha256": "cb867445631a930222346ad56f06f8646913672ba83f0d8012fb85ad721c386a",
+      "stderrBytes": 0,
+      "packet": "opaque-count-unused-typescript.json",
+      "packetSha256": "dbfc7943595e6a2ac36af0bcb1f3f524354a72e82d29f642fa8d349e5916e990",
+      "packetBytes": 22431,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-downgrade-unused",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "ef871a14d299a3b2a0079b0fe9165059a34ed57a5a1b4b46b3c287504738795a",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "694c7f5d73c5216e296b24879bcefced21eded043b8d466e4b9117670ea82430",
+      "stdoutSha256": "b7887cac4212b2fc844c730ffc347f8aa0da9db9d0ecf646223b6182553e83be",
+      "stderrBytes": 0,
+      "packet": "opaque-downgrade-unused-native.json",
+      "packetSha256": "885c9074c091340ce26a660adab194dbc5245c183231157343f114e43d0af199",
+      "packetBytes": 8991,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-downgrade-unused",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "ef871a14d299a3b2a0079b0fe9165059a34ed57a5a1b4b46b3c287504738795a",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "694c7f5d73c5216e296b24879bcefced21eded043b8d466e4b9117670ea82430",
+      "stdoutSha256": "a086c419b1781f752245b5b63088d29fba81cb96f77331a54a49e010fd4ff9b1",
+      "stderrBytes": 0,
+      "packet": "opaque-downgrade-unused-typescript.json",
+      "packetSha256": "03c24061b40bbd825cc6597e08fbe82a7ec17d3916505993a9ca899aeaddba48",
+      "packetBytes": 8991,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-vec-clone-unused",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "6d75c5749f65a5530354250bfc760019383fd23ab09c08dbff87382269c9c90f",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "af2278e14dfb5534f220dbc722a44e86243fbf51d20f4d0ac4edec4e8a8c1d05",
+      "stdoutSha256": "a78dcf3040753fe0a8463d3535b432d9d091e9f0696c912b5af20d3130f607fc",
+      "stderrBytes": 0,
+      "packet": "opaque-vec-clone-unused-native.json",
+      "packetSha256": "ecba9a07b52f8c0f0eb0ae33fc3bca985a0a65e29fb60bad8ba0821bb74483e4",
+      "packetBytes": 9565,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "opaque-vec-clone-unused",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "6d75c5749f65a5530354250bfc760019383fd23ab09c08dbff87382269c9c90f",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "af2278e14dfb5534f220dbc722a44e86243fbf51d20f4d0ac4edec4e8a8c1d05",
+      "stdoutSha256": "b01ab2990ceb7e2440ed97b4823a7a8ff448341e1918592afe04663feea80e17",
+      "stderrBytes": 0,
+      "packet": "opaque-vec-clone-unused-typescript.json",
+      "packetSha256": "094c9dc4333537c048326c67e876f7b0bc1b20e7f7a0f4d70cd6ce5a39640ad9",
+      "packetBytes": 9565,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-weak-count",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "e3426c8ef974e30d090ce09f6a70e9274a38b366be408c4dbb12c5e4bb610867",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "325d2cc40fee3647cf655009fa3ee193f6ba3844316681ed03c325d5023058f9",
+      "stdoutSha256": "c7d4c47748116410895fb317eee50c9228bb611da9ffe0d2a50f42cb30cc2a9c",
+      "stderrBytes": 0,
+      "packet": "shared-weak-count-native.json",
+      "packetSha256": "9aeace1bf73d01b149a63c1fc5acbfb7c44fcd12e98cfd81a3ceac1eae208af4",
+      "packetBytes": 15547,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "shared-weak-count",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "e3426c8ef974e30d090ce09f6a70e9274a38b366be408c4dbb12c5e4bb610867",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "325d2cc40fee3647cf655009fa3ee193f6ba3844316681ed03c325d5023058f9",
+      "stdoutSha256": "1f208449825188a4059d39ea103e77a72feaeea7310e0709b3c1e6d5fb2af992",
+      "stderrBytes": 0,
+      "packet": "shared-weak-count-typescript.json",
+      "packetSha256": "26db15b1e5647e881d03d2c2d9e85f3f8c943164f7ae9ff3522a8abf1d2b3912",
+      "packetBytes": 15547,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-copy",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "9cef08565d23a4a03968bb483e0981b915b0f4be2b34f438e98d281cb12ffff7",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "b538ba71321061095fe60fa4f2c21580d9be5cc69359c70a16987aba080c6ed2",
+      "stdoutSha256": "0602708fe30c25ed6b18f3e019c619d5a58ce9fa25f4c4034187adcf979880c7",
+      "stderrBytes": 0,
+      "packet": "vec-copy-native.json",
+      "packetSha256": "fa3cc50222196dda6a8499bac606e516b93d6d8f2768b568e197eca67978bd6f",
+      "packetBytes": 20697,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-copy",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "9cef08565d23a4a03968bb483e0981b915b0f4be2b34f438e98d281cb12ffff7",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "b538ba71321061095fe60fa4f2c21580d9be5cc69359c70a16987aba080c6ed2",
+      "stdoutSha256": "4f68ccc6e197f976530c90d57f472be7f62c732e93964464834bef6b867ea219",
+      "stderrBytes": 0,
+      "packet": "vec-copy-typescript.json",
+      "packetSha256": "82a669c8d7f0e0863f099aad031c02cdc8e4916d0103d11c995a9a6f65642c88",
+      "packetBytes": 20697,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-owned-prepare",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "9c59e547d071e178768bb729553d92e96c3a3cb5615ef4dab66de8413dfc6fa9",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "0a5d061aa9c832311562db4cbba8cd2e426efe180238ffd3a9f75622a5744e46",
+      "stdoutSha256": "419548ec103887442b5304a6ddcc8f662bd5b2cd51c7e8211a28d8501fa8fcfa",
+      "stderrBytes": 0,
+      "packet": "vec-owned-prepare-native.json",
+      "packetSha256": "28c208a316ab03b69f2e3add791be951e06a51fe319114a6e6b7fdca56a0ac96",
+      "packetBytes": 10563,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-owned-prepare",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "9c59e547d071e178768bb729553d92e96c3a3cb5615ef4dab66de8413dfc6fa9",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "0a5d061aa9c832311562db4cbba8cd2e426efe180238ffd3a9f75622a5744e46",
+      "stdoutSha256": "145f3cb047ad8f509cf1c19ca87a3d8ffc8ec969dd9d8b0c70920e2ce28cd669",
+      "stderrBytes": 0,
+      "packet": "vec-owned-prepare-typescript.json",
+      "packetSha256": "feb8bd5c12d162a92c4212307eb171df7fd76e5b3b75ca66de04a9760a862abc",
+      "packetBytes": 10563,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-push",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "a63e8b3d75c19f4f84908f2d4a02bd7d34507b02bef8e850fd6929f670c56395",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "08f6e25d5d9eddaef01305a1aa84bce367e87dd9478dff1c971dd1045cd0b78b",
+      "stdoutSha256": "efb7ff472fae5a9cbdf83261232101f8b221200330ed1f4616011024a431bfd6",
+      "stderrBytes": 0,
+      "packet": "vec-push-native.json",
+      "packetSha256": "5ec214bf0eee2f930034426c43ae9dfa4590a033ff2bcfcae457d45c304d64de",
+      "packetBytes": 12287,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "vec-push",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "a63e8b3d75c19f4f84908f2d4a02bd7d34507b02bef8e850fd6929f670c56395",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "08f6e25d5d9eddaef01305a1aa84bce367e87dd9478dff1c971dd1045cd0b78b",
+      "stdoutSha256": "ce47b16ef6b91a05cc24ca59ce77c3ef23e0d3985d274e3ce7dd8250b4f097cb",
+      "stderrBytes": 0,
+      "packet": "vec-push-typescript.json",
+      "packetSha256": "ad73ec673e9ddd1e7d3928a707beae26620236e9076046341100f298f65b2ef2",
+      "packetBytes": 12287,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "weak-expired",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "7019b30bf1e5454ef1b6e84246a2b5acba44b83a925dd49c7ae5c27d463a99f6",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "ca3ca576c6f10439689c4d7dd2cff503d2b709331df1ccc026101619447c0b36",
+      "stdoutSha256": "c8bf2506182d1c8fc78cc06289e95ce2909111e5e46ff4e0450b25b30c2e471c",
+      "stderrBytes": 0,
+      "packet": "weak-expired-native.json",
+      "packetSha256": "81567063f1204dde5e3f49fc9abcc08450bb437e6755c6f765cb6234205a8621",
+      "packetBytes": 16492,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "weak-expired",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "7019b30bf1e5454ef1b6e84246a2b5acba44b83a925dd49c7ae5c27d463a99f6",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "ca3ca576c6f10439689c4d7dd2cff503d2b709331df1ccc026101619447c0b36",
+      "stdoutSha256": "2002fa0c9cca04fdfc01917ebccfa7c486c1d7ec7f98ccd0d2d7d1ba12eae532",
+      "stderrBytes": 0,
+      "packet": "weak-expired-typescript.json",
+      "packetSha256": "011a6061793f36512da3d75c0d85f33a02bf968b3d32aaba3b0b61315fd7a81c",
+      "packetBytes": 16492,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "weak-live",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "9b61432da4fefa674cd1c572c62fcb61baad9ef104f641f3f711bee67ddf7936",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "9b197913fdb27c6b0414a57d7eb0375384682a28ce5ca5cbe3f2d3a51c25f322",
+      "stdoutSha256": "6f03867b76cd3f84279bd0ba5ce9f4494cf72d7450681095276504d0188b1a25",
+      "stderrBytes": 0,
+      "packet": "weak-live-native.json",
+      "packetSha256": "08e27c720276df7ca8b4fc32c796ff2c19d96912c84a55f92f89893348e5f54d",
+      "packetBytes": 12699,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "weak-live",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "d7d6d51db3eb9b51ed729b32aac8590a05b3102056ee2f88bc9c8baa51530d33",
+      "exactSourceSha256": "9b61432da4fefa674cd1c572c62fcb61baad9ef104f641f3f711bee67ddf7936",
+      "inputPinFreezeSha256": "73e4fc16ce49391a7f88d5e26c7ca01aa4cee59e7b61277e32f0b6c71088ba9d",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "9b197913fdb27c6b0414a57d7eb0375384682a28ce5ca5cbe3f2d3a51c25f322",
+      "stdoutSha256": "57aeb16a26db1f50a71b71713e933201685ee10013da3c0def953c10cad4eadc",
+      "stderrBytes": 0,
+      "packet": "weak-live-typescript.json",
+      "packetSha256": "d7a9f07987a491d87a6d6aa995888f9cfa98a049005350b51fb4fb671beaec98",
+      "packetBytes": 12699,
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

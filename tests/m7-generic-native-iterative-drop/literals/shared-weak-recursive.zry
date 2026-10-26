@@ -1,0 +1,16 @@
+interface Node<T extends ZrynaValue> extends ZrynaEnum { leaf: T; branch: Vec<Node<T>>; }
+export function entry(depth: i32): i32 {
+  let root: Node<String> = Node.leaf<String>("x");
+  let count: i32 = 0;
+  while (count < depth) {
+    const prior: Node<String> = root;
+    const children: Vec<Node<String>> = Vec<Node<String>>([prior]);
+    root = Node.branch<String>(children);
+    count = count + 1;
+  }
+  const owner: Shared<Node<String>> = shared(root);
+  const alias: Shared<Node<String>> = clone(owner);
+  const weak: Weak<Node<String>> = downgrade(owner);
+  const copiedWeak: Weak<Node<String>> = clone(weak);
+  return 7;
+}

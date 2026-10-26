@@ -1,0 +1,19 @@
+{
+  "freshProviderProcesses": 4,
+  "cases": [
+    {
+      "case": "indexed-push-copy",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    },
+    {
+      "case": "indexed-push-rhs-relocates-owner",
+      "nativeAccepted": true,
+      "typescriptAccepted": true,
+      "completeDTOEqual": true,
+      "completeAcceptedDTOParity": true
+    }
+  ]
+}

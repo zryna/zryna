@@ -1,5 +1,27 @@
 # Zryna CLI reference
 
+## Bounded generics source-checkout candidate
+
+Exact `--profile bounded-generics-v1` selects the separate protocol-v5 path for `build`
+and `run`; `--profile=bounded-generics-v1` is equivalent. See the
+[complete programs](M7_GETTING_STARTED.md), [public reference](M7_PUBLIC_PROFILE.md), and
+[candidate host/evidence matrix](M7_SUPPORT.md). This selection preserves the default and
+all older profile/manifest contracts. Hosted Windows qualification is pending; source
+presence and local Linux results do not close #416.
+
+The entrypoint roots authenticated explicit relative `.zry` modules. Generic structs/enums,
+Option/Result and ownership remain internal; public parameters/results are only `bool`/`i32`.
+A template-only library with zero scalar exports may build, including `--target all`. A run
+requires a nongeneric scalar export and canonical typed arguments; a visible source template
+is not a host export. Public generic/aggregate FFI and components are excluded. Standalone
+package projects and installed distributions reject this profile.
+
+The output uses `zryna-generic-manifest-v1.json`, format `zryna.generic-bundle.v1`, independently
+of manifests v1/v2/v3. Build publishes ordinary target artifacts. Run prepares separate typed
+invocation transports and publishes only a completed observation after checked cleanup. The
+five source trap identities and host-failure distinction are specified in the public reference;
+engine errors, native signals and diagnostic strings never supply a source-trap identity.
+
 ## Bounded public source-checkout server profiles
 
 This change introduces bounded public Linux x64/Windows x64 source-checkout support when
@@ -81,8 +103,8 @@ zryna architecture check [--root <PATH>] [--json]
 zryna doctor             [--root <PATH>] [--json]
 zryna support            [--json]
 zryna package resolve <PACKAGE> --source-root <PATH> --mode <frozen|update> [--git-cache <PATH>] [--json]
-zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> [--provider <native|bootstrap|compare>] [--node <PATH>] [--profile <control-flow-v1|data-ownership-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
-zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> [--provider <native|bootstrap|compare>] [--node <PATH>] [--profile control-flow-v1] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
+zryna build <ENTRYPOINT> --target <javascript|webassembly|native|component|all> [--provider <native|bootstrap|compare>] [--node <PATH>] [--profile <control-flow-v1|data-ownership-v1|bounded-generics-v1|browser-component-v1>] [--root <PATH>] [--name <STEM>] [--json]
+zryna run   <ENTRYPOINT> --target <javascript|webassembly|native|all> --export <NAME> [--provider <native|bootstrap|compare>] [--node <PATH>] [--profile <control-flow-v1|data-ownership-v1|bounded-generics-v1>] [--arg=<i32|bool>:<VALUE> ...] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--grant-file <ABSOLUTE_PATH>] [--root <PATH>] [--name <STEM>] [--json]
 zryna run   <ENTRYPOINT> --target wasi-command --profile command-h1-v1 --export main [--project-root <PATH>] [--grant-file <ABSOLUTE_PATH>] [--name <STEM>] [--json] # newly verified complete installation
 ```
@@ -108,7 +130,8 @@ authenticates one final source map, and performs semantic lowering exactly once 
 dispatch. The frontend never resolves imports or reads the workspace.
 
 `--profile` has no hidden default: omission means M1. Exact lowercase `control-flow-v1` selects
-M2; `data-ownership-v1` selects M3; `browser-component-v1` selects the default M1 scalar compiler
+M2; `data-ownership-v1` selects M3; `bounded-generics-v1` selects the separate M7 route above;
+`browser-component-v1` selects the default M1 scalar compiler
 with an explicit browser bundle.
 `--target` is mandatory, exact, lowercase, and has no alias or default. `component` is build-only;
 the browser profile requires it. Other explicit profiles with `component` reject before source or
@@ -125,7 +148,8 @@ installation format.
 
 `run` requires one exact logical export. Each repeated `--arg` is a typed scalar. M1 accepts only
 `i32:<VALUE>`. `control-flow-v1` accepts that grammar plus exact lowercase `bool:true` and
-`bool:false`. Negative shell arguments are most robust as `--arg=i32:-1`. The decimal spelling is
+`bool:false`; the explicit M3 and M7 profiles also use those typed scalar arguments. Negative
+shell arguments are most robust as `--arg=i32:-1`. The decimal spelling is
 canonical: whitespace, a plus sign, leading zeroes other than `0`, numeric prefixes, fractions,
 exponents, negative zero, and values outside `-2147483648` through `2147483647` are rejected.
 Arity and types are checked through the program's sealed scalar ABI before target execution.

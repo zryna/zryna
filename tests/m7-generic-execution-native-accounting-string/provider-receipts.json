@@ -1,0 +1,221 @@
+{
+  "status": "Actual fresh syntax-only processes; complete local stdin/stdout/stderr retained, every failure preserved. No compiler source/semantic/seal/runtime claim.",
+  "records": [
+    {
+      "case": "empty-call-loop",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "dde76996fe15e76b3b4d9d92282847b0ddf75e7ea31cc8e1c1e5914067f6b437",
+      "exactSourceSha256": "a775fd354662d11803f42ba6e7d3be5c3f49df9384008ba60e0f01c654c5dc6e",
+      "inputPinFreezeSha256": "85a2250e2c44f722a6f451ae792cb9115834f4ce5b5c9f036b75ced992c41d20",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "45c6d03367329aa1871722150e93ae548a3ad2476e3c06a3ade40f9a3c180bf7",
+      "stdoutSha256": "e13a820a6701102e7715f3e9db76d6a858a5c689998feec24fa13af5b0187ae6",
+      "stderrBytes": 0,
+      "packet": "empty-call-loop-native.json",
+      "packetSha256": "2e903b8a380893cfdccd8f9843cc269e68e7c434100da87d5d761c5e899baf92",
+      "packetBytes": 24176,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "empty-call-loop",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "dde76996fe15e76b3b4d9d92282847b0ddf75e7ea31cc8e1c1e5914067f6b437",
+      "exactSourceSha256": "a775fd354662d11803f42ba6e7d3be5c3f49df9384008ba60e0f01c654c5dc6e",
+      "inputPinFreezeSha256": "85a2250e2c44f722a6f451ae792cb9115834f4ce5b5c9f036b75ced992c41d20",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "45c6d03367329aa1871722150e93ae548a3ad2476e3c06a3ade40f9a3c180bf7",
+      "stdoutSha256": "06951aa5d450e2f19dc5a8d60daf87415f5bfc99d29c9c3790865d0da85d7b37",
+      "stderrBytes": 0,
+      "packet": "empty-call-loop-typescript.json",
+      "packetSha256": "782eabc090054a94993e3113c7ab3a4ebce8d675818b110cf9bb79257db224af",
+      "packetBytes": 24176,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nonempty-call-loop",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "dde76996fe15e76b3b4d9d92282847b0ddf75e7ea31cc8e1c1e5914067f6b437",
+      "exactSourceSha256": "41f53d8b9de2567d177f1a69bd7883affbf91f1bc73fc1181b2bb0dadad1fdea",
+      "inputPinFreezeSha256": "85a2250e2c44f722a6f451ae792cb9115834f4ce5b5c9f036b75ced992c41d20",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "1a4536a386f2f2ec8850f6d098c51efa38140b9f168191440483687a9d73f6ca",
+      "stdoutSha256": "465ff9276c3da77feaa9b95e2da0e87bf2ff515c13748a2f21d7dc5c1f3ecaed",
+      "stderrBytes": 0,
+      "packet": "nonempty-call-loop-native.json",
+      "packetSha256": "6d4fbda07cb623f333e205b2e215c059d4a5d3147b9e152c97ed5ecc1b95fe04",
+      "packetBytes": 24177,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "nonempty-call-loop",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "dde76996fe15e76b3b4d9d92282847b0ddf75e7ea31cc8e1c1e5914067f6b437",
+      "exactSourceSha256": "41f53d8b9de2567d177f1a69bd7883affbf91f1bc73fc1181b2bb0dadad1fdea",
+      "inputPinFreezeSha256": "85a2250e2c44f722a6f451ae792cb9115834f4ce5b5c9f036b75ced992c41d20",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "1a4536a386f2f2ec8850f6d098c51efa38140b9f168191440483687a9d73f6ca",
+      "stdoutSha256": "b3b4db8597a97a18fafde06ec39427a31c165ac976cb127c3c7cf4d9502ecda2",
+      "stderrBytes": 0,
+      "packet": "nonempty-call-loop-typescript.json",
+      "packetSha256": "83a5bc011e6f3d58a5377930374cbe44304e0ff36df40b72835d11fde8753563",
+      "packetBytes": 24177,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "retained-clone-call-loop",
+      "provider": "native",
+      "command": [
+        "/tmp/m416-target/debug/deps/worker_process-a0ba6f0a0b2c8980",
+        "--native-worker-v5"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate",
+      "sourceExpectedFreezeSha256": "dde76996fe15e76b3b4d9d92282847b0ddf75e7ea31cc8e1c1e5914067f6b437",
+      "exactSourceSha256": "ae363ce61a8e0c8aa8aaeff0ce3c763ebd40f0ba3fe47cc73d080cbed5036279",
+      "inputPinFreezeSha256": "85a2250e2c44f722a6f451ae792cb9115834f4ce5b5c9f036b75ced992c41d20",
+      "handshake": {
+        "capabilities": {
+          "bounded_generics_syntax_v1": true,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "module_resolution": false,
+          "semantic_diagnostics": false
+        },
+        "protocol_version": 5,
+        "provider": "zryna-native",
+        "provider_version": "0.2.3"
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "5481a102a94ac6fbe8aa4583312da068fd8471d3763be8ba47ef463f9444caea",
+      "stdoutSha256": "3012430789a26887ccd13e8ff4fd581bdacbd1822c562947fcffa8dc274102c6",
+      "stderrBytes": 0,
+      "packet": "retained-clone-call-loop-native.json",
+      "packetSha256": "bbf4e685db5c49a50e869072b521789e1883d30ebc396cc94275a9af4a3f143e",
+      "packetBytes": 31859,
+      "acceptedSyntaxWithoutDiagnostics": true
+    },
+    {
+      "case": "retained-clone-call-loop",
+      "provider": "typescript",
+      "command": [
+        "/workspace/.cloud-setup/node-v22.22.1-linux-x64/bin/node",
+        "src/worker-v5.mjs"
+      ],
+      "cwd": "/tmp/m416-nominal-transport-candidate/adapters/typescript-6",
+      "sourceExpectedFreezeSha256": "dde76996fe15e76b3b4d9d92282847b0ddf75e7ea31cc8e1c1e5914067f6b437",
+      "exactSourceSha256": "ae363ce61a8e0c8aa8aaeff0ce3c763ebd40f0ba3fe47cc73d080cbed5036279",
+      "inputPinFreezeSha256": "85a2250e2c44f722a6f451ae792cb9115834f4ce5b5c9f036b75ced992c41d20",
+      "handshake": {
+        "provider": "typescript-6",
+        "provider_version": "6.0.3",
+        "protocol_version": 5,
+        "capabilities": {
+          "module_resolution": false,
+          "semantic_diagnostics": false,
+          "control_flow_v1": true,
+          "data_ownership_syntax_v1": true,
+          "bounded_generics_syntax_v1": true
+        }
+      },
+      "returncode": 0,
+      "failure": null,
+      "jsonLineErrors": [],
+      "analysisError": null,
+      "diagnostics": [],
+      "stdinSha256": "5481a102a94ac6fbe8aa4583312da068fd8471d3763be8ba47ef463f9444caea",
+      "stdoutSha256": "0b0d86e9d8fa30a9ee2d3607cb824adc7e761b99f4bdd4c2995d3a2a21efc7f7",
+      "stderrBytes": 0,
+      "packet": "retained-clone-call-loop-typescript.json",
+      "packetSha256": "26b1aa1fb078f8323600e773e6beb7aafa5bf2c6bab7f9738a9dcc3d07a3cd49",
+      "packetBytes": 31859,
+      "acceptedSyntaxWithoutDiagnostics": true
+    }
+  ]
+}

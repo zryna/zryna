@@ -1,0 +1,14 @@
+{
+  "decision": "admit",
+  "result": 7,
+  "success": [
+    "alloc:1:L",
+    "drop:1:L"
+  ],
+  "allocationFailures": {
+    "1": [
+      "fail:1"
+    ]
+  },
+  "retryAfterEveryFailure": true
+}

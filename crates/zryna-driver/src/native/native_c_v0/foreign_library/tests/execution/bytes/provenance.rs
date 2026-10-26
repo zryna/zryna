@@ -20,8 +20,14 @@ fn separate_byte_reference_material_matches_the_preserved_review_checkpoint() {
         ),
         (
             "private_runtime_template",
-            include_bytes!("../../../../../../../../../runtime/native/ownership_runtime_v1.c")
-                .as_slice(),
+            // This is the exact input preserved at the reviewed checkpoint. Live byte
+            // executions render and hash the current runtime independently.
+            concat!(
+                include_str!("reference-runtime/storage.c"),
+                include_str!("reference-runtime/strings.c"),
+                include_str!("reference-runtime/owners.c")
+            )
+            .as_bytes(),
         ),
     ] {
         assert_eq!(document["materials"][key]["bytes"], bytes.len());

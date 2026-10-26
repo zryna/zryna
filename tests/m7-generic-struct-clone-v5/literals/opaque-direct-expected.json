@@ -1,0 +1,13 @@
+{
+  "status": "Frozen independent proposed semantic rejection; unexecuted.",
+  "case": "opaque-direct",
+  "accept": false,
+  "diagnostic": "ZRYNA-M7002",
+  "noInstanceContext": true,
+  "primarySpan": {
+    "file": 0,
+    "start": 60,
+    "end": 65
+  },
+  "originalUnusedFunctionMustStillReject": true
+}

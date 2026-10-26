@@ -1,0 +1,5 @@
+export function entry(): i32 {
+  let values: Vec<String> = Vec<String>(["A"]);
+  push(values, "B");
+  return 7;
+}

@@ -1,0 +1,7 @@
+{
+  "source": "erased.zry",
+  "source_bytes": 214,
+  "source_sha256": "245a9558deb2a770cc130b8f67a6a11f67f0d034e934d0297556f5ba39b94d86",
+  "expected": "Authenticated source accepted; zero-array root Copy/drop_kind0; no owned recursive reachable root and no arena, regardless of erased Node/Vec layout entries.",
+  "oracle_frozen_before_provider": true
+}

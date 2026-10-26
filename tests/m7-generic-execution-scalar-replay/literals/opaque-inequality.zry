@@ -1,0 +1,5 @@
+function forbidden<T extends ZrynaValue>(left: T, right: T): T {
+  left !== right;
+  return left;
+}
+export function entry(): i32 { return forbidden<i32>(1, 2); }

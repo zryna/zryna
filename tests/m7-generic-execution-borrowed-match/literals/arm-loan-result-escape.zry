@@ -1,0 +1,5 @@
+interface Sides extends ZrynaEnum { left: String; right: String; }
+function escape(value: Borrow<Sides>): Borrow<String> {
+  return match(value, { "Sides.left": (payload) => payload, "Sides.right": (payload) => payload });
+}
+export function entry(): i32 { return 0; }

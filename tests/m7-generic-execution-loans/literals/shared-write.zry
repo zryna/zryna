@@ -1,0 +1,2 @@
+function write(loan: Borrow<String>, value: String): i32 { loan = value; return 0; }
+export function entry(): i32 { return 0; }

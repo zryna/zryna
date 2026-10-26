@@ -1,0 +1,10 @@
+[
+  {
+    "path": "main.zry",
+    "text": "import { Box } from \"./values.zry\";\nfunction score(): i32 { const box: Box<i32> = Box<i32>({ value: 7 }); return box.value; }"
+  },
+  {
+    "path": "values.zry",
+    "text": "export interface Box<T extends ZrynaValue> extends ZrynaStruct { value: T; }"
+  }
+]

@@ -1,0 +1,484 @@
+{
+  "status": "FROZEN independent concat runtime expectations BEFORE any concat runtime output; four original source/oracles unchanged",
+  "domain": "generic.execution.v1",
+  "canonical_runtime": {
+    "path": "runtime/native/ownership_runtime_v1.c",
+    "sha256": "94ce0a5f0d40458a7dcc234b93f98a2d18c985ff1f60e285c238516bea3d0e26",
+    "abi": "unchanged canonical17; real canonical StringClone/StringConcat allocation/status/caps"
+  },
+  "source_oracle_sha256": "2d2144150554e2bd348d332c41fa1c1225e0ad7ffea5fc59e48e486cbae44bb5",
+  "providers": [
+    "native",
+    "typescript"
+  ],
+  "cases": [
+    {
+      "case": "local-observation",
+      "source_sha256": "e9c3fe48b3727e231773d58189930e390b282ac8a5b14d9a6486c63f7740ab66",
+      "provider_packets": {
+        "native": "24c088803aaa02342a4ff2946950efc7886a69b1e77e205332742bc6a8d5d77b",
+        "typescript": "f451b7f9e5974662f02b371b5871b2996b939c1a4f5bc29477c0502f7771b7b1"
+      },
+      "pristine": {
+        "scalar_result": 17,
+        "language_string_allocations": 4,
+        "string_clone_calls": 1,
+        "string_concat_calls": 1,
+        "release_acquisition_ids": [
+          4,
+          3,
+          2,
+          1
+        ]
+      },
+      "acquisitions": [
+        {
+          "utf8_hex": "68c3a9",
+          "source_ids": []
+        },
+        {
+          "utf8_hex": "21",
+          "source_ids": []
+        },
+        {
+          "utf8_hex": "68c3a921",
+          "source_ids": [
+            1,
+            2
+          ]
+        },
+        {
+          "utf8_hex": "68c3a9",
+          "source_ids": [
+            1
+          ]
+        }
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "release_acquisition_ids": [],
+          "unchanged_source_ids": [],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 3,
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            1,
+            2
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 4,
+          "release_acquisition_ids": [
+            3,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringClone",
+          "ordinal": 1,
+          "release_acquisition_ids": [
+            3,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringConcat",
+          "ordinal": 1,
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            1,
+            2
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        }
+      ]
+    },
+    {
+      "case": "same-source",
+      "source_sha256": "d04df1fbfc26bf4fcb270263ccb7498c63e12f50990de93fd4db288dada8dfe1",
+      "provider_packets": {
+        "native": "7f3d9f5582e4ae0eed6340d9c5ee33cc46a7071dfdbb2f1b472314165ca5b24c",
+        "typescript": "c77793b1854fb089a479f7f639edba11e8a25671553696ed1dff09d76f7cb1ef"
+      },
+      "pristine": {
+        "scalar_result": 19,
+        "language_string_allocations": 2,
+        "string_clone_calls": 0,
+        "string_concat_calls": 1,
+        "release_acquisition_ids": [
+          2,
+          1
+        ]
+      },
+      "acquisitions": [
+        {
+          "utf8_hex": "73616d65",
+          "source_ids": []
+        },
+        {
+          "utf8_hex": "73616d6573616d65",
+          "source_ids": [
+            1,
+            1
+          ]
+        }
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "release_acquisition_ids": [],
+          "unchanged_source_ids": [],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [
+            1,
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringConcat",
+          "ordinal": 1,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [
+            1,
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        }
+      ]
+    },
+    {
+      "case": "nested-temporaries",
+      "source_sha256": "0c1b2550e658940cb91bf128b735d40f46776ca7951b6bbb21d355f80c0584c6",
+      "provider_packets": {
+        "native": "685d49d2f0fd9da970284d45167bb07303678c6c9b03f07e2459cd54355f0ad8",
+        "typescript": "6772b0cffd0bcc822dfc78b10059659c5290c50c34ccfc5e65434efa7f093e15"
+      },
+      "pristine": {
+        "scalar_result": 23,
+        "language_string_allocations": 6,
+        "string_clone_calls": 2,
+        "string_concat_calls": 2,
+        "release_acquisition_ids": [
+          4,
+          3,
+          5,
+          2,
+          6,
+          1
+        ]
+      },
+      "acquisitions": [
+        {
+          "utf8_hex": "52",
+          "source_ids": []
+        },
+        {
+          "utf8_hex": "52",
+          "source_ids": [
+            1
+          ]
+        },
+        {
+          "utf8_hex": "21",
+          "source_ids": []
+        },
+        {
+          "utf8_hex": "52",
+          "source_ids": [
+            1
+          ]
+        },
+        {
+          "utf8_hex": "2152",
+          "source_ids": [
+            3,
+            4
+          ]
+        },
+        {
+          "utf8_hex": "522152",
+          "source_ids": [
+            2,
+            5
+          ]
+        }
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "release_acquisition_ids": [],
+          "unchanged_source_ids": [],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 3,
+          "release_acquisition_ids": [
+            2,
+            1
+          ],
+          "unchanged_source_ids": [],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 4,
+          "release_acquisition_ids": [
+            3,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 5,
+          "release_acquisition_ids": [
+            4,
+            3,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            3,
+            4
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 6,
+          "release_acquisition_ids": [
+            4,
+            3,
+            5,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            2,
+            5
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringClone",
+          "ordinal": 1,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringClone",
+          "ordinal": 2,
+          "release_acquisition_ids": [
+            3,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringConcat",
+          "ordinal": 1,
+          "release_acquisition_ids": [
+            4,
+            3,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            3,
+            4
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringConcat",
+          "ordinal": 2,
+          "release_acquisition_ids": [
+            4,
+            3,
+            5,
+            2,
+            1
+          ],
+          "unchanged_source_ids": [
+            2,
+            5
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        }
+      ]
+    },
+    {
+      "case": "formal-observation",
+      "source_sha256": "ad3cbf1de952e717d253e4534a140c83df24ce3cb83696525af18c155cd553cc",
+      "provider_packets": {
+        "native": "4dcc9a8a50cfe3909b1f10f54657e68ffa65c311e4a1843516bc5a2759a62518",
+        "typescript": "63ad7bbadeea05e83c3d9093bd25d73572ad2cfcbee945b8da658efef894926b"
+      },
+      "pristine": {
+        "scalar_result": 29,
+        "language_string_allocations": 2,
+        "string_clone_calls": 0,
+        "string_concat_calls": 1,
+        "release_acquisition_ids": [
+          2,
+          1
+        ]
+      },
+      "acquisitions": [
+        {
+          "utf8_hex": "51",
+          "source_ids": []
+        },
+        {
+          "utf8_hex": "5151",
+          "source_ids": [
+            1,
+            1
+          ]
+        }
+      ],
+      "faults": [
+        {
+          "kind": "allocation",
+          "ordinal": 1,
+          "release_acquisition_ids": [],
+          "unchanged_source_ids": [],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "allocation",
+          "ordinal": 2,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [
+            1,
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        },
+        {
+          "kind": "stringConcat",
+          "ordinal": 1,
+          "release_acquisition_ids": [
+            1
+          ],
+          "unchanged_source_ids": [
+            1,
+            1
+          ],
+          "result": "controlled_native_SIGILL",
+          "then": "pristine same-input retry with original success expectations"
+        }
+      ]
+    }
+  ],
+  "observer_contract": [
+    "Real canonical malloc NULL at numbered allocation attempts; actual malloc/free base+extent binding, successful IDs only; allow historical pointer reuse after free.",
+    "StringFromUtf8, StringClone and StringConcat outputs zero at ABI entry before any canonical call or injected failure.",
+    "Separate declared StringClone/StringConcat route failures poison output after zero assertion, before canonical call/allocation; failed result never read/published/released.",
+    "Both concat source handle records and live UTF8 bytes remain unchanged on allocation/declared concat failure; same source in both positions is legal.",
+    "Nested prepared temporaries remain pending through later failure; on success reverse inner temporary drops precede outer concat, then reverse outer temporary drops precede final local/root cleanup.",
+    "Exact outer cleanup excludes uninitialized concat output; Clone local prefix rollback remains before outer cleanup.",
+    "Every numbered fault process must SIGILL after exact cleanup, followed by pristine same-input retry; scalar/source bytes never fitted to output."
+  ],
+  "expected_per_provider": {
+    "observations": 48,
+    "SIGILL": 22
+  },
+  "expected_both_providers": {
+    "observations": 96,
+    "SIGILL": 44
+  },
+  "actual_runtime_claim": false
+}

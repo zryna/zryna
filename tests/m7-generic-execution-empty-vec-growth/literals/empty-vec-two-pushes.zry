@@ -1,0 +1,6 @@
+export function entry(): i32 {
+  let values: Vec<i32> = Vec<i32>([]);
+  push(values, 7);
+  push(values, 11);
+  return values[0] + values[1];
+}

@@ -1,3 +1,4 @@
+import { withoutDriverTransfer } from './ci-driver-transfer-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -16,7 +17,7 @@ const requiredRustStep = Object.freeze({
 });
 const parsed = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(parsed.errors, []);
-const workflow = parsed.toJS();
+const workflow = withoutDriverTransfer(parsed.toJS());
 
 // Validate this finite addition before removing it for the existing whole-workflow digest.
 // Other owners' steps are retained, including #405's separate Rust insertion point.
