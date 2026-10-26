@@ -31,6 +31,18 @@ function successful(result, allowed = [0]) {
   requireValue(!result.termination.error && !result.termination.signal &&
     allowed.includes(result.termination.exitCode), 'observed command completed');
 }
+export function validateToolProbe(result, key, windows) {
+  if (windows && key === 'linker' && result.termination.exitCode === 1100) {
+    // MSVC returns 1100 for /? after printing help. This is never a build exit policy.
+    successful(result, [1100]);
+    requireValue(JSON.stringify(result.command.args) === '["/?"]' && result.stderr === '' &&
+      /^Microsoft \(R\) Incremental Linker Version [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\r?\n/u.test(result.stdout) &&
+      /^ +usage: LINK \[options\] \[files\] \[@commandfile\]\r?$/mu.test(result.stdout),
+    'actual MSVC linker help query and output');
+    return;
+  }
+  successful(result, windows && key === 'cc' ? [0, 2] : [0]);
+}
 function validatePE(path) {
   const fd = openSync(path, 'r');
   try {
@@ -69,7 +81,7 @@ export async function captureReleaseBuild({ root, output, target, tools, environ
   const observations = {};
   for (const key of keys) {
     observations[key] = await observe(directory, key, tools[key], specs[key], root, env, 30_000);
-    successful(observations[key], win && key === 'cc' ? [0, 2] : [0]);
+    validateToolProbe(observations[key], key, win);
   }
   validateVersions(observations, target);
   const before = captureSourceCensus({ root, directory: join(output, 'source-before'), executable: tools.git, env });

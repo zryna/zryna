@@ -89,3 +89,20 @@ test('release capture entry module links and exports the real operator API', asy
   const entry = await import('../scripts/stability-gates/release-build-capture.mjs');
   assert.equal(typeof entry.captureReleaseBuild, 'function');
 });
+
+test('Windows linker help preserves actual 1100 status without treating it as a build failure', async () => {
+  const { validateToolProbe } = await import('../scripts/stability-gates/release-build-capture.mjs');
+  const result = { command: { args: ['/?'] }, termination: { exitCode: 1100, error: null, signal: null },
+    stdout: 'Microsoft (R) Incremental Linker Version 14.44.35229.0\r\nCopyright (C) Microsoft Corporation.\r\n\r\n usage: LINK [options] [files] [@commandfile]\r\n', stderr: '' };
+  validateToolProbe(result, 'linker', true);
+  assert.equal(result.termination.exitCode, 1100);
+  for (const changed of [{ ...result, command: { args: ['input.obj'] } },
+    { ...result, stdout: 'LINK : fatal error LNK1100\r\n' },
+    { ...result, stderr: 'unclassified warning' },
+    { ...result, termination: { ...result.termination, error: 'ETIMEDOUT' } },
+    { ...result, termination: { ...result.termination, signal: 'SIGKILL' } },
+    { ...result, termination: { ...result.termination, exitCode: 1120 } }])
+    assert.throws(() => validateToolProbe(changed, 'linker', true));
+  assert.throws(() => validateToolProbe(result, 'cargo', true));
+  assert.throws(() => validateToolProbe(result, 'linker', false));
+});
