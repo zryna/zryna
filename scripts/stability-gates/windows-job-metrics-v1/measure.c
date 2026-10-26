@@ -61,6 +61,8 @@ static BOOL peak(WMContext *ctx) {
 BOOL wm_measure(WMContext *ctx) {
     for (;;) {
         HANDLE waits[3]; DWORD count = 0, active, waited;
+        DWORD captured = ctx->streams[0].bytes + ctx->streams[1].bytes;
+        BOOL eof0 = ctx->streams[0].eof, eof1 = ctx->streams[1].eof;
         uint32_t remaining;
         if (!budget(ctx, &remaining) || !main_exit(ctx)) return FALSE;
         for (unsigned int i = 0; i < 2; ++i) {
@@ -74,6 +76,8 @@ BOOL wm_measure(WMContext *ctx) {
             if (!active) return peak(ctx);
         }
         if (!budget(ctx, &remaining)) return FALSE;
+        if (captured != ctx->streams[0].bytes + ctx->streams[1].bytes ||
+            eof0 != ctx->streams[0].eof || eof1 != ctx->streams[1].eof) continue;
         if (!ctx->result.child_exit_known) waits[count++] = ctx->process.hProcess;
         for (unsigned int i = 0; i < 2; ++i)
             if (ctx->streams[i].pending) waits[count++] = ctx->streams[i].event;
