@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pinFile } from '../scripts/stability-gates/release-build-input.mjs';
@@ -54,7 +54,7 @@ test('artifact search roots keep Linux absolute provider paths out of Windows up
 });
 
 test('actual multiply linked Cargo image becomes a byte-identical single-link measured copy', () => {
-  const root = mkdtempSync(join(tmpdir(), 'm418-retained-image-'));
+  const root = mkdtempSync(join(realpathSync(process.env.RUNNER_TEMP ?? tmpdir()), 'm418-retained-image-'));
   try {
     const target = join(root, 'cargo-target'); mkdirSync(target);
     const output = join(root, 'capture'); mkdirSync(output);

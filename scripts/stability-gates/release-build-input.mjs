@@ -93,6 +93,8 @@ export function controlledEnvironment(environment, { target, targetDirectory, to
   if (win) requireValue(/^10\.0\.[0-9]+\.0\\?$/.test(environment.WindowsSDKVersion) &&
     /^10\.0\.[0-9]+\.0$/.test(environment.UCRTVersion), 'SDK version projection');
   return { ...environment, CARGO_TARGET_DIR: targetDirectory, CARGO_BUILD_JOBS: '2', CARGO_INCREMENTAL: '0',
+    // Fixed MSVC input replaces wall-clock PE/CodeView identities with reproducible linker identities.
+    ...(win ? { RUSTFLAGS: '-Clink-arg=/Brepro' } : {}),
     CARGO_NET_OFFLINE: 'true', RUSTUP_TOOLCHAIN: '1.97.1', RUSTC: tools.rustc, CC: tools.cc,
     [target === 'x86_64-pc-windows-msvc' ? 'CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER'
       : 'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER']: tools.linker };

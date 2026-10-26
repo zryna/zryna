@@ -106,3 +106,16 @@ test('Windows linker help preserves actual 1100 status without treating it as a 
   assert.throws(() => validateToolProbe(result, 'cargo', true));
   assert.throws(() => validateToolProbe(result, 'linker', false));
 });
+
+test('Windows release linker reproducibility is a fixed input while caller flags remain rejected', () => {
+  const win = { ...environment(), RUNNER_OS: 'Windows', ImageOS: 'win22',
+    WindowsSDKVersion: '10.0.26100.0\\', UCRTVersion: '10.0.26100.0', VCToolsVersion: '14.44.35207' };
+  delete win.TMPDIR;
+  for (const key of ['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'USERPROFILE', 'INCLUDE', 'LIB', 'LIBPATH',
+    'WindowsSdkDir', 'UniversalCRTSdkDir', 'VCToolsInstallDir']) win[key] = resolve('/observed', key);
+  const selected = { ...options, target: 'x86_64-pc-windows-msvc' };
+  assert.equal(controlledEnvironment(win, selected).RUSTFLAGS, '-Clink-arg=/Brepro');
+  assert.equal(Object.hasOwn(controlledEnvironment(environment(), options), 'RUSTFLAGS'), false);
+  for (const flags of ['-Clink-arg=/Brepro', '-Copt-level=0', '-Clink-arg=/INCREMENTAL'])
+    assert.throws(() => controlledEnvironment({ ...win, RUSTFLAGS: flags }, selected));
+});
