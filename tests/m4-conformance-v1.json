@@ -294,8 +294,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 36048,
-      "sha256": "368b6c3a6867afa27b5e507a26d8220afb5887f3b03082eccc0a9f036c3e8c64"
+      "bytes": 36254,
+      "sha256": "474bef87d3fd3ae1543c01c4a67ad3e312fc83b344d45a137e043692a4cc64cc"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -2505,7 +2505,7 @@
     {
       "path": "tests/m4-conformance.test.mjs",
       "bytes": 15274,
-      "sha256": "a300cda36fbbccd4c1fdfd21378de0781c9ad04c46e961cc0f5e9c9be76bbb23"
+      "sha256": "dfdbd6b32cbe0b44bf4bbcf0a5c88ec98a4adc6370d6f955158de0104b8075e1"
     },
     {
       "path": "tests/m4-evidence.test.mjs",

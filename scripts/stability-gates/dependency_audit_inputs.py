@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import sys
 import tomllib
 
 MAX_JSON = 16 * 1024 * 1024
@@ -58,9 +59,49 @@ def decode(raw, maximum=MAX_JSON):
     return value
 
 
+_STAT_FIELDS = ("st_dev", "st_ino", "st_size", "st_mode", "st_nlink", "st_mtime_ns", "st_ctime_ns")
+_WINDOWS_EXECUTABLE_SUFFIXES = (".exe", ".bat", ".cmd", ".com")
+
+
 def identity(value):
-    return (value.st_dev, value.st_ino, value.st_size, value.st_mode,
-            value.st_nlink, value.st_mtime_ns, value.st_ctime_ns)
+    full = tuple(getattr(value, field) for field in _STAT_FIELDS)
+    # Preserve RAW same-API ctime/mode and add creation time on Windows.
+    return full + (getattr(value, "st_birthtime_ns", None),) if sys.platform == "win32" else full
+
+
+def _opened_matches_named(path, named, opened):
+    if sys.platform != "win32":
+        return identity(named) == identity(opened)
+    if not stat.S_ISREG(named.st_mode) or not stat.S_ISREG(opened.st_mode):
+        return False
+    # Python3.12+ Windows named ctime is creation time; fd ctime is ChangeTime.
+    # Compare the matching creation timestamps, while same-API checks retain both.
+    for value in (named, opened):
+        birth = getattr(value, "st_birthtime_ns", None)
+        if type(birth) is not int or birth <= 0:
+            return False
+    common = ("st_dev", "st_ino", "st_size", "st_nlink", "st_mtime_ns", "st_birthtime_ns")
+    if any(getattr(named, field) != getattr(opened, field) for field in common):
+        return False
+    if named.st_mode == opened.st_mode:
+        return True
+    # CPython's filename heuristic adds ALL0111 on named stat only. No generic mask.
+    return (path.suffix.casefold() in _WINDOWS_EXECUTABLE_SUFFIXES and
+            opened.st_mode & 0o111 == 0 and named.st_mode == opened.st_mode | 0o111)
+
+
+def _cross_identity_diagnostic(path, named, opened):
+    fields = _STAT_FIELDS + ("st_birthtime_ns",)
+    differences = {field: [getattr(named, field, None), getattr(opened, field, None)]
+                   for field in fields if getattr(named, field, None) != getattr(opened, field, None)}
+    text = str(path)
+    detail = {"path": text[:384], "pathTruncated": len(text) > 384,
+              "platform": sys.platform, "namedOpenedFieldDifferences": differences}
+    if sys.platform == "win32":
+        detail["requiredPositiveBirthtimeNs"] = [getattr(named, "st_birthtime_ns", None),
+                                                getattr(opened, "st_birthtime_ns", None)]
+    return "input replaced before read: " + json.dumps(detail, ensure_ascii=False,
+                                                       sort_keys=True, separators=(",", ":"))
 
 
 def snapshot(path, limit=4 * 1024 * 1024):
@@ -73,7 +114,7 @@ def snapshot(path, limit=4 * 1024 * 1024):
     descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
     with os.fdopen(descriptor, "rb") as handle:
         opened = os.fstat(handle.fileno())
-        require(identity(before) == identity(opened), "input replaced before read")
+        require(_opened_matches_named(path, before, opened), _cross_identity_diagnostic(path, before, opened))
         raw = handle.read(limit + 1)
         require(len(raw) == before.st_size, "complete bounded input")
         require(identity(opened) == identity(os.fstat(handle.fileno())), "input changed during read")

@@ -35,7 +35,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Check Python requirement
-        run: python -c "import sys; assert sys.version_info >= (3, 11)"
+        run: python -c "import sys; assert sys.version_info >= ((3, 12) if sys.platform == 'win32' else (3, 11))"
       - name: Run advisory capture regression tests
         run: python -B -m unittest discover -s tests/dependency-audit -p 'test_*.py' -v
       - name: Run dependency lock parser tests

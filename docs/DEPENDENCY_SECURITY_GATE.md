@@ -5,8 +5,9 @@ The dependency gate inventories every registry package in `Cargo.lock` and
 backport when its original version-range finding is present. It runs on Linux
 and Windows in the Dependency security workflow.
 
-Install the frozen workspace first. The gate requires Python 3.11 or newer,
-Node 22.22.1, and the workspace's selected YAML parser. Supply canonical absolute
+Install the frozen workspace first. The gate requires Python 3.11 or newer on
+Linux and Python 3.12 or newer on Windows, Node 22.22.1, and the workspace's
+selected YAML parser. Supply canonical absolute
 paths and a fresh evidence directory outside the checkout:
 
 ```text
@@ -23,6 +24,12 @@ output remain available alongside `REPORT.json`. Exit 0 means the observed
 dependency gate passed; exit 1 means unresolved advisories; exit 2 means invalid
 inputs, acquisition or regression evidence. Missing, inconsistent, paginated or
 unsupported responses fail the gate.
+
+File reads compare stable named and opened identities. On Windows, matching
+creation timestamps use `st_birthtime_ns`; named and descriptor `st_ctime_ns`
+have different meanings. Each API's full before/after mode and timestamps remain
+checked. The only mode translation is CPython's filename-derived execute bits
+for `.exe`, `.bat`, `.cmd`, and `.com`; other identity changes reject.
 
 ## Reviewed MSAL source fix
 
