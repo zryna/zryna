@@ -16,6 +16,9 @@ mod probe_slot;
 const TABLE_BYTES: u64 = 1024 * 1024;
 const TABLE_ROWS: usize = 4096;
 const PROBE_TIME: Duration = Duration::from_millis(100);
+// Host kernel observation has its own wall bound, separate from request/guest limits.
+// One strict snapshot only; this allowance never retries a surviving original inode.
+const QUERY_TIME: Duration = Duration::from_secs(1);
 
 #[derive(Debug)]
 struct Row {
@@ -45,7 +48,7 @@ impl Identity {
     }
 
     fn capture_probe(listener: &TcpListener, wait: Duration) -> Self {
-        let deadline = Instant::now() + PROBE_TIME;
+        let deadline = Instant::now() + QUERY_TIME;
         let address = listener.local_addr().expect("original listener address");
         assert!(address.is_ipv4() && address.ip().is_loopback());
         let inode = socket_inode(listener);
@@ -79,7 +82,7 @@ impl Identity {
     }
 
     fn assert_gone_locked(&self, wait: Duration) {
-        let deadline = Instant::now() + PROBE_TIME;
+        let deadline = Instant::now() + QUERY_TIME;
         assert_eq!(std::process::id(), self.process, "original listener owning process");
         let snapshot = snapshot(deadline, self.inode, "closure", wait);
         // All states, not only LISTEN: any surviving original inode is a failure.
