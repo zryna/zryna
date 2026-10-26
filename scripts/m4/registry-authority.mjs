@@ -1,6 +1,6 @@
 // Independent reviewed authorities. Regenerate only after explicit source/contract review.
-export const expectedRegistrySha256 = "c6520ba4a368a9877913f7902dd286d0167d2f5ecad0ed466c43391ac8a7d7ed";
-export const expectedSchemaSha256 = "80fc227f9bdc53bfb68bf0dd1042978c3916cfcc49f0ed337bd54e37382c3b40";
+export const expectedRegistrySha256 = "47f1776bb9042ff34907b48ca3fdd73443148635cf56046181bda1f0290257b0";
+export const expectedSchemaSha256 = "3439899abc8dbed8a41e0bf414d9e85a3a382482b08745494b91636de048bd1f";
 export const maximumRegistryBytes = 512 * 1024;
 export const maximumSourceBytes = 2 * 1024 * 1024;
 export const rowInventory = Object.freeze(["component-linux", "component-windows", "browser-linux", "browser-windows", "command-linux", "command-windows", "installed-command-linux", "installed-command-windows", "server-status-linux", "server-status-windows", "server-clock-linux", "server-clock-windows"]);
@@ -8,10 +8,10 @@ export const sectionSha256 = Object.freeze({
   "format": "8fa4aac2a05a2886b8ea2d28f3b8253ef4fa740b3c6e5652f8cb8d28ccf1dc1e",
   "version": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
   "scope": "2ec67fcde9731a4cc3823081bf846ffae357a5e3d429cc2bc13575714a4e5b12",
-  "toolchains": "44c8610ac4234413a5ff541fee4eef8be0a69478e44c827eca6ce05ab26fc868",
+  "toolchains": "237862abf85200909524f5c8bd428f7cd58420635a01582ea27c7b8ad4534fe0",
   "foundations": "10f39f299594cd4640c74d84d8e3d16a73c39ae560be360619c2be3b2b050500",
-  "sources": "60988c495d1e5914b55d01c7d50e5a25346172007a73455d669c77fb76549975",
-  "rows": "cd577213574191e204257caf39b438ff36b3646a607433f2708e29ffab118463",
+  "sources": "443aa0ec87bb1eca1040267147b593671dd7ccb41d1392f4ce1513b13a4a0d05",
+  "rows": "b023a4afdd66be36afb3feeb2e0e1d818a1a9b7d55003ea7a519879ccf0ce725",
   "cases": "6b30c4685f672602e93c6fbb690244280e2d17a8fe4d2b4aacd351c818e133c0",
   "gates": "d6179ed95040788b03c2f3af080a6f0655970c9c1e42a1c58bda3da0d4cc6d76",
   "exclusions": "e8a8006d24dd6a58067520b83e42c795e859df5f4c8875e41b772749a67a30f1",

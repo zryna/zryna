@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { bytes, sha256 } from '../scripts/distribution/canonical.mjs';
 import { validateDistribution } from '../scripts/distribution/prepare.mjs';
+import { securityNativeRecipe } from '../scripts/distribution/rust-security-materials.mjs';
 import {
   NATIVE_FORMAT, NATIVE_RECIPE_SHA256, nativeRecipe, nativeRole, nativeRustMaterials,
   validateNativeDistribution,
@@ -167,5 +168,7 @@ test('native source policy admits actual main/codex/fix branches and rejects hos
     ['refs/heads/codex/', 'refs/heads/fix/']);
   assert.equal(nativeRecipe.productionAdmission, 'forbidden');
   const lock = readFileSync(new URL('../Cargo.lock', import.meta.url));
-  assert.deepEqual(nativeRecipe.cargoLock, { bytes: lock.length, sha256: sha256(lock) });
+  assert.deepEqual(securityNativeRecipe.cargoLock, { bytes: lock.length, sha256: sha256(lock) });
+  assert.deepEqual(nativeRecipe.cargoLock, { bytes: 52083,
+    sha256: '19ae2e25538486884534028e684b7bd2cc3e36ca8c85f1a3f53d43efe5673908' });
 });

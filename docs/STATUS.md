@@ -352,7 +352,8 @@ When integrated, this change activates the [command profile](WASI_COMMAND_GETTIN
 for one source file and sole `main(): bool`, empty grants or one owner-private literal-key
 environment request, and a distinct create-only execution record. It accepts the checkout
 route and a newly content-verified complete installation with fixed Node 22.22.1, Wasmtime
-48.0.1 and pinned WASI 0.2.12. The envelope remains 100,000 fuel, five seconds and one fixed
+48.0.7 and pinned WASI 0.2.12. The earlier H1 qualification used Wasmtime 48.0.1;
+fresh security-patch qualification is tracked in issue #418. The envelope remains 100,000 fuel, five seconds and one fixed
 16 MiB memory; the exhaustive grant table denies other host capabilities.
 
 Evidence covers supervised Linux x86-64 and hosted Ubuntu 24.04 x86-64 / Windows Server

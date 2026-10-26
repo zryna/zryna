@@ -1,0 +1,129 @@
+{
+  "format": "zryna.msal6-upstream-backport-regression.v1",
+  "advisory": "GHSA-xcx6-jx8p-x3h5",
+  "disposition": "source-bound upstream security backport; version6.0.1 advisory remains visible, not ignored or relabeled",
+  "upstream": {
+    "commit": "f550958586475dbfeb1cd44be14a2d653728850e",
+    "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js/commit/f550958586475dbfeb1cd44be14a2d653728850e",
+    "patchSha256": "e01f4f045c149c81410fbf7b23df3e4e049a7467fda0b61d0bdf812eabad94c0"
+  },
+  "originalNpm": {
+    "package": "@azure/msal-node",
+    "version": "6.0.1",
+    "tarball": "https://registry.npmjs.org/@azure/msal-node/-/msal-node-6.0.1.tgz",
+    "integrity": "sha512-ixSO1Y/kCVRthRs+hSx/5qkwaunX1/RAePhlMN0wIpIQ4WEZ6AREGGnGd1AP0qspHVsAwzWQKGubpjh50JyJIQ==",
+    "archiveSha256": "639e2e079148c35d871be96955cf290ed38cf8d8aceaa8e4cfca32fc26e26636"
+  },
+  "dependencyPath": [
+    {
+      "package": "@vscode/vsce",
+      "version": "4.0.0"
+    },
+    {
+      "package": "@azure/identity",
+      "version": "4.13.3"
+    },
+    {
+      "package": "@azure/msal-node",
+      "version": "6.0.1"
+    }
+  ],
+  "patch": {
+    "path": "scripts/dependency-patches/msal-node-6.0.1-auth-code.patch",
+    "canonicalLfBytes": 15518,
+    "canonicalLfSha256": "ebeed7ec9c0aa2c2d7fdbc0adae85bdd33ef2f99e5fc80b4f676fdd10afb7055",
+    "pnpmNormalizedSha256": "ebeed7ec9c0aa2c2d7fdbc0adae85bdd33ef2f99e5fc80b4f676fdd10afb7055",
+    "originRawBytes": 15655,
+    "originRawSha256": "e152924d06f86d6ef66186b310d98313700ab70a7fab9ccce35b4d391128c302",
+    "rootEolPolicy": "* text=auto eol=lf; no gitattributes exception",
+    "appliedSourcePolicy": "accept only pinned study raw or pinned root canonical-patch raw, each additionally bound to exact CRLF-to-LF normalized hash; no bare CR normalization",
+    "originStudyPath": "patches/@azure__msal-node@6.0.1.patch"
+  },
+  "installedAfterimages": [
+    {
+      "path": "dist/client/ConfidentialClientApplication.mjs",
+      "studyRawBytes": 14895,
+      "studyRawSha256": "875940913ab64fc5229dda701b863803dc2a4a34ff64f440518414ac17faf040",
+      "canonicalLfBytes": 14635,
+      "canonicalLfSha256": "41af165cb6b126e8c33d9f8798c6a99ee0049221f3b7dcfeb01cc20a72917371",
+      "canonicalPatchAppliedBytes": 14868,
+      "canonicalPatchAppliedSha256": "2b4a6dd3d2ad8b6b68f588d353b4599125dee6a9b9349a15e5547e65885fad93"
+    },
+    {
+      "path": "dist/error/NodeAuthError.mjs",
+      "studyRawBytes": 5576,
+      "studyRawSha256": "5bae603cb4c37883a8da49df4cdbd972b9646b0d8081600ae4ad3d16f41ffd31",
+      "canonicalLfBytes": 5462,
+      "canonicalLfSha256": "fda8325a23bce186ed8be4001752c918a8d4b259cc499b34175c23d3d955277d",
+      "canonicalPatchAppliedBytes": 5566,
+      "canonicalPatchAppliedSha256": "60309ce54f33f29b86ea46b86da45dab3c2b99e9cdc36099f07a81ae1c393f6c"
+    },
+    {
+      "path": "lib/msal-node.cjs",
+      "studyRawBytes": 609384,
+      "studyRawSha256": "fec010dfa20040896765c675f62c76125af106fabfb8164a7f6a22312e179c76",
+      "canonicalLfBytes": 596080,
+      "canonicalLfSha256": "88c85e430f7784d61dd2991cf19da6d6dffb17ee8dade22fbb3a9eb6e71f1cd8",
+      "canonicalPatchAppliedBytes": 609347,
+      "canonicalPatchAppliedSha256": "1f596b9ee2dcad025aa2163a439c8c5502a3fa1fd8a77202569f9cf777162d6a"
+    },
+    {
+      "path": "src/client/ConfidentialClientApplication.ts",
+      "studyRawBytes": 18333,
+      "studyRawSha256": "ab6a1f163363a3f27bc6ccee91bffc62949fcebbf8c3607e10b61021c657d27e",
+      "canonicalLfBytes": 18333,
+      "canonicalLfSha256": "ab6a1f163363a3f27bc6ccee91bffc62949fcebbf8c3607e10b61021c657d27e",
+      "canonicalPatchAppliedBytes": 18333,
+      "canonicalPatchAppliedSha256": "ab6a1f163363a3f27bc6ccee91bffc62949fcebbf8c3607e10b61021c657d27e"
+    },
+    {
+      "path": "src/error/NodeAuthError.ts",
+      "studyRawBytes": 6144,
+      "studyRawSha256": "d6cd4798778d4d88617a3371a011716703eb1fe8c451a88753a7781423a60dde",
+      "canonicalLfBytes": 6144,
+      "canonicalLfSha256": "d6cd4798778d4d88617a3371a011716703eb1fe8c451a88753a7781423a60dde",
+      "canonicalPatchAppliedBytes": 6144,
+      "canonicalPatchAppliedSha256": "d6cd4798778d4d88617a3371a011716703eb1fe8c451a88753a7781423a60dde"
+    },
+    {
+      "path": "types/client/ConfidentialClientApplication.d.ts",
+      "studyRawBytes": 4982,
+      "studyRawSha256": "8ad93b7c53639def7632bef76a2318a4d780c90ee3c7c35f3759c0bf900f3363",
+      "canonicalLfBytes": 4911,
+      "canonicalLfSha256": "845ad6de15b48bf432ba16bcb1cd084a2813474bc995917c080adc3c44cef82a",
+      "canonicalPatchAppliedBytes": 4977,
+      "canonicalPatchAppliedSha256": "3ac63ce7570c611630f8ab678987ffe45ffe485a032ef87c63c5ab234cd357cf"
+    },
+    {
+      "path": "types/error/NodeAuthError.d.ts",
+      "studyRawBytes": 2920,
+      "studyRawSha256": "f86fb71c4518e9f1fc15c3edd00273c919cb49f35280e4168fb8731c36b7d111",
+      "canonicalLfBytes": 2840,
+      "canonicalLfSha256": "4e7eb761b44e1cf043fdd3192a0ec9f9d981caa8f985b25eda1be1a752f1d729",
+      "canonicalPatchAppliedBytes": 2920,
+      "canonicalPatchAppliedSha256": "f86fb71c4518e9f1fc15c3edd00273c919cb49f35280e4168fb8731c36b7d111"
+    }
+  ],
+  "rootAppliedInspectionSha256": "35119fa850f03702a43faf73ea30ea7b639a4fe8fba95f58f79b4a899182a8ed",
+  "study": {
+    "finalFreezeSha256": "e81cb87359dcd0dd0be40a7a1fab26aab808b978b14fb96b57f7c0a57ca40d00",
+    "finalActualSha256": "dc890f5f130b04592c8e255e11fc0e38bf8ace96bb682428477c38c5f4a9d5a3",
+    "unpatched": "11cases5pass6owningfail",
+    "patched": "11cases11pass0fail; actual isolated ls/package exactVSIX",
+    "credentialedPublish": false
+  },
+  "expectedCaseNames": [
+    "deny guard blocks real HTTPS, fetch and socket before SDK calls",
+    "cjs upstream instance-aware constructor rejects",
+    "cjs upstream payload strips routing and attacker nonce before delegation",
+    "cjs upstream instance_aware true false empty reject without delegation",
+    "cjs ordinary no-payload authCode preserves request and delegation",
+    "cjs genuine base state mismatch remains rejected before network",
+    "esm upstream instance-aware constructor rejects",
+    "esm upstream payload strips routing and attacker nonce before delegation",
+    "esm upstream instance_aware true false empty reject without delegation",
+    "esm ordinary no-payload authCode preserves request and delegation",
+    "esm genuine base state mismatch remains rejected before network"
+  ],
+  "qualification": "regression packet, not source/host authentication, version-only audit exemption or security closure"
+}

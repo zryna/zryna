@@ -1,3 +1,5 @@
+import './dependency-lock-parser.test.mjs';
+import './msal-backport.test.mjs';
 import './stability-contract-coverage-v2.test.mjs';
 import './stability-contract-coverage-v2-hostile.test.mjs';
 import './stability-required-owner-v2.test.mjs';

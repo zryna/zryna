@@ -1,0 +1,13 @@
+[
+  "deny guard blocks real HTTPS, fetch and socket before SDK calls",
+  "cjs upstream instance-aware constructor rejects",
+  "cjs upstream payload strips routing and attacker nonce before delegation",
+  "cjs upstream instance_aware true false empty reject without delegation",
+  "cjs ordinary no-payload authCode preserves request and delegation",
+  "cjs genuine base state mismatch remains rejected before network",
+  "esm upstream instance-aware constructor rejects",
+  "esm upstream payload strips routing and attacker nonce before delegation",
+  "esm upstream instance_aware true false empty reject without delegation",
+  "esm ordinary no-payload authCode preserves request and delegation",
+  "esm genuine base state mismatch remains rejected before network"
+]

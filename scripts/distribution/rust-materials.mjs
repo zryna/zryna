@@ -4,6 +4,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bytes, parseCanonical, requireValue, sha256 } from './canonical.mjs';
 import { matchesCommandH1RustBinding } from './command-h1-rust-binding.mjs';
+import { matchesSecurityRustBinding, requireSecurityRustWorkspace, securityRustMaterials } from './rust-security-materials.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const LOCK = readFileSync(new URL('./materials-rust-v1.json', import.meta.url));
@@ -40,10 +41,11 @@ export function rustMaterials(target, {
 } = {}) {
   requireValue(Object.hasOwn(RECORD.targets, target), 'Rust material target');
   if (productionCandidate) {
-    requireValue(productionCandidate === true && matchesCommandH1RustBinding(
-      architectureReceipt, distribution, target, sha256(LOCK), sha256(CANDIDATE_LOCK)),
+    const security = matchesSecurityRustBinding(architectureReceipt, distribution, target);
+    requireValue(productionCandidate === true && (security || matchesCommandH1RustBinding(
+      architectureReceipt, distribution, target, sha256(LOCK), sha256(CANDIDATE_LOCK))),
     'candidate Rust material source binding');
-    return candidateMaterials(target);
+    return security ? securityRustMaterials(target) : candidateMaterials(target);
   }
   const selected = new Set(RECORD.targets[target]);
   return RECORD.packages.filter(record => selected.has(`${record.name}-${record.version}`));
@@ -69,8 +71,11 @@ export function validateRustMaterials(entries, target, architectureReceipt, acce
     && lock?.sha256 === CARGO_LOCKS[acceptedVersion];
   const commandCandidateLock = productionCandidate === true && acceptedVersion === '0.2.3'
     && matchesCommandH1RustBinding(architectureReceipt, distribution, target, sha256(LOCK), sha256(CANDIDATE_LOCK));
-  requireValue(releaseLock || commandCandidateLock, 'Rust material lockfile identity');
-  const records = commandCandidateLock ? candidateMaterials(target) : rustMaterials(target);
+  const securityCandidateLock = productionCandidate === true && acceptedVersion === '0.2.3'
+    && matchesSecurityRustBinding(architectureReceipt, distribution, target);
+  requireValue(releaseLock || commandCandidateLock || securityCandidateLock, 'Rust material lockfile identity');
+  const records = securityCandidateLock ? securityRustMaterials(target)
+    : commandCandidateLock ? candidateMaterials(target) : rustMaterials(target);
   const expected = records.flatMap(record => record.files)
     .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }))
     .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
@@ -135,12 +140,18 @@ export function checkQualificationRustClosure({
   return counts;
 }
 
+export function checkSecurityRustClosure({ cwd = resolve('.'), spawn = spawnSync } = {}) {
+  requireSecurityRustWorkspace(cwd);
+  return checkQualificationRustClosure({ cwd, spawn, materialRecords: securityRustMaterials });
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) {
   try {
-    if (process.argv.length !== 3 || process.argv[2] !== '--check-qualification-closure') {
+    const security = process.argv[2] === '--check-security-patch-qualification-closure';
+    if (process.argv.length !== 3 || (!security && process.argv[2] !== '--check-qualification-closure')) {
       requireValue(false, 'qualification Rust closure usage');
     }
-    const counts = checkQualificationRustClosure();
+    const counts = security ? checkSecurityRustClosure() : checkQualificationRustClosure();
     console.log(`Qualification Rust closure passed: ${counts[TARGETS[0]]} Windows and ${counts[TARGETS[1]]} Linux crates.`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`c6520ba4a368a9877913f7902dd286d0167d2f5ecad0ed466c43391ac8a7d7ed`. The matrix defines six bounded modes on the two
+`47f1776bb9042ff34907b48ca3fdd73443148635cf56046181bda1f0290257b0`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,13 +74,13 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "c6520ba4a368a9877913f7902dd286d0167d2f5ecad0ed466c43391ac8a7d7ed",
+  "registrySha256": "47f1776bb9042ff34907b48ca3fdd73443148635cf56046181bda1f0290257b0",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
     "node": "22.22.1",
     "pnpm": "11.18.0",
-    "wasmtime": "48.0.1",
+    "wasmtime": "48.0.7",
     "witParser": "0.258.0",
     "wasi": "0.2.12",
     "browser": "Chrome for Testing 153.0.8010.12",
@@ -3348,12 +3348,12 @@ zryna.m4.support.v1:begin
     {
       "path": "Cargo.lock",
       "bytes": 52083,
-      "sha256": "19ae2e25538486884534028e684b7bd2cc3e36ca8c85f1a3f53d43efe5673908"
+      "sha256": "a128e241fa1968308f2d5e2e828c94c29c413e718a7b96368e7a4032ac019751"
     },
     {
       "path": "Cargo.toml",
       "bytes": 3384,
-      "sha256": "3334b7ed22fb374a2fd90f178ef447a356f83b2cad106781e3000210b4233657"
+      "sha256": "765ba86bff634ffa0dfebf662c9fc3be00585b0b053c6b6a3e9ec48368e2e568"
     },
     {
       "path": "LICENSE",
@@ -4897,18 +4897,18 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "package.json",
-      "bytes": 7060,
-      "sha256": "1fd39f39e3d56af1b8d68c5f3848f0debfb8b24b284fb605098ed9335037f625"
+      "bytes": 7161,
+      "sha256": "79fd59bda138f9f0c79d17a7c3f128f99686ed48a4b0793d1c0d405cbe719571"
     },
     {
       "path": "pnpm-lock.yaml",
-      "bytes": 45872,
-      "sha256": "786287872b677b0239cc0e76344b7d22536111b678d5f3f9644b565a32e2faa4"
+      "bytes": 46141,
+      "sha256": "5459d16d1f34ecb524f757f982c133681095e48a4502550c9bb212c4172a4534"
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 143,
-      "sha256": "2b28fbe22f736378c5377ad2b9759a9c02152c4870ad1602e378ac4879daa088"
+      "bytes": 251,
+      "sha256": "153d1f646dc0a8b39fe956def397578dd1079f31fe6fc8fa60da3deeb52cfef0"
     },
     {
       "path": "rust-toolchain.toml",
@@ -4979,6 +4979,11 @@ zryna.m4.support.v1:begin
       "path": "scripts/classify-workflow-paths.mjs",
       "bytes": 8772,
       "sha256": "467726b64d1566817b90d9c662bd5fd404be422927656a45c798c7b057e2d478"
+    },
+    {
+      "path": "scripts/dependency-patches/msal-node-6.0.1-auth-code.patch",
+      "bytes": 15518,
+      "sha256": "ebeed7ec9c0aa2c2d7fdbc0adae85bdd33ef2f99e5fc80b4f676fdd10afb7055"
     },
     {
       "path": "scripts/distribution-release/acquire-qualification-materials.mjs",
@@ -5126,6 +5131,11 @@ zryna.m4.support.v1:begin
       "sha256": "499be6581463e71e54ede6d2c5807c346173f34e7505e6faeaae95944c254483"
     },
     {
+      "path": "scripts/distribution/materials-rust-security-candidate-v1.json",
+      "bytes": 129359,
+      "sha256": "434e0bcfea3aba59d6500d4eb4a0b9e5a77ac05657febaa07121b5366a837ff8"
+    },
+    {
       "path": "scripts/distribution/materials-rust-v1.json",
       "bytes": 128074,
       "sha256": "32b6343a6dfae19d7c3cdcc50658762c2c0ad08aca15124bdce85b28db38a84b"
@@ -5139,6 +5149,11 @@ zryna.m4.support.v1:begin
       "path": "scripts/distribution/materials.mjs",
       "bytes": 3130,
       "sha256": "552342cef514309452fd96bd0b579c9b6841d26d63dc298ee162aeea4734e46f"
+    },
+    {
+      "path": "scripts/distribution/native-recipe-security-candidate-v1.json",
+      "bytes": 1019,
+      "sha256": "bd94d51417811098caf0fda18add45070d12cf499cc8a13d3d9d895b24cd5b49"
     },
     {
       "path": "scripts/distribution/node-materials.mjs",
@@ -5192,8 +5207,23 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "scripts/distribution/rust-materials.mjs",
-      "bytes": 8110,
-      "sha256": "48a5da5d323d1f6696f5acb073ddedf48f1789669e18dbf9675769a0eb27fd9a"
+      "bytes": 9014,
+      "sha256": "467b761ae7cba1fc75400f521dd288e8a708a1aa8963fd393feb22e64f1193e0"
+    },
+    {
+      "path": "scripts/distribution/rust-notice-owner.mjs",
+      "bytes": 1550,
+      "sha256": "381b86fb42f308bde02bd44e64d035585dff4aeed7cbe5127ae6bffce4ab3ff7"
+    },
+    {
+      "path": "scripts/distribution/rust-security-binding-v1.json",
+      "bytes": 991,
+      "sha256": "8f1f2fed9de28e3fa19fec830904ec0f6b4ac68f07eb34b5fd8f76c7796b5ce4"
+    },
+    {
+      "path": "scripts/distribution/rust-security-materials.mjs",
+      "bytes": 3869,
+      "sha256": "edd169844e5a71844d87160f60856452d08e5aae5d955f7a0904cd742b0bac61"
     },
     {
       "path": "scripts/distribution/source-receipt.mjs",
@@ -5452,8 +5482,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/installed-command-qualification/prepare.mjs",
-      "bytes": 12467,
-      "sha256": "41ace74d0c394ddf86d23889bcf8303e14500602570ace5887b8a742feed3b68"
+      "bytes": 12461,
+      "sha256": "79f29141fa5863b9fa6c5aae2f4d491539d53b7d2530825b434e92d7e1710201"
     },
     {
       "path": "tests/installed-command-qualification/run.mjs",
@@ -5892,8 +5922,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/workflow-routing/inventory-contracts.mjs",
-      "bytes": 7860,
-      "sha256": "d05936eb19c0325a48a3134042243c3005a1501df443202e95dadd7f55b10bae"
+      "bytes": 7887,
+      "sha256": "2b46494a042ed0eceec40799d46b387c393ed75d6aa94275acae4d08216ef61e"
     },
     {
       "path": "zryna.workspace.json",
@@ -8474,7 +8504,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "ubuntu-latest:observed-baseline-required",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         400
@@ -10675,7 +10705,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "windows-latest:observed-baseline-required",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         400
@@ -12876,7 +12906,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "ubuntu-24.04",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         400
@@ -15895,7 +15925,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "windows-2022",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         400
@@ -18914,7 +18944,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "ubuntu-latest:observed-baseline-required",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         401
@@ -20807,7 +20837,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "windows-latest:observed-baseline-required",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         401
@@ -22700,7 +22730,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "ubuntu-latest:observed-baseline-required",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         401
@@ -24997,7 +25027,7 @@ zryna.m4.support.v1:begin
         "architecture": "x64",
         "baseline": "windows-latest:observed-baseline-required",
         "portabilityClaim": "exact-hosted-baseline-only",
-        "consumer": "Wasmtime48.0.1"
+        "consumer": "Wasmtime48.0.7"
       },
       "ownerIssues": [
         401

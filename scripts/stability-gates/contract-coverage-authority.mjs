@@ -1,11 +1,11 @@
 // Frozen declared-scope snapshot; changing these identities requires review, never a run-derived waiver.
 export const INDEX_PATH = 'tests/stability-contract-coverage-v2.json';
-export const INDEX_SHA256 = "9fada42fb05d40c073f58669e207ab5da015b25d0aa4a0812aa5dc80b90476bf";
+export const INDEX_SHA256 = "a33fe1880c8d41665099332a413c4a6dfea8b632810118cd596dbe2b4085db01";
 // Informational merged-base references; neither is a candidate/source/host receipt.
 export const MERGED_REVISION = '4a5b9d423051e78766899d1d5f46ef3f4e0f39d6';
 export const MERGED_TREE = 'f4908f76574c405b68be39a65ccb74ca36c3fefa';
 export const PLAN_SHA256 = "c081c8b0338c79b76a601161ae5614bfa5792342ddf29ef2acf21022412337cc";
-export const MATERIAL_SHA256 = "52bfd253bcb93c4eb390167750abcf16781a260ef6713694bdce1d9393d48803";
+export const MATERIAL_SHA256 = "e92daf08fea604f940fe9401206dd87aadb39eb59214e1931a86ad42adca0e92";
 export const LEGACY_SHA256 = 'f339c9edba6773d63a252908dbfa094875a5ecb7c66843dd8017142f547e787b';
 export const ROWS = Object.freeze([
   Object.freeze(["m1-default-language-cli-manifest", "887fe042e08b58c4a10adf2dc56bf4cd28649090465f5339137fc8d9589bf5f4"]),
@@ -21,10 +21,10 @@ export const ROWS = Object.freeze([
   Object.freeze(["native-c-restricted-typed-api", "493689941fbb2e815ae2eb626c0d15c1b02438aa19fd5764617b7e54b66b01f0"]),
   Object.freeze(["m4-component", "2535631ab0abccd05be67da7bc3a4e42419ee1e5a45ca3754ff8c518304b3058"]),
   Object.freeze(["m4-browser", "0945672806c8856be1505118417c4049230834c0063cc2c95b8816deb7884f0f"]),
-  Object.freeze(["m4-command-checkout", "f360eb2258223336bacf69ca308ab3bbeedfda326e38fcac1cbac8fe096f3140"]),
-  Object.freeze(["m4-command-installed", "18da0a66de17313ddbf715cf4a517d768805db52b361c2a2e3f09e1b7256a79f"]),
-  Object.freeze(["m4-server-status", "f8c4e3cac968e8fb2db142e1bae2cb1d8dcdf3be7ecca6d5666498f1d6620b89"]),
-  Object.freeze(["m4-server-clock", "dbaf3ade1b588e002e411010a32ff47e5fc8c43d0d73a60eb92f43319b836a94"]),
+  Object.freeze(["m4-command-checkout", "81f0a0b223dc6a424c4ff113b7b1d06f870765cda828a5f8fa9946e59db017a8"]),
+  Object.freeze(["m4-command-installed", "33fe3bb39bf987271b430255ac68a6f88fe52e70f05a7da0a966a069e0bc9f00"]),
+  Object.freeze(["m4-server-status", "4b1b130edfdb9770bbe11062f6f7341cf74001fe4c20e4dc2dcbcd79773764ba"]),
+  Object.freeze(["m4-server-clock", "8327bf6cc2caddd2c41e506889fbf1b7a790f2e34839b4909902b528eb02a51c"]),
   Object.freeze(["static-support-report", "ecaa0d41eb3422c59cd920d2b0aee2260cca71b4df4c7d157a793ed3e822e5df"]),
   Object.freeze(["lsp-diagnostics-definition", "3f93a55be2302c62e6977603d67cc910c893d544749fa56b45d1744bbb81fa8f"]),
   Object.freeze(["formatter-edits", "2dacbfc071b52fd5492663070367da2d92b754605a6e0b0866c24fc28c8bf035"]),

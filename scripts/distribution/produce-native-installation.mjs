@@ -5,12 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { bytes, parseCanonical, requireValue, sha256 } from './canonical.mjs';
 import { targetPaths } from './inventory.mjs';
-import { nativeRecipe, NATIVE_RECIPE_SHA256, nativeRustMaterials } from './native-inventory-v2.mjs';
+import { securityNativeRecipe as nativeRecipe, SECURITY_NATIVE_RECIPE_SHA256 as NATIVE_RECIPE_SHA256,
+  securityRustMaterials as nativeRustMaterials } from './rust-security-materials.mjs';
+import { rustNoticeOwner } from './rust-notice-owner.mjs';
 import {
   prepareNativePayload, assembleNativeInstallation, verifyNativeArchive,
 } from './native-distribution-v2.mjs';
 import { requireArchiveRuntime } from './runtime.mjs';
-import { checkQualificationRustClosure } from './rust-materials.mjs';
+import { checkSecurityRustClosure } from './rust-materials.mjs';
 import { extractVerifiedProductionFiles } from '../distribution-release/extract-verified-files.mjs';
 import { validateSourceReceipt } from './source-receipt.mjs';
 import {
@@ -152,7 +154,7 @@ export async function produceNativeInstallation({ source, output, jobs = 2 }) {
       recipe: { format: nativeRecipe.format, sha256: NATIVE_RECIPE_SHA256 } };
     validateSourceReceipt(receipt, identity); assertCurrent();
     stage = 'actual-frozen-Rust-supplier-capture';
-    const runtimeClosure = checkQualificationRustClosure({ cwd: source, materialRecords: nativeRustMaterials,
+    const runtimeClosure = checkSecurityRustClosure({ cwd: source,
       spawn: (executable, args) => {
         const observed = execute('supplier-closure', executable === 'rustup' ? rustup : executable,
           args, firstEnvironment);
@@ -163,13 +165,12 @@ export async function produceNativeInstallation({ source, output, jobs = 2 }) {
     const metadata = JSON.parse(successful(execute('cargo-metadata', cargo,
       ['metadata', '--format-version=1', '--locked', '--offline', '--filter-platform', target], firstEnvironment)));
     const captured = [{ path: 'LICENSE', mode: 0o644, data: ordinaryBytes(join(source, 'LICENSE'), 2097152) }];
-    for (const record of nativeRustMaterials(target)) {
+    const selectedMaterials = nativeRustMaterials(target);
+    for (const record of selectedMaterials) {
       const pkg = metadata.packages.find(item => item.name === record.name && item.version === record.version);
       requireValue(pkg?.source === 'registry+https://github.com/rust-lang/crates.io-index', 'native Rust registry material identity');
       for (const file of record.files) {
-        const owner = file.origin.startsWith('https://raw.githubusercontent.com/bytecodealliance/wasmtime/')
-          ? metadata.packages.find(item => item.name === 'wasmtime' && item.version === '48.0.1') : pkg;
-        requireValue(owner, 'native upstream notice package missing');
+        const owner = rustNoticeOwner(record, file, selectedMaterials, metadata);
         const data = ordinaryBytes(join(dirname(owner.manifest_path), file.sourcePath), 2097152);
         requireValue(data.length === file.size && sha256(data) === file.sha256, 'whole native Rust notice pin');
         captured.push({ path: file.path, mode: 0o644, data });

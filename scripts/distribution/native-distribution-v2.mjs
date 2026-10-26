@@ -9,9 +9,11 @@ import { validateMaterials } from './material-record.mjs';
 import { validateSourceReceipt } from './source-receipt.mjs';
 import { requireArchiveRuntime } from './runtime.mjs';
 import {
-  NATIVE_FORMAT, nativeRecipe, nativeRole, validateNativeDistribution,
+  NATIVE_FORMAT, nativeRecipe, nativeRecipeFor, nativeRole, validateNativeDistribution,
   validateNativeTuples,
 } from './native-inventory-v2.mjs';
+
+import { securityNativeRecipe, matchesSecurityRustInputs } from './rust-security-materials.mjs';
 
 const byPath = (left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0;
 const metadataTuple = (path, data) => ({ path, size: data.length, sha256: sha256(data),
@@ -25,9 +27,12 @@ export function prepareNativeDistribution(identity, payload) {
   const materialBytes = get('metadata/materials.json');
   validateMaterials(materialBytes, record);
   const source = validateSourceReceipt(get('metadata/architecture-receipt.json'), record);
+  const selectedRecipe = nativeRecipeFor(record.recipe);
   const lock = source.inputs.find(file => file.logicalPath === 'Cargo.lock');
-  requireValue(lock?.size === nativeRecipe.cargoLock.bytes
-    && lock.sha256 === nativeRecipe.cargoLock.sha256, 'native supplier Cargo.lock binding');
+  requireValue(lock?.size === selectedRecipe.cargoLock.bytes
+    && lock.sha256 === selectedRecipe.cargoLock.sha256, 'native supplier Cargo.lock binding');
+  requireValue(selectedRecipe !== securityNativeRecipe || matchesSecurityRustInputs(source),
+    'native security supplier exact source inputs');
   requireValue(get('VERSION').equals(Buffer.from(`${record.version}\n`)), 'native VERSION mismatch');
   const distribution = bytes(record);
   requireValue(distribution.length <= LIMITS.record, 'native manifest byte budget');
