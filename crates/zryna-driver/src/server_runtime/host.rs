@@ -111,6 +111,7 @@ pub(super) struct Pause {
     pub(super) claimed: std::sync::atomic::AtomicBool,
     pub(super) entered: std::sync::mpsc::SyncSender<()>,
     pub(super) release: std::sync::Mutex<std::sync::mpsc::Receiver<()>>,
+    pub(super) release_timeout: std::time::Duration,
     pub(super) panic_after_release: bool,
 }
 #[cfg(test)]
@@ -123,7 +124,7 @@ impl Pause {
         self.release
             .lock()
             .map_err(|_| Error::Host)?
-            .recv_timeout(std::time::Duration::from_secs(2))
+            .recv_timeout(self.release_timeout)
             .map_err(|_| Error::Host)?;
         assert!(!self.panic_after_release, "injected host callback panic");
         Ok(())

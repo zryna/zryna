@@ -1504,8 +1504,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/host.rs",
-      "bytes": 4044,
-      "sha256": "0c8990da9c09b2fd1a68b952aec9586abd4ac848a04e947bcf0a26f69629efe9"
+      "bytes": 4084,
+      "sha256": "f6b19bd3139b3b81dee6ae7db7aad01133cd6a67643ccb9bcc6e51bc840a137c"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/linker.rs",
@@ -1604,8 +1604,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/tests/retirement.rs",
-      "bytes": 8131,
-      "sha256": "87b620f152a18118d61946781274f8723344e400f22a763f90ef6df7bac46c59"
+      "bytes": 8822,
+      "sha256": "1f858c31c1830bac1eb9eb0c3319289e7dad967b542b0a6994cf7d4b95a84fad"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/tests/retirement/public_serial.rs",
