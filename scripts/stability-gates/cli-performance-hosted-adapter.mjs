@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chmodSync, constants, copyFileSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, constants, copyFileSync, lstatSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { canonical, MAX_LOG, parse, readSafe, sha256 } from './input.mjs';
 import { execute } from './process.mjs';
@@ -24,23 +24,31 @@ export function collectorEnvironment(environment, rustc, windows) {
 export function observedPin(pin) { return { path: pin.path, bytes: pin.bytes, sha256: pin.sha256 }; }
 export function validateRetainedCliBinding(record) {
   const { sourceBefore, sourceAfter, copy, targetDirectory, measuredPath } = record;
-  assert.equal(sourceBefore.path, measuredPath); assert.equal(sourceAfter.path, measuredPath);
-  assert(!outside(targetDirectory, measuredPath), 'measured CLI remains in its original target tree');
+  assert.equal(record.format, 'zryna.cli-performance-retained-release-cli.v2');
+  assert(Object.values(record.links).every(value => Number.isSafeInteger(value) && value > 0));
+  assert.equal(record.links.builtBefore, record.links.builtAfter, 'built image links stable across copy');
+  assert.equal(record.links.copy, 1, 'independent single-link measured CLI copy');
+  assert.equal(sourceBefore.path, sourceAfter.path, 'same built image before and after copy');
+  assert(!outside(targetDirectory, sourceBefore.path), 'built CLI remains in its original target tree');
+  assert.equal(measuredPath, copy.path, 'measure exactly the independently rehashed private copy');
   assert(outside(targetDirectory, copy.path), 'retained CLI must be outside excluded target tree');
   for (const key of ['bytes', 'mode', 'sha256']) {
     assert.equal(sourceAfter[key], sourceBefore[key], 'source CLI stable across copy');
     assert.equal(copy[key], sourceBefore[key], 'independently rehashed retained CLI binding');
   }
 }
-function retainReleaseCli(output, build) {
+export function retainReleaseCli(output, build) {
   const sourceBefore = pinFile(build.cli.after.path);
+  const builtLinksBefore = lstatSync(sourceBefore.path).nlink;
   const directory = join(output, 'retained-release-cli'); mkdirSync(directory, { mode: 0o700 });
   const destination = join(directory, basename(sourceBefore.path));
   copyFileSync(sourceBefore.path, destination, constants.COPYFILE_EXCL);
   chmodSync(destination, parseInt(sourceBefore.mode, 8));
-  const record = { format: 'zryna.cli-performance-retained-release-cli.v1',
+  const record = { format: 'zryna.cli-performance-retained-release-cli.v2',
     sourceBefore, sourceAfter: pinFile(sourceBefore.path), copy: pinFile(destination),
-    targetDirectory: build.environment.CARGO_TARGET_DIR, measuredPath: sourceBefore.path,
+    links: { builtBefore: builtLinksBefore, builtAfter: lstatSync(sourceBefore.path).nlink,
+      copy: lstatSync(destination).nlink },
+    targetDirectory: build.environment.CARGO_TARGET_DIR, measuredPath: destination,
     sourceAuthenticated: false, performanceQualified: false, baselineAuthority: null, thresholds: null };
   save(output, 'retained-release-cli.json', record); // Preserve observed mismatch before validation.
   assert.deepEqual(sourceBefore, build.cli.after, 'same actual successful release CLI');
@@ -120,8 +128,8 @@ export async function runHostedRound(input, output) {
     assert.equal(build.profile.observed, 'release');
     assert.equal(build.source.before.commit, input.expectedHead); assert.equal(build.source.before.tree, input.expectedTree);
     stage = 'retain-release-cli';
-    retainReleaseCli(output, build); // Copy/hash outside the target tree before all oracles and measurements.
-    const cli = observedPin(build.cli.after); const node = observedPin(build.tools.after.node);
+    const retainedCli = retainReleaseCli(output, build); // The retained private copy is the actual measured image.
+    const cli = observedPin(retainedCli.copy); const node = observedPin(build.tools.after.node);
     const environment = collectorEnvironment(env, input.tools.rustc, windows);
     stage = 'architecture-check';
     await runArchitectureCheck({ root, output, cli: cli.path, environment: build.environment });

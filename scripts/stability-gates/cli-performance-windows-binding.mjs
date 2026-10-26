@@ -32,13 +32,13 @@ export function validateWindowsCapture(document, capture) {
     assert.match(pin.sha256, /^[a-f0-9]{64}$/u);
   }
 }
-function snapshot(pin) {
+export function snapshot(pin) {
   const base = parsePath(pin.path).root;
   const before = lstatSync(pin.path);
   const bytes = readSafe(base, relative(base, pin.path).split('\\').join('/'), pin.bytes);
   const identity = stat => Object.fromEntries(['dev', 'ino', 'size', 'mode', 'nlink', 'mtimeMs', 'ctimeMs'].map(key => [key, stat[key]]));
   assert.deepEqual(identity(lstatSync(pin.path)), identity(before), 'stable operator-bound file identity');
-  assert.equal(before.nlink, 1, 'private single-link operator input');
+  assert.equal(before.nlink, 1, `private single-link operator input: ${pin.path}`);
   assert.equal(bytes.length, pin.bytes); assert.equal(sha256(bytes), pin.sha256);
   return { identity: identity(before), bytes };
 }
