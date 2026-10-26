@@ -5,7 +5,10 @@ mod artifact;
 #[path = "generic_struct_v4_nested/process.rs"]
 mod process;
 use sha2::{Digest, Sha256};
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Mutex,
+};
 use zryna_frontend::{native_lexer::lex, native_parser::v5::parse_v5_candidate};
 use zryna_ir::generic_v1::execution_v1;
 use zryna_layout::StorageTarget;
@@ -18,6 +21,9 @@ use zryna_semantics::bounded_generics_v1::{
 };
 use zryna_source::{SourceFileInput, SourceMap};
 use zryna_syntax::v5::{decode_snapshot, verify_snapshot};
+
+// Keep this test process's three deep fixtures from competing for the same child budget.
+static FIXTURE_PROCESS_OWNER: Mutex<()> = Mutex::new(());
 
 fn base() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/m7-generic-execution-recursive-owner")
@@ -43,6 +49,7 @@ fn input(name: &str) -> Vec<u8> {
 }
 
 fn actual(case: &str) {
+    let _owner = FIXTURE_PROCESS_OWNER.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let text = String::from_utf8(input(&format!("literals/{case}.zry"))).expect("original UTF8");
     assert_eq!(
         digest(&input("SOURCE_EXPECTED_FREEZE.json")),
@@ -164,7 +171,7 @@ fn webassembly(case: &str, program: &execution_v1::VerifiedExecution<'_>, direct
             .arg(directory)
             .arg(case)
             .arg(depth.to_string());
-        let output = process::run(command, 20);
+        let output = run_child(command, case, "webassembly", Some(depth), directory);
         std::fs::write(directory.join(format!("wasm-{depth}.stdout.json")), &output.stdout)
             .expect("actual ordinary Wasm observations");
         std::fs::write(directory.join(format!("wasm-{depth}.stderr.txt")), &output.stderr)
@@ -201,7 +208,7 @@ fn javascript(case: &str, program: &execution_v1::VerifiedExecution<'_>, directo
         } else {
             "release".to_owned()
         };
-        let output = process::run(command, 20);
+        let output = run_child(command, case, "javascript", *depth, directory);
         std::fs::write(directory.join(format!("{label}.stdout.json")), &output.stdout)
             .expect("actual JS observations");
         std::fs::write(directory.join(format!("{label}.stderr.txt")), &output.stderr)
@@ -209,6 +216,29 @@ fn javascript(case: &str, program: &execution_v1::VerifiedExecution<'_>, directo
         assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
         assert!(output.stderr.is_empty());
     }
+}
+
+fn run_child(
+    command: std::process::Command,
+    case: &str,
+    phase: &str,
+    depth: Option<u32>,
+    directory: &Path,
+) -> std::process::Output {
+    eprintln!(
+        "recursive owner child start case={case} phase={phase} depth={depth:?} artifact={}",
+        directory.display()
+    );
+    let started = std::time::Instant::now();
+    let output = process::run(command, 20);
+    eprintln!(
+        "recursive owner child complete case={case} phase={phase} depth={depth:?} elapsed_ms={} stdout_bytes={} stderr_bytes={} status={}",
+        started.elapsed().as_millis(),
+        output.stdout.len(),
+        output.stderr.len(),
+        output.status
+    );
+    output
 }
 
 #[test]

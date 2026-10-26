@@ -62,15 +62,13 @@ pub(super) fn declarations(
                 let variants = ty.variants();
                 charge(&context.work, variants.len())?;
                 for (ordinal, payload) in variants {
-                    writer.format(format_args!(
-                        "case {ordinal}: return $owner({{tag:{ordinal},payload:"
-                    ))?;
+                    writer.format(format_args!("case {ordinal}: return $enumOwner({ordinal},"))?;
                     if let Some(child) = payload {
                         source(context.ty(child.index())?, format_args!("$s.payload"), writer)?;
                     } else {
                         writer.text("undefined")?;
                     }
-                    writer.text("});\n")?;
+                    writer.text(");\n")?;
                 }
                 writer.text("default: throw new Error('ZRYNA-RT-TAG');\n}\n")?;
             }

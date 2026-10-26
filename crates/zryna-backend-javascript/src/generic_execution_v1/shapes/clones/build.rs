@@ -34,7 +34,7 @@ pub(super) fn body(
             complete(w, node)
         }
         CloneNodeKind::Enum => {
-            begin(w, node, "$owner({tag:$s.tag,payload:undefined})")?;
+            begin(w, node, "$enumOwner($s.tag,undefined)")?;
             w.text("if($parent.$dropIndex===0) { switch($s.tag) {\n")?;
             charge(&c.work, node.variants().len())?;
             for (ordinal, child) in node.variants() {

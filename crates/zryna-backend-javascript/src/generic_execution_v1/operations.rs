@@ -113,13 +113,13 @@ fn compound(
             values(c, f, fields, w)
         }
         O::ClosedEnumConstruct { ordinal, payload, .. } => {
-            w.format(format_args!("$owner({{tag:{ordinal},payload:"))?;
+            w.format(format_args!("$enumOwner({ordinal},"))?;
             if let Some(value) = payload {
                 super::shapes::records::value(c, f, *value, w)?;
             } else {
                 w.text("undefined")?;
             }
-            w.text("})")
+            w.text(")")
         }
         O::StringConcat { left, right, .. } => {
             w.text("$stringConcat(")?;

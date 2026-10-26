@@ -115,3 +115,5 @@ fn observe(case: &str, provider: &str, source: &str) {
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
     println!("{}", String::from_utf8_lossy(&output.stdout));
 }
+
+mod enum_owner;

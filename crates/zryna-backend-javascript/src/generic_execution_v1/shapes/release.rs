@@ -9,6 +9,7 @@ pub(super) fn declarations(c: &Context<'_, '_>, w: &mut Writer) -> Result<(), Di
     // Every aggregate producer calls this before publishing its private carrier. These
     // properties are separate from canonical String/storage tokens and control headers.
     w.text("function $owner($s) { Object.setPrototypeOf($s,null); $s.$dropParent=null; $s.$dropType=-1; $s.$dropIndex=-1; return $s; }\n")?;
+    w.text("function $enumOwner($tag,$payload) { return {__proto__:null,tag:$tag,payload:$payload,$dropParent:null,$dropType:-1,$dropIndex:-1}; }\n")?;
     w.text("function $dropLoop($s,$type,$ctx) { let $parent=null,$index=-1; for(;;) { switch($type) {\n")?;
     charge(&c.work, c.types.len())?;
     for ty in &c.types {

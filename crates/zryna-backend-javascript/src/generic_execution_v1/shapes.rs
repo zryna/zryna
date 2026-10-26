@@ -61,13 +61,13 @@ fn copy_body(c: &Context<'_, '_>, ty: TypeView<'_>, w: &mut Writer) -> Result<()
             w.text("switch ($s.tag) {\n")?;
             for (ordinal, child) in ty.variants() {
                 charge(&c.work, 1)?;
-                w.format(format_args!("case {ordinal}: return $owner({{tag:{ordinal},payload:"))?;
+                w.format(format_args!("case {ordinal}: return $enumOwner({ordinal},"))?;
                 if let Some(child) = child {
                     w.format(format_args!("$copy{}($s.payload)", child.index()))?;
                 } else {
                     w.text("undefined")?;
                 }
-                w.text("});\n")?;
+                w.text(");\n")?;
             }
             invalid_tag(w)?;
         }
