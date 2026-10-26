@@ -1,0 +1,23 @@
+TAP version 13
+# SYNTHETIC parser fixture; not actual SDK execution
+    ok 1 - deny guard blocks real HTTPS, fetch and socket before SDK calls
+    ok 2 - cjs upstream instance-aware constructor rejects
+    ok 3 - cjs upstream payload strips routing and attacker nonce before delegation
+    ok 4 - cjs upstream instance_aware true false empty reject without delegation
+    ok 5 - cjs ordinary no-payload authCode preserves request and delegation
+    ok 6 - cjs genuine base state mismatch remains rejected before network
+    ok 7 - esm upstream instance-aware constructor rejects
+    ok 8 - esm upstream payload strips routing and attacker nonce before delegation
+    ok 9 - esm upstream instance_aware true false empty reject without delegation
+    ok 10 - esm ordinary no-payload authCode preserves request and delegation
+    ok 11 - esm genuine base state mismatch remains rejected before network
+    1..11
+ok 1 - reviewed MSAL6 authCode backport preserves all eleven network-denied CJS/ESM controls
+1..1
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0

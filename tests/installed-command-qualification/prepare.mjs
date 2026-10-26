@@ -5,7 +5,8 @@ import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
 import { bytes, sha256 } from '../../scripts/distribution/canonical.mjs';
 import { preparePayload } from '../../scripts/distribution/payload.mjs';
-import { checkQualificationRustClosure, rustMaterials } from '../../scripts/distribution/rust-materials.mjs';
+import { checkSecurityRustClosure, rustMaterials } from '../../scripts/distribution/rust-materials.mjs';
+import { rustNoticeOwner } from '../../scripts/distribution/rust-notice-owner.mjs';
 import { NODE_TARGETS } from '../../scripts/distribution/materials.mjs';
 import { inventoryBytes, checksumBytes, targetPaths, V4_PROVIDER_MODULES } from '../../scripts/distribution/inventory.mjs';
 import { verifyCompiledIdentity } from '../../scripts/distribution/binary-identity.mjs';
@@ -96,14 +97,14 @@ export async function prepare(source, output) {
   const materialContext = { productionCandidate: true, distribution: identity,
     architectureReceipt: JSON.parse(receipt.toString('utf8')) };
   const metadata = JSON.parse(run(cargo, ['metadata', '--format-version=1', '--locked', '--offline', '--filter-platform', target], source, buildEnv));
-  const runtimeClosureAudit = checkQualificationRustClosure({ cwd: source });
-  for (const record of rustMaterials(target, materialContext)) {
+  const runtimeClosureAudit = checkSecurityRustClosure({ cwd: source });
+  const selectedMaterials = rustMaterials(target, materialContext);
+  for (const record of selectedMaterials) {
     const pkg = metadata.packages.find(pkg => pkg.name === record.name && pkg.version === record.version);
     if (!pkg) throw new Error(`Missing pinned Rust material ${record.name}-${record.version}`);
     for (const expected of record.files) {
       // Cargo's verified registry source contains the same pinned license, including Wasmtime.
-      const materialPackage = expected.origin.startsWith('https://raw.githubusercontent.com/bytecodealliance/wasmtime/')
-        ? metadata.packages.find(pkg => pkg.name === 'wasmtime' && pkg.version === '48.0.1') : pkg;
+      const materialPackage = rustNoticeOwner(record, expected, selectedMaterials, metadata);
       const data = readFileSync(join(dirname(materialPackage.manifest_path), expected.sourcePath));
       if (data.length !== expected.size || sha256(data) !== expected.sha256) {
         throw new Error(`Rust notice pin differs: ${expected.path}`);

@@ -52,10 +52,10 @@ cap-fs-ext = { version = "=4.0.2", default-features = false, features = ["std"] 
 cap-primitives = "=4.0.2"
 cap-std = { version = "=4.0.2", default-features = false }
 clap = { version = "4.5.47", features = ["derive"] }
-cranelift-codegen = { version = "=0.135.1", default-features = false, features = ["std", "x86"] }
-cranelift-frontend = { version = "=0.135.1", default-features = false, features = ["std"] }
-cranelift-module = { version = "=0.135.1", default-features = false, features = ["std"] }
-cranelift-object = { version = "=0.135.1", default-features = false }
+cranelift-codegen = { version = "=0.135.7", default-features = false, features = ["std", "x86"] }
+cranelift-frontend = { version = "=0.135.7", default-features = false, features = ["std"] }
+cranelift-module = { version = "=0.135.7", default-features = false, features = ["std"] }
+cranelift-object = { version = "=0.135.7", default-features = false }
 libc = "0.2"
 nix = { version = "=0.31.3", default-features = false, features = ["fs", "process", "resource", "signal"] }
 object = { version = "=0.39.0", default-features = false, features = ["read_core", "elf", "std"] }
@@ -71,7 +71,7 @@ windows-spawn = "=0.1.0"
 windows-sys = "=0.61.2"
 wasm-encoder = { version = "=0.258.0", default-features = false, features = ["std"] }
 wasmparser = { version = "=0.258.0", default-features = false, features = ["features", "std", "validate"] }
-wasmtime = { version = "=48.0.1", default-features = false, features = ["std", "runtime", "cranelift", "component-model"] }
+wasmtime = { version = "=48.0.7", default-features = false, features = ["std", "runtime", "cranelift", "component-model"] }
 wit-component = { version = "=0.258.0", default-features = false }
 wit-parser = { version = "=0.258.0", default-features = false, features = ["std"] }
 zryna-abi = { path = "crates/zryna-abi" }

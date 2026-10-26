@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { LIMITS, bytes, exactKeys, parseCanonical, requireValue, sha256 } from './canonical.mjs';
 import { digestValue, roleFor, targetPaths, validateTuples } from './inventory.mjs';
+import { SECURITY_NATIVE_RECIPE_SHA256, securityNativeRecipe, securityRustMaterials } from './rust-security-materials.mjs';
 
 export const NATIVE_FORMAT = 'zryna.native-distribution.v2';
 export const NATIVE_RECIPE_SHA256 = 'fbc5eb291f8e878e07d3385f5a17c4f29d4bf1542c8ca5f918dea9514702416e';
@@ -28,8 +29,18 @@ export function nativeSourceRef(value) {
     && !part.endsWith('.') && !part.endsWith('.lock'));
 }
 
-export function nativeRustMaterials(target) {
+export function nativeRecipeFor(recipe) {
+  if (recipe?.format === securityNativeRecipe.format && recipe.sha256 === SECURITY_NATIVE_RECIPE_SHA256) {
+    return securityNativeRecipe;
+  }
+  requireValue(recipe?.format === nativeRecipe.format && recipe.sha256 === NATIVE_RECIPE_SHA256,
+    'native recipe binding');
+  return nativeRecipe;
+}
+
+export function nativeRustMaterials(target, recipe = { format: nativeRecipe.format, sha256: NATIVE_RECIPE_SHA256 }) {
   targetPaths(target);
+  if (nativeRecipeFor(recipe) === securityNativeRecipe) return securityRustMaterials(target);
   const records = materialRecords.flatMap(record => {
     const selected = new Set(record.targets[target]);
     return record.packages.filter(item => selected.has(`${item.name}-${item.version}`));
@@ -48,7 +59,7 @@ export function nativeRole(path, target) {
   return role;
 }
 
-export function validateNativeTuples(entries, target, { complete = false } = {}) {
+export function validateNativeTuples(entries, target, { complete = false, recipe } = {}) {
   requireValue(Array.isArray(entries), 'native finite file inventory');
   validateTuples(entries, target);
   for (const file of entries) {
@@ -59,7 +70,7 @@ export function validateNativeTuples(entries, target, { complete = false } = {})
   for (const path of [...NATIVE_TEXT, 'metadata/materials.json', 'metadata/architecture-receipt.json']) {
     requireValue(paths.has(path), 'missing required native payload');
   }
-  const expected = nativeRustMaterials(target).flatMap(record => record.files)
+  const expected = nativeRustMaterials(target, recipe).flatMap(record => record.files)
     .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }))
     .sort((left, right) => left.path < right.path ? -1 : 1);
   const actual = entries.filter(file => file.path.startsWith('licenses/rust/'))
@@ -69,10 +80,11 @@ export function validateNativeTuples(entries, target, { complete = false } = {})
 
 export function validateNativeDistribution(record) {
   exactKeys(record, ['format', 'version', 'source', 'target', 'recipe', 'files']);
-  requireValue(record.format === NATIVE_FORMAT && record.version === nativeRecipe.compilerVersion,
+  const selectedRecipe = nativeRecipeFor(record.recipe);
+  requireValue(record.format === NATIVE_FORMAT && record.version === selectedRecipe.compilerVersion,
     'native distribution identity');
   exactKeys(record.source, ['repository', 'ref', 'commit', 'tree', 'sourceDateEpoch']);
-  requireValue(record.source.repository === nativeRecipe.sourceRepository
+  requireValue(record.source.repository === selectedRecipe.sourceRepository
     && nativeSourceRef(record.source.ref)
     && /^[a-f0-9]{40}$/.test(record.source.commit) && /^[a-f0-9]{40}$/.test(record.source.tree),
   'native exact source candidate');
@@ -88,10 +100,9 @@ export function validateNativeDistribution(record) {
   requireValue(record.target.archiveFormat === paths.format
     && bytes(record.target.platformBaseline).equals(bytes(baseline)), 'native target baseline');
   exactKeys(record.recipe, ['format', 'sha256']);
-  requireValue(record.recipe.format === nativeRecipe.format
-    && record.recipe.sha256 === NATIVE_RECIPE_SHA256, 'native recipe binding');
+  nativeRecipeFor(record.recipe);
   digestValue(record.recipe.sha256);
-  validateNativeTuples(record.files, record.target.triple, { complete: true });
+  validateNativeTuples(record.files, record.target.triple, { complete: true, recipe: record.recipe });
   requireValue(record.files.length <= LIMITS.files - 4, 'native complete file count');
   requireValue(record.files.every(file => ![paths.cli, 'metadata/distribution.json',
     'metadata/inventory.json', 'metadata/checksums.sha256'].includes(file.path)), 'native cyclic payload');

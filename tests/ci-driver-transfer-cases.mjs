@@ -4,6 +4,12 @@ import { createHash } from 'node:crypto';
 import { parseDocument } from 'yaml';
 const LEGACY_SHA = '8e1cce2fa04942e3e18cd676684b922582ade90e6fb38ae2f408f9d3e4de8173';
 const LEGACY_TEXT_SHA = '77bc79ec0734b9510b2665f2ec0706a3771b5371e4b8289476c5c7a7d8b0c7a2';
+const HOST_DEBUG_PROFILE = {
+  CARGO_PROFILE_DEV_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}",
+  CARGO_PROFILE_TEST_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}",
+};
+const HOST_DEBUG_TEXT = '    env:\n' + Object.entries(HOST_DEBUG_PROFILE)
+  .map(([key, value]) => `      ${key}: "${value}"\n`).join('');
 const MOVED = [
   {
     "name": "Verify M2 semantics",
@@ -68,6 +74,10 @@ function acyclic(jobs) {
 export function withoutDriverTransfer(candidate) {
   const original = structuredClone(candidate);
   const rust = original.jobs.rust, m2 = original.jobs['m2-platform'], m0 = original.jobs.m0;
+  if (Object.hasOwn(rust, 'env')) {
+    assert.deepEqual(rust.env, HOST_DEBUG_PROFILE, 'only reviewed Linux host debug profile');
+    delete rust.env;
+  }
   assert.deepEqual(m2.steps.slice(7, 14), MOVED, 'exact seven moved steps after fetch');
   assert.equal(m2.steps[6].name, 'Fetch locked Rust dependencies');
   assert.deepEqual(m2.steps[14], { run: 'pnpm m2:check' }, 'moved work precedes canonical M2');
@@ -117,6 +127,11 @@ export function withoutDriverTransferText(text) {
     return (job.slice(0, start) + job.slice(end)).replace('          components: rustfmt, clippy\n', '');
   });
   legacy = editJob(legacy, 'rust', job => {
+    if (Object.hasOwn(parsed.toJS().jobs.rust, 'env')) {
+      const profile = '    runs-on: ${{ matrix.os }}\n' + HOST_DEBUG_TEXT + '    steps:\n';
+      assert.equal(job.split(profile).length, 2, 'exact job-local host debug profile placement');
+      job = job.replace(profile, '    runs-on: ${{ matrix.os }}\n    steps:\n');
+    }
     const anchor = '      - name: Fetch locked Rust dependencies\n        run: cargo fetch --locked\n';
     const begin = moved.indexOf('      - name: Prepare pinned SQLite source fixture\n');
     const end = moved.indexOf('      - name: Verify M2 driver security\n');

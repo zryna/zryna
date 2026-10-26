@@ -100,7 +100,7 @@ test('unregistered fixture unsafe paths and case-colliding sources reject', () =
   }
   assert.throws(() => validateM4Conformance(mutant(value => {
     value.sources.push({ path: 'tests/m4-inventory-first-extra-control.zry', bytes: 0, sha256: '0'.repeat(64) });
-    assert.equal(value.sources.length, 517);
+    assert.equal(value.sources.length, 523);
   })), /closed schema rejected \/sources/u);
 });
 

@@ -78,6 +78,53 @@ fn native_candidate_has_no_bootstrap_or_node_capability() {
 }
 
 #[test]
+fn current_security_recipe_loads_its_complete_native_supplier_inventory() {
+    let mut value = native();
+    let recipe: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../scripts/distribution/native-recipe-security-candidate-v1.json"
+    )))
+    .expect("reviewed current native recipe");
+    let materials: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../scripts/distribution/materials-rust-security-candidate-v1.json"
+    )))
+    .expect("reviewed current supplier inventory");
+    assert_eq!(recipe["productionAdmission"], "forbidden");
+    assert_eq!(materials["productionAdmission"], "forbidden");
+    value.recipe.sha256 =
+        "bd94d51417811098caf0fda18add45070d12cf499cc8a13d3d9d895b24cd5b49".to_owned();
+    value.files.retain(|file| !file.path.starts_with("licenses/rust/"));
+    let selected = materials["targets"][&value.target.triple].as_array().expect("current target");
+    assert_eq!(selected.len(), if cfg!(windows) { 170 } else { 163 });
+    for package in materials["packages"].as_array().expect("current packages") {
+        let identity = format!(
+            "{}-{}",
+            package["name"].as_str().expect("package name"),
+            package["version"].as_str().expect("package version")
+        );
+        if !selected.iter().any(|entry| entry.as_str() == Some(identity.as_str())) {
+            continue;
+        }
+        for notice in package["files"].as_array().expect("package notices") {
+            let mut file = tuple(notice["path"].as_str().expect("notice path"));
+            file.size = notice["size"].as_u64().expect("notice size");
+            file.sha256 = notice["sha256"].as_str().expect("notice digest").to_owned();
+            value.files.push(file);
+        }
+    }
+    value.files.sort_by(|left, right| left.path.cmp(&right.path));
+    assert_eq!(value.files.len(), required_paths().len() + if cfg!(windows) { 334 } else { 327 });
+    value.validate().expect("current exact recipe and complete supplier inventory");
+    let encoded = super::super::super::wire::canonical(&value).expect("canonical current record");
+    Distribution::parse(&encoded).expect("current native installation wire grammar");
+    assert!(!value.requires_bootstrap());
+    assert!(value.node_path().is_err());
+    value.recipe.sha256.replace_range(..1, "0");
+    assert!(value.validate().is_err(), "a foreign recipe cannot inherit current admission");
+}
+
+#[test]
 fn native_installation_rejects_runtime_bootstrap_and_unknown_payloads() {
     for path in [
         "runtime/node/bin/node",

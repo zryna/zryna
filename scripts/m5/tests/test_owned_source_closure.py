@@ -154,6 +154,8 @@ class SourceClosure(unittest.TestCase):
             'crates/zryna-backend-native/tests/recursive_arena/source.rs',
             'crates/zryna-backend-native/tests/recursive_arena/input-pins.json',
             'tests/m7-generic-full-profile-first-vertical/literals/scalar-i32-clone.zry',
+            'scripts/distribution/native-recipe-security-candidate-v1.json',
+            'scripts/distribution/materials-rust-security-candidate-v1.json',
         }
         self.assertTrue(required <= set(SOURCE_FILES))
         self.assertEqual(SOURCE_ROOTS,
@@ -167,10 +169,12 @@ class SourceClosure(unittest.TestCase):
         files = {origin: '#[cfg(any())] #[path = ' + json.dumps(reference) + '] mod fixture;'}
         for path in (*sorted(required), 'crates/zryna-driver/src/generic_run/tests/source.rs'):
             files[path] = (repo / path).read_text()
+        native_test = 'crates/zryna-driver/src/distribution/manifest/native/tests.rs'
+        files[native_test] = (repo / native_test).read_text()
         rows = [{'path': path} for path in files]
         load = lambda path: files[path].encode()
         complete = audit(rows, load, set(files))
-        self.assertEqual(len(complete['includePathEdges']), 3)
+        self.assertEqual(len(complete['includePathEdges']), 5)
         for omitted in sorted(required):
             with self.subTest(omitted=omitted):
                 with self.assertRaisesRegex(AssertionError, 'missing from owned mirror closure'):

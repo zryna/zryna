@@ -1,1 +1,3 @@
 * text=auto eol=lf
+# Unified diffs require one prefix space on empty context lines.
+scripts/dependency-patches/msal-node-6.0.1-auth-code.patch whitespace=-blank-at-eol

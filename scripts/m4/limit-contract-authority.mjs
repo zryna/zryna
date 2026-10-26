@@ -1,4 +1,4 @@
 // Independently reviewed source-contract authorities; refresh deliberately after final code review.
 export const expectedLimitContractsSha256 = "b35368682735c16683f45929f52c5343b8e28c23e0927309a462d2a66526da6f";
 export const expectedLimitContractSchemaSha256 = "489492648010722cebd63130300c600d02020a9a010509ed6048134c74f3ded4";
-export const expectedMappedRegistrySchemaSha256 = "80fc227f9bdc53bfb68bf0dd1042978c3916cfcc49f0ed337bd54e37382c3b40";
+export const expectedMappedRegistrySchemaSha256 = "3439899abc8dbed8a41e0bf414d9e85a3a382482b08745494b91636de048bd1f";

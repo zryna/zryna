@@ -41,6 +41,9 @@ test('H1 candidate binding authenticates current workspace bytes and rejects an 
   for (const target of ['x86_64-unknown-linux-gnu', 'x86_64-pc-windows-msvc']) {
     const value = commandCandidate(target);
     value.receipt.inputs = inputs;
+    value.entries = rustMaterials(target, { productionCandidate: true,
+      distribution: value.distribution, architectureReceipt: value.receipt }).flatMap(record => record.files)
+      .map(({ path, size, sha256: digest }) => ({ path, size, sha256: digest }));
     assert.doesNotThrow(() => validateCommandCandidate(value));
     value.receipt.inputs = inputs.map(input => input.logicalPath === 'Cargo.toml'
       ? { ...input, size: changed.length, sha256: sha256(changed) } : input);

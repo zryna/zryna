@@ -18,7 +18,7 @@ through that artifact, so an object cannot be paired with a different program or
 
 ## Deterministic lowering
 
-Pinned Cranelift `0.135.1` emits baseline non-PIC ELF64 relocatable code with optimization disabled,
+Pinned Cranelift `0.135.7` emits baseline non-PIC ELF64 relocatable code with optimization disabled,
 unwind information disabled, and one shared `.text` section. All bodies are declared before any
 definition, so forward and cross-module direct calls use only sealed function identities.
 

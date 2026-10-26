@@ -1,3 +1,5 @@
+import './distribution-rust-security-workspace-cases.mjs';
+import './distribution-rust-security-cases.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';

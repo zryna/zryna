@@ -5,6 +5,10 @@ import test from 'node:test';
 import { parseDocument } from 'yaml';
 import { withoutDriverTransfer, withoutDriverTransferText } from './ci-driver-transfer-cases.mjs';
 const legacy = JSON.parse(readFileSync(new URL('./ci-driver-transfer/legacy.json', import.meta.url)));
+const debugProfile = {
+  CARGO_PROFILE_DEV_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}",
+  CARGO_PROFILE_TEST_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}",
+};
 function transferred() {
   const value = structuredClone(legacy), jobs = value.jobs;
   const moved = jobs.rust.steps.splice(8, 7);
@@ -23,9 +27,41 @@ function rejects(mutate) {
 test('actual workflow transfers all seven steps before canonical M2 and gates M0', () => {
   const bytes = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const parsed = parseDocument(bytes); assert.deepEqual(parsed.errors, []);
+  assert.deepEqual(parsed.toJS().jobs.rust.env, debugProfile, 'actual Linux CI uses reviewed debug profile');
   assert.deepEqual(withoutDriverTransfer(parsed.toJS()), legacy);
   const text = withoutDriverTransferText(bytes);
   const old = parseDocument(text); assert.deepEqual(old.errors, []); assert.deepEqual(old.toJS(), legacy);
+});
+test('exact Linux host debug profile reverses without changing historical authority or its input', () => {
+  const value = transferred(); value.jobs.rust.env = structuredClone(debugProfile);
+  const before = structuredClone(value);
+  assert.deepEqual(withoutDriverTransfer(value), legacy);
+  assert.deepEqual(value, before);
+});
+test('debug profile rejects partial unknown or broadened declarations and retains all proof budgets', () => {
+  for (const mutate of [
+    w => { delete w.jobs.rust.env.CARGO_PROFILE_TEST_DEBUG; },
+    w => { w.jobs.rust.env.CARGO_PROFILE_DEV_DEBUG = '0'; },
+    w => { w.jobs.rust.env.CARGO_PROFILE_TEST_DEBUG = "${{ matrix.os == 'ubuntu-latest' && '1' || 'line-tables-only' }}"; },
+    w => { w.jobs.rust.env.CARGO_PROFILE_TEST_DEBUG = "${{ matrix.os == 'ubuntu-latest' && '0' || '0' }}"; },
+    w => { w.jobs.rust.env.CARGO_PROFILE_TEST_OPT_LEVEL = '1'; },
+    w => { w.jobs.rust['timeout-minutes'] = 60; },
+    w => { w.jobs.rust.steps.find(s => s.id === 'm0-complete').run += ' --skip'; },
+    w => { w.jobs.rust.steps.find(s => s.id === 'm7-generic').run = 'true'; },
+  ]) {
+    const value = transferred(); value.jobs.rust.env = structuredClone(debugProfile);
+    mutate(value); assert.throws(() => withoutDriverTransfer(value));
+  }
+});
+test('text inverse rejects a moved debug profile block even when parsed workflow is equivalent', () => {
+  const bytes = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const start = bytes.indexOf('  rust:\n'), end = bytes.indexOf('\n  adapter-platform:\n', start);
+  const block = '    env:\n' + Object.entries(debugProfile).map(([key, value]) => `      ${key}: "${value}"\n`).join('');
+  const rust = bytes.slice(start, end); assert.equal(rust.split(block).length, 2);
+  const moved = rust.replace(block, '').replace('    steps:\n', block + '    steps:\n');
+  // Moving before runs-on preserves YAML semantics but must not broaden raw-text admission.
+  const reordered = moved.replace(block, '').replace('    runs-on:', block + '    runs-on:');
+  assert.throws(() => withoutDriverTransferText(bytes.slice(0, start) + reordered + bytes.slice(end)));
 });
 test('valid transferred fixture reverses exactly without changing its input or legacy expectations', () => {
   const value = transferred(), before = structuredClone(value);

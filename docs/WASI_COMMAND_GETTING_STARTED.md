@@ -12,7 +12,7 @@ records the prerequisite decisions.
 This route runs one source file, either from a compiler checkout or an independently verified
 new complete installation built from this change. The installed executable uses only its bundled
 Node.js 22.22.1 and authenticated protocol-v4 provider; both routes execute a fresh pinned
-Wasmtime 48.0.1 engine. Existing published archives do not acquire H1 support retroactively.
+Wasmtime 48.0.7 engine. Existing published archives do not acquire H1 support retroactively.
 
 Installed H1 selects a real source directory with `--project-root` (default: current directory),
 which must be outside the entire installation. It needs neither a compiler checkout nor Rust,

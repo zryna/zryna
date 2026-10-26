@@ -9,6 +9,8 @@ pub(super) const FORMAT: &str = "zryna.native-distribution.v2";
 pub(super) const RECIPE_FORMAT: &str = "zryna.native-distribution-recipe.v2";
 pub(super) const RECIPE_SHA256: &str =
     "fbc5eb291f8e878e07d3385f5a17c4f29d4bf1542c8ca5f918dea9514702416e";
+const SECURITY_RECIPE_SHA256: &str =
+    "bd94d51417811098caf0fda18add45070d12cf499cc8a13d3d9d895b24cd5b49";
 const TEXT: [&str; 5] = ["LICENSE", "NOTICE", "README.md", "SUPPORT.md", "VERSION"];
 const REQUIRED: [&str; 7] = [
     "LICENSE",
@@ -66,7 +68,9 @@ impl Distribution {
     }
 
     pub(super) fn validate_native_recipe(&self) -> Result<(), Diagnostic> {
-        if self.is_native_provider() && self.recipe.sha256 != RECIPE_SHA256 {
+        if self.is_native_provider()
+            && ![RECIPE_SHA256, SECURITY_RECIPE_SHA256].contains(&self.recipe.sha256.as_str())
+        {
             return Err(admission_error("native installation requires the exact source recipe"));
         }
         Ok(())
