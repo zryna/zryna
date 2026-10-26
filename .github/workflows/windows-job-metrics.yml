@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: windows-job-metrics-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   calibration:
     runs-on: windows-2022

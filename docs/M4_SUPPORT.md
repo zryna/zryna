@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`3372cc8b98d852a77ee6640dd9798d428454ccde05f8c73118e7829de44cfbea`. The matrix defines six bounded modes on the two
+`cd07776e629c42aeafc368cf70017af81786b2ded828cc93901d8e6b15882e57`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "3372cc8b98d852a77ee6640dd9798d428454ccde05f8c73118e7829de44cfbea",
+  "registrySha256": "cd07776e629c42aeafc368cf70017af81786b2ded828cc93901d8e6b15882e57",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -5922,8 +5922,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/workflow-routing/inventory-contracts.mjs",
-      "bytes": 7887,
-      "sha256": "2b46494a042ed0eceec40799d46b387c393ed75d6aa94275acae4d08216ef61e"
+      "bytes": 7914,
+      "sha256": "d438292bfb7ac5bea2b0207276b0cc0a18e01b89950681ebf2721be39522b67c"
     },
     {
       "path": "zryna.workspace.json",
