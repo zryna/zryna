@@ -167,6 +167,32 @@ jobs:
           $code = $LASTEXITCODE
           [IO.File]::WriteAllText((Join-Path $artifacts 'operator-exit.json'), "{`"exitCode`":$code}`n", [Text.UTF8Encoding]::new($false))
           if ($code -ne 0) { throw "Operator/wrapper failed with exit $code; retained raw evidence remains unqualified" }
+      - name: Expose bounded operator failure diagnostics
+        if: failure()
+        shell: pwsh
+        run: |
+          foreach ($leaf in @('operator.stderr.raw', 'capture/hosted-failure.json')) {
+            $path = Join-Path $env:RUNNER_TEMP "m418-hosted-observations/$leaf"
+            if (Test-Path -LiteralPath $path -PathType Leaf) {
+              $stream = [IO.File]::OpenRead($path)
+              try {
+                $buffer = [byte[]]::new(8192)
+                $count = $stream.Read($buffer, 0, $buffer.Length)
+                [Console]::WriteLine("Bounded diagnostic: $leaf (first $count bytes)")
+                [Console]::WriteLine([Text.Encoding]::UTF8.GetString($buffer, 0, $count))
+              } finally { $stream.Dispose() }
+            }
+          }
+      - name: Retain Linux provider acquisition and loader observations
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cli-performance-linux-provider-${{ matrix.round }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/m418-linux-provider-*/
+          include-hidden-files: true
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7
       - name: Retain all observations and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -176,7 +202,6 @@ jobs:
             ${{ runner.temp }}/m418-hosted-observations
             !${{ runner.temp }}/m418-hosted-observations/capture/release-build/cargo-target/**
             ${{ runner.temp }}/windows-job-metrics-calibration
-            /tmp/m418-linux-provider-*/
           include-hidden-files: true
           if-no-files-found: warn
           compression-level: 0

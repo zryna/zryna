@@ -128,3 +128,12 @@ test('portable loader projection accepts explicit system closure and rejects mis
     'warning: preload active\n', 'libc.so.6 => /lib/x86_64-linux-gnu/../evil (0xabc)\n', ''])
     assert.throws(() => parseLoaderListing(text));
 });
+
+test('loader projection accepts the observed absolute system interpreter alias only', () => {
+  const line = '\t/lib64/ld-linux-x86-64.so.2 => /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 (0x7fa878687000)\n';
+  assert.deepEqual(parseLoaderListing(line), ['/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2']);
+  for (const text of [line.replace('/lib64/', '/tmp/'),
+    line.replace(' => /usr/lib/', ' => /tmp/'),
+    line.replace(' => /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2', ' => /lib/x86_64-linux-gnu/libc.so.6')])
+    assert.throws(() => parseLoaderListing(text));
+});

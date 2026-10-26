@@ -15,7 +15,8 @@ export function parseLoaderListing(text) {
   const paths = [];
   for (const line of text.trim().split('\n')) {
     if (/^\s*linux-vdso\.so\.1 \(0x[0-9a-f]+\)$/u.test(line)) continue;
-    const match = /^\s*(?:[A-Za-z0-9_.+-]+ => )?(\/[A-Za-z0-9_./+-]+) \(0x[0-9a-f]+\)$/u.exec(line);
+    const interpreter = /^\s*\/lib64\/ld-linux-x86-64\.so\.2 => (\/(?:usr\/)?lib\/x86_64-linux-gnu\/ld-linux-x86-64\.so\.2) \(0x[0-9a-f]+\)$/u.exec(line);
+    const match = interpreter ?? /^\s*(?:[A-Za-z0-9_.+-]+ => )?(\/[A-Za-z0-9_./+-]+) \(0x[0-9a-f]+\)$/u.exec(line);
     assert(match, 'closed loader listing projection; no missing dependency');
     const path = match[1];
     assert.match(path, /^\/(?:usr\/)?lib\/x86_64-linux-gnu\/[A-Za-z0-9_.+-]+$|^\/lib64\/ld-linux-x86-64\.so\.2$/u);
@@ -85,6 +86,8 @@ export async function provisionLinuxTimeProvider({ checkoutRoot }) {
   const shared = new Map([[loader.path, loader], [libc.path, libc]]);
   for (const tool of [dpkgDeb, dpkgQuery]) {
     const listing = run(loader.path, ['--list', tool.path], [...base, ...shared.values()], root);
+    writeFileSync(join(root, `${tool.path.endsWith('dpkg-deb') ? 'dpkg-deb' : 'dpkg-query'}.loader.stdout.raw`),
+      listing, { flag: 'wx', mode: 0o600 });
     for (const alias of parseLoaderListing(listing)) {
       const path = realpathSync(alias); shared.set(path, snapshotProviderFile(path).pin);
     }
@@ -99,6 +102,7 @@ export async function provisionLinuxTimeProvider({ checkoutRoot }) {
   const tool = snapshotProviderFile(timeExecutable(root).path).pin;
   assert.equal(tool.bytes, GNU_TIME.bytes); assert.equal(tool.sha256, GNU_TIME.sha256);
   const listing = run(loader.path, ['--list', tool.path], [...pins(), tool], root);
+  writeFileSync(join(root, 'time.loader.stdout.raw'), listing, { flag: 'wx', mode: 0o600 });
   for (const alias of parseLoaderListing(listing)) {
     const path = realpathSync(alias); shared.set(path, snapshotProviderFile(path).pin);
   }
