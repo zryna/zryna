@@ -60,6 +60,10 @@ export function canonicalSupportBytes(projection) {
   return Buffer.from(`${JSON.stringify(projection, null, 2)}\n`, 'utf8');
 }
 
+export function compactCompiledSupportBytes(projection) {
+  return Buffer.from(`${JSON.stringify(projection)}\n`, 'utf8');
+}
+
 export function validateSupportProjection(bytes, expected) {
   assert(Buffer.from(bytes).equals(canonicalSupportBytes(expected)),
     'support projection must equal the complete canonical checked registry projection');
@@ -155,7 +159,8 @@ export function checkSupportFiles(root = workspaceRoot) {
   const projection = projectM4Support(registry, expectedRegistrySha256,
     loadReviewedLimitContracts(registry, root));
   const compiled = readFileSync(path.join(root, 'apps/zryna/src/m4_support.json'));
-  validateSupportProjection(compiled, projection);
+  assert(compiled.equals(compactCompiledSupportBytes(projection)),
+    'compiled support must retain the complete exact compact projection');
   const page = readFileSync(path.join(root, 'docs/M4_SUPPORT.md'), 'utf8');
   validateSupportProjection(extractM4SupportFence(page), projection);
   assert.equal(page, renderM4SupportPage(projection), 'generated support page must be fresh');
@@ -168,7 +173,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     'usage: node scripts/m4/support.mjs --check|--write');
   if (args[0] === '--write') {
     const projection = projectM4Support(loadAndValidateM4Conformance());
-    writeFileSync(path.join(workspaceRoot, 'apps/zryna/src/m4_support.json'), canonicalSupportBytes(projection));
+    writeFileSync(path.join(workspaceRoot, 'apps/zryna/src/m4_support.json'), compactCompiledSupportBytes(projection));
     writeFileSync(path.join(workspaceRoot, 'docs/M4_SUPPORT.md'), renderM4SupportPage(projection));
   }
   const projection = checkSupportFiles();
