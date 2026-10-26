@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "d4069c89fb6209f17602cc7eb0832742dce326e08af0c7c5dc7a35f9dbd57bf6",
+  "registrySha256": "0c27e7243a971e358b0a77d342caca0aadbb76dcfae4eacbceee8a00949f3a5f",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3279,8 +3279,8 @@
     },
     {
       "path": "Cargo.toml",
-      "bytes": 3137,
-      "sha256": "71edfbf1d4b57caf90fa12a5bbac918ad9fe0965f3da8603f39f2cabaff0f898"
+      "bytes": 3384,
+      "sha256": "3334b7ed22fb374a2fd90f178ef447a356f83b2cad106781e3000210b4233657"
     },
     {
       "path": "LICENSE",
@@ -5025,12 +5025,12 @@
     {
       "path": "scripts/distribution/command-h1-rust-binding-v1.json",
       "bytes": 994,
-      "sha256": "10a80d4d3d38a848f0508e5e3315f5b6573b73535061ca297bebf38070db8662"
+      "sha256": "22d6455b27adcd391be9423627762d9e33629112e252fa5cb6621a0bd67fa13e"
     },
     {
       "path": "scripts/distribution/command-h1-rust-binding.mjs",
       "bytes": 1707,
-      "sha256": "c0aea042faec4d7498e7b4185cd4a292d7b00a435dd501b460dfd19dfe7f9c58"
+      "sha256": "24826b937a74d0568f0713a2a4bd1f5e196d36038cb109e3b62b16e36375bfad"
     },
     {
       "path": "scripts/distribution/documents.mjs",

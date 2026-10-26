@@ -35,6 +35,14 @@ homepage = "https://zryna.com"
 authors = ["Aditya Nandlal"]
 
 # Keep repeated full-byte tool authentication fast in development and conformance tests.
+# Keep the compiler image inside its unchanged retained-image admission bound.
+# Line tables preserve stack traces without embedding full type debug information.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.test]
+debug = "line-tables-only"
+
 [profile.dev.package.sha2]
 opt-level = 3
 

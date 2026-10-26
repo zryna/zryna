@@ -45,6 +45,15 @@ identities are distinct from engine errors, host signals, timeouts and malformed
 | Hosted Windows | Pending for the current candidate. No Linux result, test listing, cfg-disabled target or zero-test summary substitutes for actual Windows execution. |
 | Final integration | Both platform Rust receipts, Linux preflight, final canonical M0 aggregate and all branch-required checks must succeed for the tested source revision/tree. Pending, failed, ignored, cancelled and unrun checks remain explicit. |
 
+The six complete ordinary JavaScript String/Vec runtime frontier tests belong to
+`cargo test --locked -p zryna-driver --test generic_execution_v1_js_accounting`.
+The unchanged M0 `cargo test --locked --workspace` discovers this integration target on
+both Linux and Windows: all six run once, without ignored tests or feature/platform guards.
+They retain the original authenticated sources, both provider packets, scripts, oracles,
+and one shared process owner with its 60-second child deadline and 64 KiB streams.
+The M2 JavaScript backend package keeps its backend boundary/unit controls; these M7 runtime
+frontiers are exercised by the driver workspace gate without an extra finite-packet replay.
+
 The [conformance record](M7_GENERIC_CONFORMANCE.md#current-416-candidate-evidence) explains
 how the finite packet reuses existing full-suite coverage. Its
 [registry](../tests/m7-generic-acceptance-v1.json) fixes commands, test names, host selection

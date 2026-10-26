@@ -33,7 +33,9 @@ hashes, modes, topology and alias checks. The original v1 distribution grammar, 
 artifact identities and bundled bootstrap default remain unchanged.
 
 The source candidate uses the pinned [native recipe](../scripts/distribution/native-recipe-v2.json)
-and an actual main or safe `codex/*` branch ref with the selected commit/tree. This is separate
+and an actual main, safe `codex/*`, or safe `fix/*` branch ref with the selected commit/tree.
+The same bounded lowercase component grammar and exact clean-source proof apply to both
+candidate namespaces; their names grant no release or execution authority. This is separate
 from immutable version 0.2.3 release artifacts. It is not an authenticated outer production
 release, and this change does not publish or replace any release/tag.
 

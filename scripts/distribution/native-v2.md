@@ -6,7 +6,7 @@ tagged releases and signature verification remain unchanged. These helpers do no
 acquire source, run a compiler, authenticate an initial execution or publish a release.
 
 The pinned `native-recipe-v2.json` admits an actual `refs/heads/main` or safe
-lowercase `refs/heads/codex/<components>` source candidate,
+lowercase `refs/heads/codex/<components>` or `refs/heads/fix/<components>` source candidate,
 qualified Linux x86-64/Windows x64 archive baselines, the existing exact Cargo lock
 and complete approved target-specific Rust notice closure. No Node executable,
 TypeScript/bootstrap file, arbitrary helper executable or SDK payload is admitted.
@@ -48,4 +48,7 @@ GitHub checkout must retain its actual event file and event environment: same-re
 pull-request head SHA/ref, push after/ref, or workflow-dispatch SHA/ref must match the
 selected commit and admitted branch. Synthetic PR refs, tags, arbitrary feature branches,
 unsafe components and a supplied source-ref override cannot label source as main.
+The two candidate namespaces retain the same lowercase ASCII component grammar,
+200-byte ref bound, 64-byte component bound and total depth12; a branch spelling
+adds no source, worktree, execution or production-release authority.
 The retained source-ref evidence pins the original event bytes when they are used.

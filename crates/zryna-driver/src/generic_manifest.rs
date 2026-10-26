@@ -43,6 +43,7 @@ pub(crate) fn encode(wire: &GenericManifestWire) -> Result<Vec<u8>, Diagnostic> 
 }
 
 /// Fingerprint compact retained evidence under the same checked metadata envelope.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub(crate) fn receipt_sha256(value: &impl serde::Serialize) -> Result<String, Diagnostic> {
     use sha2::{Digest, Sha256};
     let mut writer = BoundedWriter { bytes: Vec::new() };
