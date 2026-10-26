@@ -16,6 +16,10 @@ pub(crate) struct Observation {
     pub(crate) incoming_bytes: AtomicUsize,
     pub(crate) remaining_fuel: AtomicU64,
     pub(crate) continued_epochs: AtomicUsize,
+    #[cfg(test)]
+    pub(crate) rejected_epochs: AtomicUsize,
+    #[cfg(test)]
+    pub(crate) fuel_traps: AtomicUsize,
     pub(crate) returned_calls: AtomicUsize,
     pub(crate) input_copies: AtomicUsize,
     pub(crate) input_copy_bytes: AtomicUsize,

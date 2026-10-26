@@ -241,7 +241,10 @@ fn execute(prepared: &Prepared, control: &Arc<Control>, incoming: Incoming) -> R
     store.set_fuel(fuel).map_err(|_| Error::Host)?;
     store.set_epoch_deadline(1);
     store.epoch_deadline_callback(|context| {
-        context.data().control.check()?;
+        context.data().control.check().inspect_err(|_| {
+            #[cfg(test)]
+            context.data().observation.rejected_epochs.fetch_add(1, Ordering::SeqCst);
+        })?;
         context.data().observation.continued_epochs.fetch_add(1, Ordering::SeqCst);
         // Epoch bumps from another request are wakeups, not authority to cancel this Store.
         Ok(UpdateDeadline::Continue(1))
@@ -259,7 +262,13 @@ fn execute(prepared: &Prepared, control: &Arc<Control>, incoming: Incoming) -> R
             .get_export_index(&mut store, Some(&interface), "handle")
             .ok_or(Error::Artifact)?;
         let handle = instance.get_func(&mut store, handle).ok_or(Error::Artifact)?;
-        handle.call(&mut store, &[incoming, outparam], &mut []).map_err(|_| {
+        handle.call(&mut store, &[incoming, outparam], &mut []).map_err(|error| {
+            #[cfg(test)]
+            if error.downcast_ref::<wasmtime::Trap>() == Some(&wasmtime::Trap::OutOfFuel) {
+                store.data().observation.fuel_traps.fetch_add(1, Ordering::SeqCst);
+            }
+            #[cfg(not(test))]
+            let _ = error;
             store.data().fatal.unwrap_or_else(|| control.check().err().unwrap_or(Error::Guest))
         })?;
         prepared.observation.returned_calls.fetch_add(1, Ordering::SeqCst);

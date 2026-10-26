@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`0c27e7243a971e358b0a77d342caca0aadbb76dcfae4eacbceee8a00949f3a5f`. The matrix defines six bounded modes on the two
+`813b06c8ebc42e4a7fa21cf52eec7a43eb5a99ad551e81d14f8a870f06874273`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "0c27e7243a971e358b0a77d342caca0aadbb76dcfae4eacbceee8a00949f3a5f",
+  "registrySha256": "813b06c8ebc42e4a7fa21cf52eec7a43eb5a99ad551e81d14f8a870f06874273",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -4522,8 +4522,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/execution.rs",
-      "bytes": 10050,
-      "sha256": "b9b653b138e91a399e46e5e005f2e65a50ec131537ff9cc20185c1c18099e260"
+      "bytes": 10467,
+      "sha256": "b8c54c634460dedd320cde41d3dce07ca2ca0aededf5db58cb971c27626461c9"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/grants.rs",
@@ -4552,8 +4552,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/observation.rs",
-      "bytes": 1043,
-      "sha256": "2919f62a0a1d817f6f396386a3d9b70650f0aa8fbeb518ef68224fcf600d664b"
+      "bytes": 1162,
+      "sha256": "b97e6654d036e4aa5525712016c5c1f2787c9d7dd734029fe66c1bea9f9c6c72"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/operations.rs",
@@ -4562,8 +4562,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/prepared.rs",
-      "bytes": 5861,
-      "sha256": "79b074d7892f98c9e5e4fd9f5058bd49ed8717987b12855a97e97d1ad7131bd8"
+      "bytes": 6284,
+      "sha256": "db0ad6a87ab20e2aee231b5c495a59328234eea6030a087ec18ed8e15bb31690"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/resources.rs",
@@ -4622,13 +4622,13 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/tests/probe_execution.rs",
-      "bytes": 3103,
-      "sha256": "0f61b9b88fb48a86e85949a223574293d24cd6c30228b51213f8a621bcfe1611"
+      "bytes": 4368,
+      "sha256": "72a272670773bab5b325b5ac2a8ebe0e0e16f0e8e0985817632cde9b8fec888b"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/tests/probes.rs",
-      "bytes": 2671,
-      "sha256": "03c54ef98a235ac56072a723310ddbb5717f38167bbc705f79d71893aa0d985f"
+      "bytes": 4898,
+      "sha256": "b4deb51badc79f09af550fea044ce33e0930345fa7aeca1a1e1b4ded463e2d17"
     },
     {
       "path": "crates/zryna-driver/src/server_runtime/tests/public_limits.rs",

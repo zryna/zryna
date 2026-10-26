@@ -122,6 +122,15 @@ impl Prepared {
         Ok(())
     }
 
+    /// One guest-entry callback followed by a noncooperative, memory-dependent CPU loop.
+    #[cfg(test)]
+    pub(crate) fn runtime_cpu_probe(&mut self) -> Result<(), Error> {
+        let bytes = super::tests::probes::replace_cpu_handle(self.artifact.bytes());
+        self.component = Component::new(&self.engine, bytes).map_err(|_| Error::Artifact)?;
+        self.probe_fuel = Some(1_000_000_000);
+        Ok(())
+    }
+
     /// Deliberately unsealed raw arrangement used only to test runtime interruption/growth.
     /// Normal preparation never accepts replacement component bytes or excessive fuel.
     #[cfg(test)]

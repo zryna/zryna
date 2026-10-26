@@ -17,17 +17,35 @@ fn real_cpu_loop_is_interrupted_by_autonomous_deadline_with_fuel_remaining() {
         &observation,
     )
     .expect("prepare");
-    prepared.runtime_probe(false).expect("runtime-only spin fixture");
+    prepared.runtime_cpu_probe().expect("runtime-only marked CPU fixture");
     let server = Server::start(prepared).expect("private probe host");
     let started = Instant::now();
     let input =
         crate::Input { deadline: started + Duration::from_millis(100), ..crate::input(b"") };
     let pending = server.admit(&input).expect("admit");
-    assert!(pending.wait().is_err());
-    assert!(started.elapsed() < Duration::from_secs(2));
+    let result = pending.wait();
+    let elapsed = started.elapsed();
+    let diagnostic = format!(
+        "result={result:?} elapsed={elapsed:?} fuel={} created={} epoch_rejections={} fuel_traps={} returned={}",
+        observation.remaining_fuel.load(Ordering::SeqCst),
+        observation.created.load(Ordering::SeqCst),
+        observation.rejected_epochs.load(Ordering::SeqCst),
+        observation.fuel_traps.load(Ordering::SeqCst),
+        observation.returned_calls.load(Ordering::SeqCst),
+    );
+    assert!(matches!(result, Err(Error::Inactive | Error::Deadline)), "{diagnostic}");
+    assert!(elapsed < Duration::from_secs(2), "{diagnostic}");
+    assert_eq!(observation.created.load(Ordering::SeqCst), 3, "guest entry: {diagnostic}");
+    assert_eq!(observation.stores_created.load(Ordering::SeqCst), 1, "{diagnostic}");
+    assert_eq!(observation.stores_destroyed.load(Ordering::SeqCst), 1, "{diagnostic}");
+    assert_eq!(observation.destroyed.load(Ordering::SeqCst), 3, "{diagnostic}");
+    assert_eq!(observation.revocations.load(Ordering::SeqCst), 1, "{diagnostic}");
+    assert_eq!(observation.rejected_epochs.load(Ordering::SeqCst), 1, "{diagnostic}");
+    assert_eq!(observation.fuel_traps.load(Ordering::SeqCst), 0, "{diagnostic}");
+    assert_eq!(observation.returned_calls.load(Ordering::SeqCst), 0, "{diagnostic}");
     assert!(
         observation.remaining_fuel.load(Ordering::SeqCst) > 500_000_000,
-        "actual epoch/deadline interruption precedes fuel exhaustion"
+        "actual epoch/deadline interruption precedes fuel exhaustion: {diagnostic}"
     );
     server.shutdown().expect("joined");
     clean(&observation);
