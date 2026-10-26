@@ -12,6 +12,10 @@ use std::{
     },
 };
 
+#[path = "support/toolchain.rs"]
+mod toolchain;
+pub use toolchain::without_node_or_linker;
+
 static NEXT: AtomicU64 = AtomicU64::new(0);
 static SERIAL: Mutex<()> = Mutex::new(());
 pub fn guard() -> MutexGuard<'static, ()> {

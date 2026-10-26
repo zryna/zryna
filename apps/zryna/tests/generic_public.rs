@@ -13,7 +13,7 @@ fn native_frontend_builds_all_ordinary_targets_without_node_or_linker() {
     let _guard = support::guard();
     let case = Case::new("scalar");
     let mut command = case.command("build", "all", false, "native", None);
-    command.env("PATH", "").env_remove("NODE").env_remove("ZRYNA_TEST_NODE");
+    support::without_node_or_linker(&mut command);
     let response = successful(&output(&mut command), &case, "build");
     assert_eq!(response["results"], json!([]));
     let metadata = manifest(&case, "build");
@@ -34,7 +34,7 @@ fn original_template_only_library_builds_all_with_empty_scalar_abi() {
     assert_eq!(row["sha256"], "b0b189e867c2bbdac4fd226e525636bdb3a37496213d4ce913593f0f69c3615b");
     fs::write(case.root.join(&case.source), original).expect("exact original library input");
     let mut command = case.command("build", "all", false, "native", None);
-    command.env("PATH", "").env_remove("NODE").env_remove("ZRYNA_TEST_NODE");
+    support::without_node_or_linker(&mut command);
     let response = successful(&output(&mut command), &case, "build");
     assert_eq!(response["results"], json!([]));
     let metadata = manifest(&case, "build");
