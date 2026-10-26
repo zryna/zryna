@@ -1,7 +1,7 @@
 #include "win.h"
 static void close_owned(WMContext *ctx, HANDLE *handle) {
     if (wm_handle(*handle)) {
-        if (!CloseHandle(*handle)) wm_cleanup_error(ctx, WM_CLOSE, GetLastError());
+        if (!CloseHandle(*handle)) wm_cleanup_error(ctx, WM_HANDLE_CLOSE, GetLastError());
         else *handle = NULL;
     }
 }
@@ -86,10 +86,10 @@ void wm_cleanup(WMContext *ctx) {
         if (!s->pending) { close_owned(ctx, &s->read); close_owned(ctx, &s->event); }
         else wm_cleanup_error(ctx, WM_CANCEL, WAIT_TIMEOUT);
         /* Pending OVERLAPPED data/events stay in static storage until ExitProcess. */
-        if (wm_handle(s->file) && !FlushFileBuffers(s->file)) wm_cleanup_error(ctx, WM_CLOSE, GetLastError());
+        if (wm_handle(s->file) && !FlushFileBuffers(s->file)) wm_cleanup_error(ctx, WM_HANDLE_CLOSE, GetLastError());
         if (wm_handle(s->file)) {
             LARGE_INTEGER size;
-            if (!GetFileSizeEx(s->file, &size)) wm_cleanup_error(ctx, WM_CLOSE, GetLastError());
+            if (!GetFileSizeEx(s->file, &size)) wm_cleanup_error(ctx, WM_HANDLE_CLOSE, GetLastError());
             else if (size.QuadPart < 0 || (uint64_t)size.QuadPart > WM_LOG_BYTES)
                 wm_cleanup_error(ctx, WM_OVERFLOW, ERROR_BUFFER_OVERFLOW);
             else if ((DWORD)size.QuadPart != s->bytes) {

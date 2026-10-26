@@ -2,7 +2,7 @@
 static void close_write(WMContext *ctx, HANDLE *handle) {
     if (wm_handle(*handle)) {
         if (CloseHandle(*handle)) *handle = NULL;
-        else wm_error(ctx, WM_CLOSE, GetLastError());
+        else wm_error(ctx, WM_HANDLE_CLOSE, GetLastError());
     }
 }
 static BOOL clock_begin(WMContext *ctx) {

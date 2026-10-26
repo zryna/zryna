@@ -11,14 +11,14 @@
     },
     {
       "path": "cleanup.c",
-      "bytes": 5312,
-      "sha256": "a95db6e80fc4e6fe3c29e4750463309fe8a4ffcff741313b42053620ce5c81ba",
+      "bytes": 5333,
+      "sha256": "daaf852cf3f3404e2913a45fea5ba7a535a79c356a91ec83f5b60576905b10f0",
       "role": "unchanged-reviewed-helper"
     },
     {
       "path": "launch.c",
-      "bytes": 4051,
-      "sha256": "c488ce92e7a7a0ffd7351889c96ab40d88c37c65a88d8f6f2661033140c4466f",
+      "bytes": 4058,
+      "sha256": "3c30867d73977311e1790abf730264a917e00ba5412bae1401e9e01f517e00cc",
       "role": "unchanged-reviewed-helper"
     },
     {
@@ -77,8 +77,8 @@
     },
     {
       "path": "win.h",
-      "bytes": 1919,
-      "sha256": "0475daa2f26a9204efe42f68e42a63b3dc1c59bd40e28d79d20480f41b5dc64c",
+      "bytes": 1926,
+      "sha256": "285359b1d66347e1e53a11b11294bd1381cf0f7d94145c0c40c45f8732559b06",
       "role": "unchanged-reviewed-helper"
     },
     {
