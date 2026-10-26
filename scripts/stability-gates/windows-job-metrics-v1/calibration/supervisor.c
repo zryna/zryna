@@ -30,6 +30,7 @@ static BOOL start(FXOwner *o){
     ULONGLONG now=GetTickCount64(),duration=(ULONGLONG)o->helper_ms+FX_CLEANUP_MS;
     if(now>UINT64_MAX-duration){fx_fail(o,6,ERROR_ARITHMETIC_OVERFLOW);return FALSE;}o->deadline=now+duration;
     if(!fx_launch(o->helper_exe,args,count,o->job,FX_FILES,o->helper_out,o->helper_err,&o->helper)){fx_fail(o,6,GetLastError());return FALSE;}
+    if(!fx_close(&o->helper.hThread)){fx_fail(o,6,GetLastError());return FALSE;}
     return TRUE;
 }
 DWORD fx_supervise(int argc,wchar_t **argv){

@@ -143,8 +143,8 @@
     },
     {
       "path": "calibration/observe.c",
-      "bytes": 4005,
-      "sha256": "af217aec35890a544843005d44ffc9f61ce4b5d58e7286df72737fd13eb89941",
+      "bytes": 4247,
+      "sha256": "24f1b01f6d1d7e5cc443f4912cb050ef02ac1155ddf4aeee595fd5bb63294d2d",
       "role": "new-calibration-source-not-executed"
     },
     {
@@ -167,8 +167,8 @@
     },
     {
       "path": "calibration/supervisor.c",
-      "bytes": 3542,
-      "sha256": "e4f0840e017301d050e836be210155fdbac55f601bd6625323deb54b99378a2e",
+      "bytes": 3623,
+      "sha256": "cc5367be0ba1dea652bee6e19b93e764d418143963527f97279bebf38a9d6143",
       "role": "new-calibration-source-not-executed"
     },
     {

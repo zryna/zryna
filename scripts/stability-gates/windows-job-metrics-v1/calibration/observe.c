@@ -49,11 +49,17 @@ BOOL fx_observe(FXOwner *o){
     }
     if(!fx_wait(o,o->helper.hProcess)||!GetExitCodeProcess(o->helper.hProcess,&o->helper_exit)){fx_fail(o,27,GetLastError());return FALSE;}
     o->helper_exit_known=TRUE;
-    /* Snapshot original process handles BEFORE any outer termination or cleanup wait. */
+    /* Freeze original process handles before waiting for outer accounting or cleanup. */
     for(DWORD slot=0;slot<o->slots;++slot){
         DWORD status=WaitForSingleObject(o->member[slot],0);o->gone[slot]=status==WAIT_OBJECT_0;
         if(o->gone[slot]){if(!GetExitCodeProcess(o->member[slot],&o->member_exit[slot])){fx_fail(o,28,GetLastError());return FALSE;}o->exit_known[slot]=TRUE;}
     }
-    if(!fx_active(o->job,&o->outer_before)){fx_fail(o,29,GetLastError());return FALSE;}o->outer_before_known=TRUE;
-    return TRUE;
+    for(;;){
+        if(GetTickCount64()>=o->deadline){fx_fail(o,29,WAIT_TIMEOUT);return FALSE;}
+        if(!fx_active(o->job,&o->outer_before)){fx_fail(o,29,GetLastError());return FALSE;}
+        o->outer_before_known=TRUE;
+        if(GetTickCount64()>=o->deadline){fx_fail(o,29,WAIT_TIMEOUT);return FALSE;}
+        if(!o->outer_before)return TRUE;
+        Sleep(1);
+    }
 }
