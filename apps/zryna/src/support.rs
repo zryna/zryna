@@ -27,11 +27,7 @@ Installed component/browser/server and existing immutable beta H1 remain exclude
 Use zryna support --json for the complete matrix and registry digest.\n",
         )
     };
-    if result.is_ok() {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(1)
-    }
+    if result.is_ok() { ExitCode::SUCCESS } else { ExitCode::from(1) }
 }
 
 // The generated embedding is trusted compact JSON. Preserve every token and its order;
@@ -70,9 +66,7 @@ fn canonical_contract(contract: &str) -> Vec<u8> {
                 output.push(byte);
                 depth += 1;
                 let close = if byte == b'{' { b'}' } else { b']' };
-                if bytes[index + 1..]
-                    .iter()
-                    .find(|next| !next.is_ascii_whitespace())
+                if bytes[index + 1..].iter().find(|next| !next.is_ascii_whitespace())
                     != Some(&close)
                 {
                     newline(&mut output, depth);

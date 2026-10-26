@@ -474,8 +474,8 @@
     },
     {
       "path": "apps/zryna/src/support.rs",
-      "bytes": 4214,
-      "sha256": "7fe57c6723bf4d5e22de1b458e9b884083fe38c78206fa1bb83e2ec42ffd7235"
+      "bytes": 4148,
+      "sha256": "6a27c0891cfdde81a88beb7e28f8d346be24effd41fdf20d04f40a58a4819d81"
     },
     {
       "path": "apps/zryna/tests/cli.rs",
