@@ -1,5 +1,5 @@
 // Independent reviewed authorities. Regenerate only after explicit source/contract review.
-export const expectedRegistrySha256 = "06308f74b7d82ff056952ec6d8369f296ecb8399d5cfcabc825cc5940a9265c7";
+export const expectedRegistrySha256 = "c6520ba4a368a9877913f7902dd286d0167d2f5ecad0ed466c43391ac8a7d7ed";
 export const expectedSchemaSha256 = "80fc227f9bdc53bfb68bf0dd1042978c3916cfcc49f0ed337bd54e37382c3b40";
 export const maximumRegistryBytes = 512 * 1024;
 export const maximumSourceBytes = 2 * 1024 * 1024;
@@ -10,7 +10,7 @@ export const sectionSha256 = Object.freeze({
   "scope": "2ec67fcde9731a4cc3823081bf846ffae357a5e3d429cc2bc13575714a4e5b12",
   "toolchains": "44c8610ac4234413a5ff541fee4eef8be0a69478e44c827eca6ce05ab26fc868",
   "foundations": "10f39f299594cd4640c74d84d8e3d16a73c39ae560be360619c2be3b2b050500",
-  "sources": "a58632cf5092cd3a36869c810fe4ca5dd6b40a642a9a83ea7ce629b43e6a304c",
+  "sources": "60988c495d1e5914b55d01c7d50e5a25346172007a73455d669c77fb76549975",
   "rows": "cd577213574191e204257caf39b438ff36b3646a607433f2708e29ffab118463",
   "cases": "6b30c4685f672602e93c6fbb690244280e2d17a8fe4d2b4aacd351c818e133c0",
   "gates": "d6179ed95040788b03c2f3af080a6f0655970c9c1e42a1c58bda3da0d4cc6d76",
