@@ -192,6 +192,8 @@ fn native_source_ref_policy_is_closed_and_does_not_change_v1() {
         "refs/heads/codex/m414/v2.1",
         "refs/heads/fix/bounded-generics-profile",
         "refs/heads/fix/m416/v2.1",
+        "refs/heads/test/windows-resource-calibration",
+        "refs/heads/test/m418/v2.1",
     ] {
         let mut value = native();
         value.source.r#ref = source_ref.to_owned();
@@ -216,12 +218,14 @@ fn native_source_ref_policy_is_closed_and_does_not_change_v1() {
     invalid.push(format!("refs/heads/codex/{}", "a".repeat(65)));
     invalid.push(format!("refs/heads/codex/{}", ["a"; 10].join("/")));
     invalid.push(format!("refs/heads/codex/{0}/{0}/{0}", "a".repeat(64)));
-    let fix_invalid = invalid
-        .iter()
-        .filter(|source_ref| source_ref.starts_with("refs/heads/codex/"))
-        .map(|source_ref| source_ref.replacen("refs/heads/codex/", "refs/heads/fix/", 1))
-        .collect::<Vec<_>>();
-    invalid.extend(fix_invalid);
+    for prefix in ["refs/heads/fix/", "refs/heads/test/"] {
+        let branch_invalid = invalid
+            .iter()
+            .filter(|source_ref| source_ref.starts_with("refs/heads/codex/"))
+            .map(|source_ref| source_ref.replacen("refs/heads/codex/", prefix, 1))
+            .collect::<Vec<_>>();
+        invalid.extend(branch_invalid);
+    }
     for source_ref in invalid {
         let mut value = native();
         value.source.r#ref = source_ref;
@@ -232,6 +236,10 @@ fn native_source_ref_policy_is_closed_and_does_not_change_v1() {
     assert!(!super::super::source_ref_matches_version("refs/heads/codex/native", "0.2.3"));
     assert!(!super::super::source_ref_matches_version(
         "refs/heads/fix/bounded-generics-profile",
+        "0.2.3"
+    ));
+    assert!(!super::super::source_ref_matches_version(
+        "refs/heads/test/windows-resource-calibration",
         "0.2.3"
     ));
 }

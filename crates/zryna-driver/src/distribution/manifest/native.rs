@@ -81,8 +81,10 @@ pub(super) fn source_ref_is_candidate(value: &str) -> bool {
     if value == "refs/heads/main" {
         return true;
     }
-    let Some(branch) =
-        value.strip_prefix("refs/heads/codex/").or_else(|| value.strip_prefix("refs/heads/fix/"))
+    let Some(branch) = value
+        .strip_prefix("refs/heads/codex/")
+        .or_else(|| value.strip_prefix("refs/heads/fix/"))
+        .or_else(|| value.strip_prefix("refs/heads/test/"))
     else {
         return false;
     };
