@@ -49,9 +49,9 @@ try {
     Record 'developer-environment.command.json' @{ script = (Material $developer); arguments = @('-SkipAutomaticLocation', '-Arch', 'amd64', '-HostArch', 'amd64') }
     & $developer -SkipAutomaticLocation -Arch amd64 -HostArch amd64 1> (Join-Path $evidence 'developer.stdout.log') 2> (Join-Path $evidence 'developer.stderr.log')
     if (-not $?) { throw 'Visual Studio developer environment failed' }
-    $compiler = (Get-Command cl.exe -CommandType Application).Source
-    $linker = (Get-Command link.exe -CommandType Application).Source
-    $node = (Get-Command node.exe -CommandType Application).Source
+    $compiler = (Get-Command cl.exe -CommandType Application | Select-Object -First 1).Source
+    $linker = Join-Path (Split-Path -Parent $compiler) 'link.exe'
+    $node = (Get-Command node.exe -CommandType Application | Select-Object -First 1).Source
     Record 'tool-locations.json' @($compiler, $linker, $node | ForEach-Object {
         $item = Get-Item -LiteralPath $_
         @{ requestedPath = $_; fullName = $item.FullName; itemType = $item.GetType().FullName
