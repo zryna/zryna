@@ -64,12 +64,13 @@ impl Identity {
         Self { process: std::process::id(), address, inode }
     }
 
+    #[cfg(not(target_arch = "x86_64"))]
     pub(super) fn assert_gone(&self) {
-        // Synchronize with existing child creation after the owning worker has
-        // joined. The strict probe below still rejects every surviving inode;
-        // acquiring this gate does not itself establish listener closure.
-        #[cfg(target_arch = "x86_64")]
-        drop(zryna_process::snapshot_writer().expect("listener closure spawn synchronization"));
+        self.assert_gone_probe();
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    pub(super) fn assert_gone_excluding_spawns(&self, _held: &super::listener_spawn_guard::Held) {
         self.assert_gone_probe();
     }
 

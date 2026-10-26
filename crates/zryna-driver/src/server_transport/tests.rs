@@ -15,6 +15,9 @@ use std::{
 #[cfg(target_os = "linux")]
 #[path = "listener_identity.rs"]
 mod listener_identity;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "listener_spawn_guard.rs"]
+mod listener_spawn_guard;
 
 #[path = "boundary_tests.rs"]
 mod boundaries;
@@ -53,6 +56,8 @@ pub(super) fn until(mut predicate: impl FnMut() -> bool) {
     }
 }
 pub(super) struct Running {
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    spawn_exclusion: Option<listener_spawn_guard::Held>,
     #[cfg(target_os = "linux")]
     listener_identity: listener_identity::Identity,
     worker: Option<JoinHandle<Result<(), Error>>>,
@@ -73,12 +78,17 @@ impl Running {
         runtime: Arc<RuntimeObservation>,
     ) -> Self {
         let observation = Arc::new(Observation::default());
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let spawn_exclusion = listener_spawn_guard::Held::acquire()
+            .expect("listener fixture spawn lifetime exclusion before bind");
         let bound = Bound::start(config, prepared, Arc::clone(&observation)).expect("bounded bind");
         #[cfg(target_os = "linux")]
         let listener_identity = listener_identity::Identity::capture(bound.listener_for_test());
         let address = bound.address();
         let control = bound.control();
         Self {
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            spawn_exclusion: Some(spawn_exclusion),
             #[cfg(target_os = "linux")]
             listener_identity,
             worker: Some(thread::spawn(move || bound.run())),
@@ -94,10 +104,20 @@ impl Running {
         assert_eq!(self.observation.socket_handles.load(Ordering::SeqCst), 0);
         assert_eq!(self.observation.reserved_bytes.load(Ordering::SeqCst), 0);
         clean(&self.runtime);
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        self.listener_identity.assert_gone_excluding_spawns(
+            self.spawn_exclusion.as_ref().expect("held from before original bind"),
+        );
+        #[cfg(all(target_os = "linux", not(target_arch = "x86_64")))]
         self.listener_identity.assert_gone();
         #[cfg(not(target_os = "linux"))]
         assert_listener_closed(self.address);
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        self.spawn_exclusion
+            .take()
+            .expect("owned exclusion")
+            .finish()
+            .expect("exclusion helper joined after strict query");
     }
 }
 impl Drop for Running {

@@ -1,7 +1,7 @@
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "0d0983a1b75e67f23a0b0ed19377b8a6de8f8d54a45056df9c9b0620b893a837",
+  "registrySha256": "235ab871f16870ed1628832e4f78c619df51a5f3d40e6bb538868863d52d8274",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -4624,8 +4624,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_transport/listener_identity.rs",
-      "bytes": 9327,
-      "sha256": "4b19b64e221118722273382e706dbd37c477267f3444e82c1a9cbc415a9924ad"
+      "bytes": 9172,
+      "sha256": "87a06533f648f10ef17aaa0f38fa96e77c569a8fe954302b937df02324ce6392"
     },
     {
       "path": "crates/zryna-driver/src/server_transport/mod.rs",
@@ -4664,8 +4664,8 @@
     },
     {
       "path": "crates/zryna-driver/src/server_transport/tests.rs",
-      "bytes": 9700,
-      "sha256": "227cffc82757fa16e3535a681422f86d2d6afac5f520f547602f4eb386e0a0f1"
+      "bytes": 10766,
+      "sha256": "47dcebca14004a9efb8ee422759958be6d94cc01a40e825ff6c6c29d591a7f25"
     },
     {
       "path": "crates/zryna-driver/src/server_workspace/approval.rs",
