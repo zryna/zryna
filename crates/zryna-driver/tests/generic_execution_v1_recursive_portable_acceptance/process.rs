@@ -106,14 +106,13 @@ pub(super) fn run(node: &Path, args: &[std::ffi::OsString], directory: &Path) ->
     let mut result =
         Observed { status: None, stdout: Vec::new(), stderr: Vec::new(), failure: None };
     let overflow = Arc::new(AtomicBool::new(false));
-    let (stdout, stderr) = match (running.child.stdout.take(), running.child.stderr.take()) {
-        (Some(stdout), Some(stderr)) => {
-            (reader(stdout, Arc::clone(&overflow)), reader(stderr, Arc::clone(&overflow)))
-        }
-        _ => {
-            result.failure = Some("configured child stream disappeared".into());
-            return result;
-        }
+    let (stdout, stderr) = if let (Some(stdout), Some(stderr)) =
+        (running.child.stdout.take(), running.child.stderr.take())
+    {
+        (reader(stdout, Arc::clone(&overflow)), reader(stderr, Arc::clone(&overflow)))
+    } else {
+        result.failure = Some("configured child stream disappeared".into());
+        return result;
     };
     let deadline = Instant::now() + EXECUTION;
     loop {
