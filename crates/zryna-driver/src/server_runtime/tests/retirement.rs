@@ -36,6 +36,15 @@ fn paused_failure(
     observation: &Arc<Observation>,
     panic_after_release: bool,
 ) -> (Server, mpsc::Receiver<()>, Release) {
+    paused_with_timeout(envelope, observation, panic_after_release, Duration::from_secs(2))
+}
+
+fn paused_with_timeout(
+    envelope: Envelope,
+    observation: &Arc<Observation>,
+    panic_after_release: bool,
+    release_timeout: Duration,
+) -> (Server, mpsc::Receiver<()>, Release) {
     let mut prepared = prepare(
         "204",
         ServerOperation::ClockRead,
@@ -51,6 +60,7 @@ fn paused_failure(
         claimed: AtomicBool::new(false),
         entered,
         release: std::sync::Mutex::new(released),
+        release_timeout,
         panic_after_release,
     }));
     (Server::start(prepared).expect("start"), wait, Release(Some(release)))
@@ -117,15 +127,17 @@ fn cancellation_waits_actual_store_drop_and_retains_quota_until_cleanup() {
 #[test]
 fn autonomous_deadline_revokes_inflight_guest_and_awaits_store_cleanup() {
     let observation = Arc::new(Observation::default());
-    let (server, entered, release) = paused(one(), &observation);
-    let input = crate::Input {
-        deadline: Instant::now() + Duration::from_millis(100),
-        ..crate::input(b"ok")
-    };
+    // Keep the existing four-second request fixture; startup must precede its real deadline.
+    // This cfg(test) pause outlives that deadline without changing the five-second server limit.
+    let (server, entered, release) =
+        paused_with_timeout(one(), &observation, false, Duration::from_secs(6));
+    let input = crate::input(b"ok");
     let pending = server.admit(&input).expect("admit");
     entered.recv_timeout(Duration::from_secs(2)).expect("real callback entered");
+    assert!(Instant::now() < input.deadline, "real callback entered before expiry");
+    assert!(!pending.revoked(), "callback must be in flight before autonomous expiry");
     // Observe expiry without calling Request::check: the lifecycle deadline worker owns revocation.
-    let until = Instant::now() + Duration::from_secs(1);
+    let until = input.deadline + Duration::from_secs(1);
     while !pending.revoked() && Instant::now() < until {
         thread::yield_now();
     }
@@ -138,6 +150,7 @@ fn autonomous_deadline_revokes_inflight_guest_and_awaits_store_cleanup() {
     ));
     release.now();
     assert!(pending.wait().is_err(), "expired response suppressed");
+    let until = Instant::now() + Duration::from_secs(1);
     while server.usage().expect("quota").0 != 0 && Instant::now() < until {
         thread::yield_now();
     }
