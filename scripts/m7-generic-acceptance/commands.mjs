@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-export const REGISTRY_SHA256 = 'e6df417bc1c7f61cec3948e1d9cdfbb84531560e2afae333dda56f8de44fb814';
+export const REGISTRY_SHA256 = '7579250d3c6c7a6566f90552ab00e5847644e01bca07c9bee9ffc3045440cd3b';
 export const REGISTRY_PATH = 'tests/m7-generic-acceptance-v1.json';
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 export function platformName(platform = process.platform, arch = process.arch) {
