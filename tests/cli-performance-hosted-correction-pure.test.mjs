@@ -8,7 +8,7 @@ import test from 'node:test';
 import { parse as parseYaml } from 'yaml';
 import { retainReleaseCli, validateRetainedCliBinding } from '../scripts/stability-gates/cli-performance-hosted-adapter.mjs';
 
-const workflow = parseYaml(readFileSync(new URL('../.github/workflows/cli-performance.yml', import.meta.url), 'utf8'));
+const workflow = parseYaml(readFileSync(new URL('../.github/workflows/cli-performance-collector.yml', import.meta.url), 'utf8'));
 test('workflow excludes the complete Cargo target tree while retaining independent CLI evidence', () => {
   const upload = workflow.jobs.collect.steps.find(step =>
     step.uses?.startsWith('actions/upload-artifact@') && step.with.path.includes('m418-hosted-observations'));

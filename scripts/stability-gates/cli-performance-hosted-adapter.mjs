@@ -104,6 +104,7 @@ export async function runHostedRound(input, output) {
     assert.equal(boundary.hostWallGuardMs, 15000);
     writeFileSync(join(output, 'operator-review.raw.json'), review, { flag: 'wx', mode: 0o600 });
     save(output, 'operator-materials.json', { workflow: observedPin(pinFile(join(root, '.github/workflows/cli-performance.yml'))),
+      collectorWorkflow: observedPin(pinFile(join(root, '.github/workflows/cli-performance-collector.yml'))),
       review: observedPin(pinFile(join(root, 'scripts/stability-gates/cli-performance-operator-review.json'))),
       triggeringWorkflowObservation: input.environment.GITHUB_ACTIONS === 'true' ? 'declared-by-workflow-run' : 'unavailable',
       sourceAuthenticated: false, performanceQualified: false, baselineAuthority: null, thresholds: null });

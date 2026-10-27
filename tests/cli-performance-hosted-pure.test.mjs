@@ -4,7 +4,7 @@ import test from 'node:test';
 import { parse as parseYaml } from 'yaml';
 import { baselineRound, collectorEnvironment, observedPin, windowsAdmission } from '../scripts/stability-gates/cli-performance-hosted-adapter.mjs';
 import { imageProjection } from '../scripts/stability-gates/cli-performance-host.mjs';
-const workflow = parseYaml(readFileSync(new URL('../.github/workflows/cli-performance.yml', import.meta.url), 'utf8'));
+const workflow = parseYaml(readFileSync(new URL('../.github/workflows/cli-performance-collector.yml', import.meta.url), 'utf8'));
 test('workflow expands four separate fresh jobs with finite new budget and PR concurrency', () => {
   const job = workflow.jobs.collect;
   assert.deepEqual(job.strategy.matrix.os, ['ubuntu-24.04', 'windows-2022']);
