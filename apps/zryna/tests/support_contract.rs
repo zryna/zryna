@@ -47,7 +47,16 @@ fn support_json_reports_exact_compiled_contract_outside_checkout_without_side_ef
     let output = case.command().args(["support", "--json"]).output().expect("support starts");
     assert!(output.status.success(), "{output:?}");
     assert!(output.stderr.is_empty());
-    assert_eq!(output.stdout, include_bytes!("../src/m4_support.json"));
+    let page = include_str!("../../../docs/M4_SUPPORT.md");
+    let (_, fence) = page
+        .split_once("zryna.m4.support.v1:begin\n\n```json\n")
+        .expect("independent canonical support fence");
+    let (canonical, _) =
+        fence.split_once("```\n\nzryna.m4.support.v1:end").expect("canonical support fence end");
+    assert!(
+        output.stdout == canonical.as_bytes(),
+        "public support bytes must retain the complete canonical Markdown contract"
+    );
     let document: Value = serde_json::from_slice(&output.stdout).expect("support JSON");
     assert_eq!(document["authority"], "static-contract");
     assert_eq!(document["authenticatedEvidence"], "not-evaluated");

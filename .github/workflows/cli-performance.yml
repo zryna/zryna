@@ -1,0 +1,55 @@
+name: CLI performance observations
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/cli-performance.yml
+      - .github/workflows/cli-performance-collector.yml
+      - scripts/stability-gates/cli-performance*
+      - scripts/stability-gates/provider-inputs/**
+      - scripts/stability-gates/release-build*
+      - scripts/stability-gates/source-census-v2.mjs
+      - scripts/stability-gates/linux-operator-owner.py
+      - scripts/stability-gates/windows-job-metrics-v1/**
+      - scripts/stability-gates/input.mjs
+      - scripts/stability-gates/performance.mjs
+      - scripts/stability-gates/run.mjs
+      - scripts/stability-gates/process.mjs
+      - scripts/stability-gates/linux-tree.mjs
+      - scripts/stability-gates/interruption.mjs
+      - tests/stability-gates-v1.json
+      - tests/cli-performance*
+      - tests/release-build-pure.test.mjs
+      - tests/source-census-read-only.test.mjs
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - zryna.workspace.json
+      - apps/**
+      - crates/**
+      - adapters/**
+      - examples/universal/add.zry
+      - tests/m2-fixtures/**
+      - tests/m3-fixtures/**
+      - tests/m7-generic-execution-recursive-owner/mixed/**
+      - tests/m1-conformance-v1.json
+      - tests/m2-conformance-v1.json
+      - tests/m3-conformance-v1.json
+      - docs/CLI.md
+      - docs/STABILITY_EVIDENCE_PREPARATION.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cli-performance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    name: observe
+    uses: ./.github/workflows/cli-performance-collector.yml

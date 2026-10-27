@@ -1,0 +1,397 @@
+{
+  "role": "Observed unmeasured manifest examples and actual inventories; not new byte goldens or timing-derived correctness",
+  "examples": [
+    {
+      "selector": "m1-wrap/build/javascript",
+      "manifest": "{\n  \"version\": 1,\n  \"profile\": \"zryna-m1-cli-v1\",\n  \"command\": \"build\",\n  \"entrypoint\": \"examples/universal/add.zry\",\n  \"source_sha256\": \"ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411\",\n  \"stem\": \"m418_m1_wrap_build_javascript\",\n  \"targets\": [\n    \"javascript\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"path\": \"javascript/m418_m1_wrap_build_javascript.mjs\",\n      \"bytes\": 1328,\n      \"sha256\": \"b765b321116599eaea77ae81b39f6d3809670f48c66e116a4004df4cf71b1911\"\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 1328,
+          "path": ".zryna/out/m418_m1_wrap_build_javascript.build/javascript/m418_m1_wrap_build_javascript.mjs",
+          "sha256": "b765b321116599eaea77ae81b39f6d3809670f48c66e116a4004df4cf71b1911"
+        },
+        {
+          "bytes": 611,
+          "path": ".zryna/out/m418_m1_wrap_build_javascript.build/zryna-manifest-v1.json",
+          "sha256": "d2c5ae0f9bd5709ff0899587778e84a91dba2eeebcc55048553ddc8448e55242"
+        }
+      ]
+    },
+    {
+      "selector": "m1-wrap/build/webassembly",
+      "manifest": "{\n  \"version\": 1,\n  \"profile\": \"zryna-m1-cli-v1\",\n  \"command\": \"build\",\n  \"entrypoint\": \"examples/universal/add.zry\",\n  \"source_sha256\": \"ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411\",\n  \"stem\": \"m418_m1_wrap_build_webassembly\",\n  \"targets\": [\n    \"webassembly\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"path\": \"webassembly/m418_m1_wrap_build_webassembly.wasm\",\n      \"bytes\": 41,\n      \"sha256\": \"f61fd62f57c41269c3c23f360eeaf1090b1db9c38651106674d48bc65dba88ba\"\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 41,
+          "path": ".zryna/out/m418_m1_wrap_build_webassembly.build/webassembly/m418_m1_wrap_build_webassembly.wasm",
+          "sha256": "f61fd62f57c41269c3c23f360eeaf1090b1db9c38651106674d48bc65dba88ba"
+        },
+        {
+          "bytes": 621,
+          "path": ".zryna/out/m418_m1_wrap_build_webassembly.build/zryna-manifest-v1.json",
+          "sha256": "88500dde703b6760efac20a9f657f06320fb5252f235caa6ec08948469001417"
+        }
+      ]
+    },
+    {
+      "selector": "m1-wrap/build/native",
+      "manifest": "{\n  \"version\": 1,\n  \"profile\": \"zryna-m1-cli-v1\",\n  \"command\": \"build\",\n  \"entrypoint\": \"examples/universal/add.zry\",\n  \"source_sha256\": \"ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411\",\n  \"stem\": \"m418_m1_wrap_build_native\",\n  \"targets\": [\n    \"native\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-relocatable-object\",\n      \"path\": \"native/m418_m1_wrap_build_native.o\",\n      \"bytes\": 608,\n      \"sha256\": \"0ceb5e55652d36e0ace1ec48d8e543b2497e4fe8c83e7448c465e7db5c02f7e3\"\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 608,
+          "path": ".zryna/out/m418_m1_wrap_build_native.build/native/m418_m1_wrap_build_native.o",
+          "sha256": "0ceb5e55652d36e0ace1ec48d8e543b2497e4fe8c83e7448c465e7db5c02f7e3"
+        },
+        {
+          "bytes": 602,
+          "path": ".zryna/out/m418_m1_wrap_build_native.build/zryna-manifest-v1.json",
+          "sha256": "0d9fea63d3f6b000321a72030f457fc3682069718ea44ae10e33656ea72761be"
+        }
+      ]
+    },
+    {
+      "selector": "m1-wrap/run/javascript",
+      "manifest": "{\n  \"version\": 1,\n  \"profile\": \"zryna-m1-cli-v1\",\n  \"command\": \"run\",\n  \"entrypoint\": \"examples/universal/add.zry\",\n  \"source_sha256\": \"ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411\",\n  \"stem\": \"m418_m1_wrap_run_javascript\",\n  \"targets\": [\n    \"javascript\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"path\": \"javascript/m418_m1_wrap_run_javascript.mjs\",\n      \"bytes\": 1328,\n      \"sha256\": \"b765b321116599eaea77ae81b39f6d3809670f48c66e116a4004df4cf71b1911\"\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"add\",\n    \"arguments\": [\n      {\n        \"type\": \"i32\",\n        \"value\": 2147483647\n      },\n      {\n        \"type\": \"i32\",\n        \"value\": 1\n      }\n    ]\n  },\n  \"results\": [\n    {\n      \"target\": \"javascript\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"type\": \"i32\",\n        \"value\": -2147483648\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 1328,
+          "path": ".zryna/out/m418_m1_wrap_run_javascript.run/javascript/m418_m1_wrap_run_javascript.mjs",
+          "sha256": "b765b321116599eaea77ae81b39f6d3809670f48c66e116a4004df4cf71b1911"
+        },
+        {
+          "bytes": 930,
+          "path": ".zryna/out/m418_m1_wrap_run_javascript.run/zryna-manifest-v1.json",
+          "sha256": "ac6942e4ef72ec56a0aff55f5e635ad5fd0f17d585b8e7171d7393e45f56eb35"
+        }
+      ]
+    },
+    {
+      "selector": "m1-wrap/run/webassembly",
+      "manifest": "{\n  \"version\": 1,\n  \"profile\": \"zryna-m1-cli-v1\",\n  \"command\": \"run\",\n  \"entrypoint\": \"examples/universal/add.zry\",\n  \"source_sha256\": \"ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411\",\n  \"stem\": \"m418_m1_wrap_run_webassembly\",\n  \"targets\": [\n    \"webassembly\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"path\": \"webassembly/m418_m1_wrap_run_webassembly.wasm\",\n      \"bytes\": 41,\n      \"sha256\": \"f61fd62f57c41269c3c23f360eeaf1090b1db9c38651106674d48bc65dba88ba\"\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"add\",\n    \"arguments\": [\n      {\n        \"type\": \"i32\",\n        \"value\": 2147483647\n      },\n      {\n        \"type\": \"i32\",\n        \"value\": 1\n      }\n    ]\n  },\n  \"results\": [\n    {\n      \"target\": \"webassembly\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"type\": \"i32\",\n        \"value\": -2147483648\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 41,
+          "path": ".zryna/out/m418_m1_wrap_run_webassembly.run/webassembly/m418_m1_wrap_run_webassembly.wasm",
+          "sha256": "f61fd62f57c41269c3c23f360eeaf1090b1db9c38651106674d48bc65dba88ba"
+        },
+        {
+          "bytes": 941,
+          "path": ".zryna/out/m418_m1_wrap_run_webassembly.run/zryna-manifest-v1.json",
+          "sha256": "92ca6a6c927610f2dccb5414be67b4b642f81b53f32f92cff4b86cc270a102e9"
+        }
+      ]
+    },
+    {
+      "selector": "m1-wrap/run/native",
+      "manifest": "{\n  \"version\": 1,\n  \"profile\": \"zryna-m1-cli-v1\",\n  \"command\": \"run\",\n  \"entrypoint\": \"examples/universal/add.zry\",\n  \"source_sha256\": \"ed651dbee782db394cb09bc00c7cc52660cf7f0bf6986b58b4128d7a22e8f411\",\n  \"stem\": \"m418_m1_wrap_run_native\",\n  \"targets\": [\n    \"native\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-invocation-executable\",\n      \"path\": \"native/m418_m1_wrap_run_native.elf\",\n      \"bytes\": 15776,\n      \"sha256\": \"5a7dc88292b77cc5adb2b45e8917ff8efb178d8b102c2f5b9221092879b12747\"\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"add\",\n    \"arguments\": [\n      {\n        \"type\": \"i32\",\n        \"value\": 2147483647\n      },\n      {\n        \"type\": \"i32\",\n        \"value\": 1\n      }\n    ]\n  },\n  \"results\": [\n    {\n      \"target\": \"native\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"type\": \"i32\",\n        \"value\": -2147483648\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 15776,
+          "path": ".zryna/out/m418_m1_wrap_run_native.run/native/m418_m1_wrap_run_native.elf",
+          "sha256": "5a7dc88292b77cc5adb2b45e8917ff8efb178d8b102c2f5b9221092879b12747"
+        },
+        {
+          "bytes": 924,
+          "path": ".zryna/out/m418_m1_wrap_run_native.run/zryna-manifest-v1.json",
+          "sha256": "ceae48554538177c9f87874f8fa5d9f79f70e9654cc65d8b9ebddfc722aadbbc"
+        }
+      ]
+    },
+    {
+      "selector": "m2-modules/build/javascript",
+      "manifest": "{\n  \"version\": 2,\n  \"profile\": \"zryna-control-flow-v1\",\n  \"command\": \"build\",\n  \"entrypoint\": \"tests/m2-fixtures/valid/main.zry\",\n  \"graph_sha256\": \"d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \"tests/m2-fixtures/valid/main.zry\",\n      \"sha256\": \"833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \"tests/m2-fixtures/valid/math.zry\",\n      \"sha256\": \"a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \"tests/m2-fixtures/valid/main.zry\",\n      \"target\": \"tests/m2-fixtures/valid/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"addPair\",\n      \"local\": \"addPair\"\n    }\n  ],\n  \"stem\": \"m418_m2_modules_build_javascript\",\n  \"targets\": [\n    \"javascript\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"path\": \"javascript/m418_m2_modules_build_javascript.mjs\",\n      \"bytes\": 12108,\n      \"sha256\": \"1cc4ebdca55fde5f0156ccc47218cef68d9dc27a28dc406d2b937dd6f52f14b4\"\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 12108,
+          "path": ".zryna/out/m418_m2_modules_build_javascript.build/javascript/m418_m2_modules_build_javascript.mjs",
+          "sha256": "1cc4ebdca55fde5f0156ccc47218cef68d9dc27a28dc406d2b937dd6f52f14b4"
+        },
+        {
+          "bytes": 1193,
+          "path": ".zryna/out/m418_m2_modules_build_javascript.build/zryna-manifest-v2.json",
+          "sha256": "de9e245490b4f74437e0b21b04d71e18c41f551d95146abde6977863e6eeb491"
+        }
+      ]
+    },
+    {
+      "selector": "m2-modules/build/webassembly",
+      "manifest": "{\n  \"version\": 2,\n  \"profile\": \"zryna-control-flow-v1\",\n  \"command\": \"build\",\n  \"entrypoint\": \"tests/m2-fixtures/valid/main.zry\",\n  \"graph_sha256\": \"d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \"tests/m2-fixtures/valid/main.zry\",\n      \"sha256\": \"833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \"tests/m2-fixtures/valid/math.zry\",\n      \"sha256\": \"a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \"tests/m2-fixtures/valid/main.zry\",\n      \"target\": \"tests/m2-fixtures/valid/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"addPair\",\n      \"local\": \"addPair\"\n    }\n  ],\n  \"stem\": \"m418_m2_modules_build_webassembly\",\n  \"targets\": [\n    \"webassembly\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"path\": \"webassembly/m418_m2_modules_build_webassembly.wasm\",\n      \"bytes\": 1276,\n      \"sha256\": \"483330d8b8ae262dc76d55726b6e9eee89ad5c1f12a5610e23176f9cc74b9f4b\"\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 1276,
+          "path": ".zryna/out/m418_m2_modules_build_webassembly.build/webassembly/m418_m2_modules_build_webassembly.wasm",
+          "sha256": "483330d8b8ae262dc76d55726b6e9eee89ad5c1f12a5610e23176f9cc74b9f4b"
+        },
+        {
+          "bytes": 1204,
+          "path": ".zryna/out/m418_m2_modules_build_webassembly.build/zryna-manifest-v2.json",
+          "sha256": "036e972cb0285ec439ad15c875505dce1c9ba3e88492f497378c72037f803227"
+        }
+      ]
+    },
+    {
+      "selector": "m2-modules/build/native",
+      "manifest": "{\n  \"version\": 2,\n  \"profile\": \"zryna-control-flow-v1\",\n  \"command\": \"build\",\n  \"entrypoint\": \"tests/m2-fixtures/valid/main.zry\",\n  \"graph_sha256\": \"d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \"tests/m2-fixtures/valid/main.zry\",\n      \"sha256\": \"833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \"tests/m2-fixtures/valid/math.zry\",\n      \"sha256\": \"a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \"tests/m2-fixtures/valid/main.zry\",\n      \"target\": \"tests/m2-fixtures/valid/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"addPair\",\n      \"local\": \"addPair\"\n    }\n  ],\n  \"stem\": \"m418_m2_modules_build_native\",\n  \"targets\": [\n    \"native\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-relocatable-object\",\n      \"path\": \"native/m418_m2_modules_build_native.o\",\n      \"bytes\": 3688,\n      \"sha256\": \"fcd7537b073d2b043c97a874bd7c9b589b68fd3b401a1ff39dcd81291821864a\"\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 3688,
+          "path": ".zryna/out/m418_m2_modules_build_native.build/native/m418_m2_modules_build_native.o",
+          "sha256": "fcd7537b073d2b043c97a874bd7c9b589b68fd3b401a1ff39dcd81291821864a"
+        },
+        {
+          "bytes": 1184,
+          "path": ".zryna/out/m418_m2_modules_build_native.build/zryna-manifest-v2.json",
+          "sha256": "6a57f1959114a35ece0e20b03e024b91d27247d9160862b7a06ab5147ac16793"
+        }
+      ]
+    },
+    {
+      "selector": "m2-modules/run/javascript",
+      "manifest": "{\n  \"version\": 2,\n  \"profile\": \"zryna-control-flow-v1\",\n  \"command\": \"run\",\n  \"entrypoint\": \"tests/m2-fixtures/valid/main.zry\",\n  \"graph_sha256\": \"d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \"tests/m2-fixtures/valid/main.zry\",\n      \"sha256\": \"833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \"tests/m2-fixtures/valid/math.zry\",\n      \"sha256\": \"a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \"tests/m2-fixtures/valid/main.zry\",\n      \"target\": \"tests/m2-fixtures/valid/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"addPair\",\n      \"local\": \"addPair\"\n    }\n  ],\n  \"stem\": \"m418_m2_modules_run_javascript\",\n  \"targets\": [\n    \"javascript\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"path\": \"javascript/m418_m2_modules_run_javascript.mjs\",\n      \"bytes\": 12108,\n      \"sha256\": \"1cc4ebdca55fde5f0156ccc47218cef68d9dc27a28dc406d2b937dd6f52f14b4\"\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"namedCrossModuleCall\",\n    \"arguments\": [\n      {\n        \"type\": \"i32\",\n        \"value\": 40\n      },\n      {\n        \"type\": \"i32\",\n        \"value\": 2\n      }\n    ]\n  },\n  \"results\": [\n    {\n      \"target\": \"javascript\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"type\": \"i32\",\n        \"value\": 42\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 12108,
+          "path": ".zryna/out/m418_m2_modules_run_javascript.run/javascript/m418_m2_modules_run_javascript.mjs",
+          "sha256": "1cc4ebdca55fde5f0156ccc47218cef68d9dc27a28dc406d2b937dd6f52f14b4"
+        },
+        {
+          "bytes": 1512,
+          "path": ".zryna/out/m418_m2_modules_run_javascript.run/zryna-manifest-v2.json",
+          "sha256": "d56814a06a858b5746545a8f551ca1099e1e20a03d3f161bff44516514375663"
+        }
+      ]
+    },
+    {
+      "selector": "m2-modules/run/webassembly",
+      "manifest": "{\n  \"version\": 2,\n  \"profile\": \"zryna-control-flow-v1\",\n  \"command\": \"run\",\n  \"entrypoint\": \"tests/m2-fixtures/valid/main.zry\",\n  \"graph_sha256\": \"d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \"tests/m2-fixtures/valid/main.zry\",\n      \"sha256\": \"833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \"tests/m2-fixtures/valid/math.zry\",\n      \"sha256\": \"a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \"tests/m2-fixtures/valid/main.zry\",\n      \"target\": \"tests/m2-fixtures/valid/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"addPair\",\n      \"local\": \"addPair\"\n    }\n  ],\n  \"stem\": \"m418_m2_modules_run_webassembly\",\n  \"targets\": [\n    \"webassembly\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"path\": \"webassembly/m418_m2_modules_run_webassembly.wasm\",\n      \"bytes\": 1276,\n      \"sha256\": \"483330d8b8ae262dc76d55726b6e9eee89ad5c1f12a5610e23176f9cc74b9f4b\"\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"namedCrossModuleCall\",\n    \"arguments\": [\n      {\n        \"type\": \"i32\",\n        \"value\": 40\n      },\n      {\n        \"type\": \"i32\",\n        \"value\": 2\n      }\n    ]\n  },\n  \"results\": [\n    {\n      \"target\": \"webassembly\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"type\": \"i32\",\n        \"value\": 42\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 1276,
+          "path": ".zryna/out/m418_m2_modules_run_webassembly.run/webassembly/m418_m2_modules_run_webassembly.wasm",
+          "sha256": "483330d8b8ae262dc76d55726b6e9eee89ad5c1f12a5610e23176f9cc74b9f4b"
+        },
+        {
+          "bytes": 1524,
+          "path": ".zryna/out/m418_m2_modules_run_webassembly.run/zryna-manifest-v2.json",
+          "sha256": "bad314585101885cab6e320a6f2ab49419d9358bd34bf38af05e01167036d15e"
+        }
+      ]
+    },
+    {
+      "selector": "m2-modules/run/native",
+      "manifest": "{\n  \"version\": 2,\n  \"profile\": \"zryna-control-flow-v1\",\n  \"command\": \"run\",\n  \"entrypoint\": \"tests/m2-fixtures/valid/main.zry\",\n  \"graph_sha256\": \"d9cafc44fb02760ed51bf989c0ec4fcf5db9c34918ba6cd07d784eeed1b57dca\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \"tests/m2-fixtures/valid/main.zry\",\n      \"sha256\": \"833c3e7465ae4328d0ea31a94aa8293f73696e42c0cdef6b0859b60bdc2c30ca\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \"tests/m2-fixtures/valid/math.zry\",\n      \"sha256\": \"a833600f480d718c86be001d55644b5e06a2d0cf9c52520f39fdc26e8185328c\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \"tests/m2-fixtures/valid/main.zry\",\n      \"target\": \"tests/m2-fixtures/valid/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"addPair\",\n      \"local\": \"addPair\"\n    }\n  ],\n  \"stem\": \"m418_m2_modules_run_native\",\n  \"targets\": [\n    \"native\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-invocation-executable\",\n      \"path\": \"native/m418_m2_modules_run_native.elf\",\n      \"bytes\": 17560,\n      \"sha256\": \"446498e908750972b253f05515ac96b23442c9fbfeada8149029c0651576960b\"\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"namedCrossModuleCall\",\n    \"arguments\": [\n      {\n        \"type\": \"i32\",\n        \"value\": 40\n      },\n      {\n        \"type\": \"i32\",\n        \"value\": 2\n      }\n    ]\n  },\n  \"results\": [\n    {\n      \"target\": \"native\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"type\": \"i32\",\n        \"value\": 42\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 17560,
+          "path": ".zryna/out/m418_m2_modules_run_native.run/native/m418_m2_modules_run_native.elf",
+          "sha256": "446498e908750972b253f05515ac96b23442c9fbfeada8149029c0651576960b"
+        },
+        {
+          "bytes": 1505,
+          "path": ".zryna/out/m418_m2_modules_run_native.run/zryna-manifest-v2.json",
+          "sha256": "f40e1a5fea2bc6902746f47e2006fdc680de26035e7857c1b90d2fb7b41e3906"
+        }
+      ]
+    },
+    {
+      "selector": "m3-ownership/build/javascript",
+      "manifest": "{\n  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",\n  \"protocol_version\": 4,\n  \"command\": \"build\",\n  \"entrypoint\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n  \"graph_sha256\": \"d4f1ba4e28443f1660b27369a3cf2d209350b8c7f17bc0be1d9b5ff2cc72da64\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"sha256\": \"ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"sha256\": \"5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"target\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"aggregate\",\n      \"local\": \"aggregate\"\n    }\n  ],\n  \"layouts\": {\n    \"type_universe_sha256\": \"0843487adc7cc46bc97dec29bd53a7bf7e0d77f9d4b2e4ec12a9824c59a7d255\",\n    \"linear32_sha256\": \"a33f79ae2512b690b0fd832818e4458aa1d02e0252de40458a3c1f45eec619af\",\n    \"linux_x86_64_sha256\": \"00ccebbeafc640c9cafe1a0f6b8fe758ffe67773514b941f82476b72088c9150\"\n  },\n  \"runtime_abi\": {\n    \"identifier\": \"zryna-ownership-runtime-v1\",\n    \"version\": 1,\n    \"sha256\": \"ded05084865cb72791321081fddcebfefddde5c37017fce86d7b1b9891bb9784\"\n  },\n  \"stem\": \"m418_m3_ownership_build_javascript\",\n  \"targets\": [\n    \"javascript\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"filename\": \"m418_m3_ownership_build_javascript.mjs\",\n      \"bytes\": 8701,\n      \"sha256\": \"13943a10a6235d9743786689fa6ae3d0f26284c51af1cc969b9a48bf0ad34e4b\",\n      \"metadata\": {\n        \"profile\": \"ecmascript-module\",\n        \"scalar_abi\": \"v1\"\n      }\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 8701,
+          "path": ".zryna/out/m418_m3_ownership_build_javascript.build/javascript/m418_m3_ownership_build_javascript.mjs",
+          "sha256": "13943a10a6235d9743786689fa6ae3d0f26284c51af1cc969b9a48bf0ad34e4b"
+        },
+        {
+          "bytes": 1838,
+          "path": ".zryna/out/m418_m3_ownership_build_javascript.build/zryna-manifest-v3.json",
+          "sha256": "5d822f32db667483dd3c60de6b1787e59c8cb5703f69890be20bf9341a43852b"
+        }
+      ]
+    },
+    {
+      "selector": "m3-ownership/build/webassembly",
+      "manifest": "{\n  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",\n  \"protocol_version\": 4,\n  \"command\": \"build\",\n  \"entrypoint\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n  \"graph_sha256\": \"d4f1ba4e28443f1660b27369a3cf2d209350b8c7f17bc0be1d9b5ff2cc72da64\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"sha256\": \"ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"sha256\": \"5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"target\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"aggregate\",\n      \"local\": \"aggregate\"\n    }\n  ],\n  \"layouts\": {\n    \"type_universe_sha256\": \"0843487adc7cc46bc97dec29bd53a7bf7e0d77f9d4b2e4ec12a9824c59a7d255\",\n    \"linear32_sha256\": \"a33f79ae2512b690b0fd832818e4458aa1d02e0252de40458a3c1f45eec619af\",\n    \"linux_x86_64_sha256\": \"00ccebbeafc640c9cafe1a0f6b8fe758ffe67773514b941f82476b72088c9150\"\n  },\n  \"runtime_abi\": {\n    \"identifier\": \"zryna-ownership-runtime-v1\",\n    \"version\": 1,\n    \"sha256\": \"ded05084865cb72791321081fddcebfefddde5c37017fce86d7b1b9891bb9784\"\n  },\n  \"stem\": \"m418_m3_ownership_build_webassembly\",\n  \"targets\": [\n    \"webassembly\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"filename\": \"m418_m3_ownership_build_webassembly.wasm\",\n      \"bytes\": 1548,\n      \"sha256\": \"3c6f2c27cdba50d3a8980b1d16707a74baa3773d7f57ca222ab89485ee45e3f3\",\n      \"metadata\": {\n        \"profile\": \"core-webassembly\",\n        \"memory\": \"linear32-v1\",\n        \"imports\": false,\n        \"scalar_abi\": \"v1\"\n      }\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 1548,
+          "path": ".zryna/out/m418_m3_ownership_build_webassembly.build/webassembly/m418_m3_ownership_build_webassembly.wasm",
+          "sha256": "3c6f2c27cdba50d3a8980b1d16707a74baa3773d7f57ca222ab89485ee45e3f3"
+        },
+        {
+          "bytes": 1907,
+          "path": ".zryna/out/m418_m3_ownership_build_webassembly.build/zryna-manifest-v3.json",
+          "sha256": "20210022f7db7e9906111492313c5df9f955ac230f41eadfa6afbd7ad824927b"
+        }
+      ]
+    },
+    {
+      "selector": "m3-ownership/build/native",
+      "manifest": "{\n  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",\n  \"protocol_version\": 4,\n  \"command\": \"build\",\n  \"entrypoint\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n  \"graph_sha256\": \"d4f1ba4e28443f1660b27369a3cf2d209350b8c7f17bc0be1d9b5ff2cc72da64\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"sha256\": \"ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"sha256\": \"5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"target\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"aggregate\",\n      \"local\": \"aggregate\"\n    }\n  ],\n  \"layouts\": {\n    \"type_universe_sha256\": \"0843487adc7cc46bc97dec29bd53a7bf7e0d77f9d4b2e4ec12a9824c59a7d255\",\n    \"linear32_sha256\": \"a33f79ae2512b690b0fd832818e4458aa1d02e0252de40458a3c1f45eec619af\",\n    \"linux_x86_64_sha256\": \"00ccebbeafc640c9cafe1a0f6b8fe758ffe67773514b941f82476b72088c9150\"\n  },\n  \"runtime_abi\": {\n    \"identifier\": \"zryna-ownership-runtime-v1\",\n    \"version\": 1,\n    \"sha256\": \"ded05084865cb72791321081fddcebfefddde5c37017fce86d7b1b9891bb9784\"\n  },\n  \"stem\": \"m418_m3_ownership_build_native\",\n  \"targets\": [\n    \"native\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-relocatable-object\",\n      \"filename\": \"m418_m3_ownership_build_native.o\",\n      \"bytes\": 6312,\n      \"sha256\": \"3bb2024eab56558958121ec19a8a53e7143514f41102e7a3a0e67322230239d5\",\n      \"metadata\": {\n        \"profile\": \"linux-x86-64-elf\",\n        \"triple\": \"x86_64-unknown-linux-gnu\",\n        \"format\": \"elf-relocatable\",\n        \"scalar_abi\": \"v1\",\n        \"program_object_sha256\": \"3bb2024eab56558958121ec19a8a53e7143514f41102e7a3a0e67322230239d5\",\n        \"runtime_object_sha256\": null,\n        \"harness_sha256\": null\n      }\n    }\n  ],\n  \"invocation\": null,\n  \"results\": [],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 6312,
+          "path": ".zryna/out/m418_m3_ownership_build_native.build/native/m418_m3_ownership_build_native.o",
+          "sha256": "3bb2024eab56558958121ec19a8a53e7143514f41102e7a3a0e67322230239d5"
+        },
+        {
+          "bytes": 2088,
+          "path": ".zryna/out/m418_m3_ownership_build_native.build/zryna-manifest-v3.json",
+          "sha256": "c89a845f2ddb79884d5bc52e11a78aed350416517722d6bbdf0486100454ab95"
+        }
+      ]
+    },
+    {
+      "selector": "m3-ownership/run/javascript",
+      "manifest": "{\n  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",\n  \"protocol_version\": 4,\n  \"command\": \"run\",\n  \"entrypoint\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n  \"graph_sha256\": \"d4f1ba4e28443f1660b27369a3cf2d209350b8c7f17bc0be1d9b5ff2cc72da64\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"sha256\": \"ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"sha256\": \"5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"target\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"aggregate\",\n      \"local\": \"aggregate\"\n    }\n  ],\n  \"layouts\": {\n    \"type_universe_sha256\": \"0843487adc7cc46bc97dec29bd53a7bf7e0d77f9d4b2e4ec12a9824c59a7d255\",\n    \"linear32_sha256\": \"a33f79ae2512b690b0fd832818e4458aa1d02e0252de40458a3c1f45eec619af\",\n    \"linux_x86_64_sha256\": \"00ccebbeafc640c9cafe1a0f6b8fe758ffe67773514b941f82476b72088c9150\"\n  },\n  \"runtime_abi\": {\n    \"identifier\": \"zryna-ownership-runtime-v1\",\n    \"version\": 1,\n    \"sha256\": \"ded05084865cb72791321081fddcebfefddde5c37017fce86d7b1b9891bb9784\"\n  },\n  \"stem\": \"m418_m3_ownership_run_javascript\",\n  \"targets\": [\n    \"javascript\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"filename\": \"m418_m3_ownership_run_javascript.mjs\",\n      \"bytes\": 8701,\n      \"sha256\": \"13943a10a6235d9743786689fa6ae3d0f26284c51af1cc969b9a48bf0ad34e4b\",\n      \"metadata\": {\n        \"profile\": \"ecmascript-module\",\n        \"scalar_abi\": \"v1\"\n      }\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"score\",\n    \"arguments\": []\n  },\n  \"results\": [\n    {\n      \"target\": \"javascript\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"value\": {\n          \"type\": \"i32\",\n          \"value\": 29\n        }\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 8701,
+          "path": ".zryna/out/m418_m3_ownership_run_javascript.run/javascript/m418_m3_ownership_run_javascript.mjs",
+          "sha256": "13943a10a6235d9743786689fa6ae3d0f26284c51af1cc969b9a48bf0ad34e4b"
+        },
+        {
+          "bytes": 2052,
+          "path": ".zryna/out/m418_m3_ownership_run_javascript.run/zryna-manifest-v3.json",
+          "sha256": "45edbabef009dd7bb0d2a258889222d9b2bd5a1acd2f120fcad57f8f30bfad54"
+        }
+      ]
+    },
+    {
+      "selector": "m3-ownership/run/webassembly",
+      "manifest": "{\n  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",\n  \"protocol_version\": 4,\n  \"command\": \"run\",\n  \"entrypoint\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n  \"graph_sha256\": \"d4f1ba4e28443f1660b27369a3cf2d209350b8c7f17bc0be1d9b5ff2cc72da64\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"sha256\": \"ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"sha256\": \"5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"target\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"aggregate\",\n      \"local\": \"aggregate\"\n    }\n  ],\n  \"layouts\": {\n    \"type_universe_sha256\": \"0843487adc7cc46bc97dec29bd53a7bf7e0d77f9d4b2e4ec12a9824c59a7d255\",\n    \"linear32_sha256\": \"a33f79ae2512b690b0fd832818e4458aa1d02e0252de40458a3c1f45eec619af\",\n    \"linux_x86_64_sha256\": \"00ccebbeafc640c9cafe1a0f6b8fe758ffe67773514b941f82476b72088c9150\"\n  },\n  \"runtime_abi\": {\n    \"identifier\": \"zryna-ownership-runtime-v1\",\n    \"version\": 1,\n    \"sha256\": \"ded05084865cb72791321081fddcebfefddde5c37017fce86d7b1b9891bb9784\"\n  },\n  \"stem\": \"m418_m3_ownership_run_webassembly\",\n  \"targets\": [\n    \"webassembly\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"filename\": \"m418_m3_ownership_run_webassembly.wasm\",\n      \"bytes\": 1548,\n      \"sha256\": \"3c6f2c27cdba50d3a8980b1d16707a74baa3773d7f57ca222ab89485ee45e3f3\",\n      \"metadata\": {\n        \"profile\": \"core-webassembly\",\n        \"memory\": \"linear32-v1\",\n        \"imports\": false,\n        \"scalar_abi\": \"v1\"\n      }\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"score\",\n    \"arguments\": []\n  },\n  \"results\": [\n    {\n      \"target\": \"webassembly\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"value\": {\n          \"type\": \"i32\",\n          \"value\": 29\n        }\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 1548,
+          "path": ".zryna/out/m418_m3_ownership_run_webassembly.run/webassembly/m418_m3_ownership_run_webassembly.wasm",
+          "sha256": "3c6f2c27cdba50d3a8980b1d16707a74baa3773d7f57ca222ab89485ee45e3f3"
+        },
+        {
+          "bytes": 2122,
+          "path": ".zryna/out/m418_m3_ownership_run_webassembly.run/zryna-manifest-v3.json",
+          "sha256": "453fc4c504a1c5805362d1b73b7bb127feec2775bd30cf7f126bfdcc13041509"
+        }
+      ]
+    },
+    {
+      "selector": "m3-ownership/run/native",
+      "manifest": "{\n  \"version\": 3,\n  \"profile\": \"zryna-data-ownership-v1\",\n  \"protocol_version\": 4,\n  \"command\": \"run\",\n  \"entrypoint\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n  \"graph_sha256\": \"d4f1ba4e28443f1660b27369a3cf2d209350b8c7f17bc0be1d9b5ff2cc72da64\",\n  \"sources\": [\n    {\n      \"id\": 0,\n      \"path\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"sha256\": \"ca02b53a2edb217c4e7c0b333fe33d2c4a900bcd78713eb7f1d8fde26012d675\"\n    },\n    {\n      \"id\": 1,\n      \"path\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"sha256\": \"5e72890982471583db622bcfd43c2e126dcccefc3b368a7b517336f9740682d6\"\n    }\n  ],\n  \"edges\": [\n    {\n      \"importer\": \".zryna/cache/m418_owned_aggregate/main.zry\",\n      \"target\": \".zryna/cache/m418_owned_aggregate/math.zry\",\n      \"specifier\": \"./math.zry\",\n      \"imported\": \"aggregate\",\n      \"local\": \"aggregate\"\n    }\n  ],\n  \"layouts\": {\n    \"type_universe_sha256\": \"0843487adc7cc46bc97dec29bd53a7bf7e0d77f9d4b2e4ec12a9824c59a7d255\",\n    \"linear32_sha256\": \"a33f79ae2512b690b0fd832818e4458aa1d02e0252de40458a3c1f45eec619af\",\n    \"linux_x86_64_sha256\": \"00ccebbeafc640c9cafe1a0f6b8fe758ffe67773514b941f82476b72088c9150\"\n  },\n  \"runtime_abi\": {\n    \"identifier\": \"zryna-ownership-runtime-v1\",\n    \"version\": 1,\n    \"sha256\": \"ded05084865cb72791321081fddcebfefddde5c37017fce86d7b1b9891bb9784\"\n  },\n  \"stem\": \"m418_m3_ownership_run_native\",\n  \"targets\": [\n    \"native\"\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-invocation-executable\",\n      \"filename\": \"m418_m3_ownership_run_native.elf\",\n      \"bytes\": 21896,\n      \"sha256\": \"35f4beae3e8ab04f5b22f88dfab074b81ce944919bc3bb2f61a305694eda629e\",\n      \"metadata\": {\n        \"profile\": \"linux-x86-64-elf\",\n        \"triple\": \"x86_64-unknown-linux-gnu\",\n        \"format\": \"elf-executable\",\n        \"scalar_abi\": \"v1\",\n        \"program_object_sha256\": \"3bb2024eab56558958121ec19a8a53e7143514f41102e7a3a0e67322230239d5\",\n        \"runtime_object_sha256\": \"4a6c10f023a3749b83efd070c15897e56b345175d37680b006e8b6953fb82a2a\",\n        \"harness_sha256\": \"0143e4d9b54334cfd86bd52789f265bfba4959e545f81592bea41aa8e10ec19c\"\n      }\n    }\n  ],\n  \"invocation\": {\n    \"export\": \"score\",\n    \"arguments\": []\n  },\n  \"results\": [\n    {\n      \"target\": \"native\",\n      \"outcome\": {\n        \"kind\": \"returned\",\n        \"value\": {\n          \"type\": \"i32\",\n          \"value\": 29\n        }\n      }\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+      "files": [
+        {
+          "bytes": 21896,
+          "path": ".zryna/out/m418_m3_ownership_run_native.run/native/m418_m3_ownership_run_native.elf",
+          "sha256": "35f4beae3e8ab04f5b22f88dfab074b81ce944919bc3bb2f61a305694eda629e"
+        },
+        {
+          "bytes": 2427,
+          "path": ".zryna/out/m418_m3_ownership_run_native.run/zryna-manifest-v3.json",
+          "sha256": "e6af34e0931de2c1a632d80e5bfedefa8fd01d8d1a4bfa91885ee0358a39cd39"
+        }
+      ]
+    },
+    {
+      "selector": "m7-mixed/build/javascript",
+      "manifest": "{\n  \"format\": \"zryna.generic-bundle.v1\",\n  \"profile\": \"bounded-generics-v1\",\n  \"syntaxProtocol\": 5,\n  \"command\": \"build\",\n  \"artifactStem\": \"m418_m7_mixed_build_javascript\",\n  \"source\": {\n    \"entrypoint\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n    \"entryModule\": 0,\n    \"modules\": [\n      {\n        \"id\": 0,\n        \"path\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n        \"bytes\": 2269,\n        \"sha256\": \"5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6\"\n      }\n    ],\n    \"edges\": [],\n    \"graphSha256\": \"82f4fad70b4f2d7cdca046bf7b10e4d55131efed7c7f446556764ce40dbc8d9c\",\n    \"executionSha256\": \"53d74f92604402f34e92996b43298ea62bfb1c03782c23e768e839bf770661e1\",\n    \"typeUniverseSha256\": \"ea07bad0ee95d765939c7f863806f713300ff1da66880e281657d7fce9ad2015\",\n    \"linear32Sha256\": \"f0787917332b14a28b930b2889b22d050b22c252216a62bc193b1b813aa388df\",\n    \"linuxX8664Sha256\": \"ed7cd09ffda2e6bc4cb29d0f4221a4c7c91a5386854702e51e548e2478c7376d\",\n    \"runtimeAbiSha256\": \"1c973650ff38e080bb3104a7181709e886967f35ac78cc9b71ba094ca3ec441d\"\n  },\n  \"exports\": [\n    {\n      \"name\": \"entry\",\n      \"parameters\": [],\n      \"result\": \"i32\"\n    }\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"path\": \"javascript/m418_m7_mixed_build_javascript.mjs\",\n      \"bytes\": 47174,\n      \"sha256\": \"2589f9b65f3fd56e8417124e90e55fbd26892e52e742d1762c5a7adb865ac119\"\n    }\n  ],\n  \"native\": null,\n  \"invocation\": null\n}\n",
+      "files": [
+        {
+          "bytes": 47174,
+          "path": ".zryna/out/m418_m7_mixed_build_javascript.build/javascript/m418_m7_mixed_build_javascript.mjs",
+          "sha256": "2589f9b65f3fd56e8417124e90e55fbd26892e52e742d1762c5a7adb865ac119"
+        },
+        {
+          "bytes": 1529,
+          "path": ".zryna/out/m418_m7_mixed_build_javascript.build/zryna-generic-manifest-v1.json",
+          "sha256": "911bddfd784e7b521fab33924384478694cae37d669693345dba13c18765bfd3"
+        }
+      ]
+    },
+    {
+      "selector": "m7-mixed/build/webassembly",
+      "manifest": "{\n  \"format\": \"zryna.generic-bundle.v1\",\n  \"profile\": \"bounded-generics-v1\",\n  \"syntaxProtocol\": 5,\n  \"command\": \"build\",\n  \"artifactStem\": \"m418_m7_mixed_build_webassembly\",\n  \"source\": {\n    \"entrypoint\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n    \"entryModule\": 0,\n    \"modules\": [\n      {\n        \"id\": 0,\n        \"path\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n        \"bytes\": 2269,\n        \"sha256\": \"5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6\"\n      }\n    ],\n    \"edges\": [],\n    \"graphSha256\": \"82f4fad70b4f2d7cdca046bf7b10e4d55131efed7c7f446556764ce40dbc8d9c\",\n    \"executionSha256\": \"53d74f92604402f34e92996b43298ea62bfb1c03782c23e768e839bf770661e1\",\n    \"typeUniverseSha256\": \"ea07bad0ee95d765939c7f863806f713300ff1da66880e281657d7fce9ad2015\",\n    \"linear32Sha256\": \"f0787917332b14a28b930b2889b22d050b22c252216a62bc193b1b813aa388df\",\n    \"linuxX8664Sha256\": \"ed7cd09ffda2e6bc4cb29d0f4221a4c7c91a5386854702e51e548e2478c7376d\",\n    \"runtimeAbiSha256\": \"1c973650ff38e080bb3104a7181709e886967f35ac78cc9b71ba094ca3ec441d\"\n  },\n  \"exports\": [\n    {\n      \"name\": \"entry\",\n      \"parameters\": [],\n      \"result\": \"i32\"\n    }\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"path\": \"webassembly/m418_m7_mixed_build_webassembly.wasm\",\n      \"bytes\": 13467,\n      \"sha256\": \"2dffe7c665db451e070980afa26fb188efe6efe15f024b4cfc81cdf09445fac4\"\n    }\n  ],\n  \"native\": null,\n  \"invocation\": null\n}\n",
+      "files": [
+        {
+          "bytes": 13467,
+          "path": ".zryna/out/m418_m7_mixed_build_webassembly.build/webassembly/m418_m7_mixed_build_webassembly.wasm",
+          "sha256": "2dffe7c665db451e070980afa26fb188efe6efe15f024b4cfc81cdf09445fac4"
+        },
+        {
+          "bytes": 1540,
+          "path": ".zryna/out/m418_m7_mixed_build_webassembly.build/zryna-generic-manifest-v1.json",
+          "sha256": "5a94241f29f0fcced23a0a0c5c9efcc7b4ee593dfddacfef06681dc496fcba5c"
+        }
+      ]
+    },
+    {
+      "selector": "m7-mixed/build/native",
+      "manifest": "{\n  \"format\": \"zryna.generic-bundle.v1\",\n  \"profile\": \"bounded-generics-v1\",\n  \"syntaxProtocol\": 5,\n  \"command\": \"build\",\n  \"artifactStem\": \"m418_m7_mixed_build_native\",\n  \"source\": {\n    \"entrypoint\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n    \"entryModule\": 0,\n    \"modules\": [\n      {\n        \"id\": 0,\n        \"path\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n        \"bytes\": 2269,\n        \"sha256\": \"5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6\"\n      }\n    ],\n    \"edges\": [],\n    \"graphSha256\": \"82f4fad70b4f2d7cdca046bf7b10e4d55131efed7c7f446556764ce40dbc8d9c\",\n    \"executionSha256\": \"53d74f92604402f34e92996b43298ea62bfb1c03782c23e768e839bf770661e1\",\n    \"typeUniverseSha256\": \"ea07bad0ee95d765939c7f863806f713300ff1da66880e281657d7fce9ad2015\",\n    \"linear32Sha256\": \"f0787917332b14a28b930b2889b22d050b22c252216a62bc193b1b813aa388df\",\n    \"linuxX8664Sha256\": \"ed7cd09ffda2e6bc4cb29d0f4221a4c7c91a5386854702e51e548e2478c7376d\",\n    \"runtimeAbiSha256\": \"1c973650ff38e080bb3104a7181709e886967f35ac78cc9b71ba094ca3ec441d\"\n  },\n  \"exports\": [\n    {\n      \"name\": \"entry\",\n      \"parameters\": [],\n      \"result\": \"i32\"\n    }\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-relocatable-object\",\n      \"path\": \"native/m418_m7_mixed_build_native.o\",\n      \"bytes\": 33488,\n      \"sha256\": \"1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a\"\n    }\n  ],\n  \"native\": {\n    \"target\": \"x86_64-unknown-linux-gnu\",\n    \"templateSha256\": \"df9be4eee10a50225414335502f6b8153874b8d6d4b9ea0903932f505d77f980\",\n    \"headerSha256\": \"24669a8f02db050f00dd351738f337f5f1d7e5bfa4387c0e942372991945c070\",\n    \"renderedSha256\": \"32dc404f88a6b67cce60627b80a89ce92ddaaff199d94f70df2d24fa5de35188\",\n    \"ordinaryObjectSha256\": \"1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a\",\n    \"requiredTlsBytes\": 33554448,\n    \"execution\": null\n  },\n  \"invocation\": null\n}\n",
+      "files": [
+        {
+          "bytes": 33488,
+          "path": ".zryna/out/m418_m7_mixed_build_native.build/native/m418_m7_mixed_build_native.o",
+          "sha256": "1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a"
+        },
+        {
+          "bytes": 1988,
+          "path": ".zryna/out/m418_m7_mixed_build_native.build/zryna-generic-manifest-v1.json",
+          "sha256": "cc48663d501a57318c5a70f16c96bb74b3722f8b3a3d7224d354eb88d4536d90"
+        }
+      ]
+    },
+    {
+      "selector": "m7-mixed/run/javascript",
+      "manifest": "{\n  \"format\": \"zryna.generic-bundle.v1\",\n  \"profile\": \"bounded-generics-v1\",\n  \"syntaxProtocol\": 5,\n  \"command\": \"run\",\n  \"artifactStem\": \"m418_m7_mixed_run_javascript\",\n  \"source\": {\n    \"entrypoint\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n    \"entryModule\": 0,\n    \"modules\": [\n      {\n        \"id\": 0,\n        \"path\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n        \"bytes\": 2269,\n        \"sha256\": \"5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6\"\n      }\n    ],\n    \"edges\": [],\n    \"graphSha256\": \"82f4fad70b4f2d7cdca046bf7b10e4d55131efed7c7f446556764ce40dbc8d9c\",\n    \"executionSha256\": \"53d74f92604402f34e92996b43298ea62bfb1c03782c23e768e839bf770661e1\",\n    \"typeUniverseSha256\": \"ea07bad0ee95d765939c7f863806f713300ff1da66880e281657d7fce9ad2015\",\n    \"linear32Sha256\": \"f0787917332b14a28b930b2889b22d050b22c252216a62bc193b1b813aa388df\",\n    \"linuxX8664Sha256\": \"ed7cd09ffda2e6bc4cb29d0f4221a4c7c91a5386854702e51e548e2478c7376d\",\n    \"runtimeAbiSha256\": \"1c973650ff38e080bb3104a7181709e886967f35ac78cc9b71ba094ca3ec441d\"\n  },\n  \"exports\": [\n    {\n      \"name\": \"entry\",\n      \"parameters\": [],\n      \"result\": \"i32\"\n    }\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"javascript\",\n      \"kind\": \"ecmascript-module\",\n      \"path\": \"javascript/m418_m7_mixed_run_javascript.mjs\",\n      \"bytes\": 47174,\n      \"sha256\": \"2589f9b65f3fd56e8417124e90e55fbd26892e52e742d1762c5a7adb865ac119\"\n    }\n  ],\n  \"native\": null,\n  \"invocation\": {\n    \"export\": \"entry\",\n    \"arguments\": [],\n    \"outcomes\": [\n      {\n        \"target\": \"javascript\",\n        \"outcome\": {\n          \"kind\": \"returned\",\n          \"value\": {\n            \"type\": \"i32\",\n            \"value\": 97\n          }\n        }\n      }\n    ]\n  }\n}\n",
+      "files": [
+        {
+          "bytes": 47174,
+          "path": ".zryna/out/m418_m7_mixed_run_javascript.run/javascript/m418_m7_mixed_run_javascript.mjs",
+          "sha256": "2589f9b65f3fd56e8417124e90e55fbd26892e52e742d1762c5a7adb865ac119"
+        },
+        {
+          "bytes": 1785,
+          "path": ".zryna/out/m418_m7_mixed_run_javascript.run/zryna-generic-manifest-v1.json",
+          "sha256": "2969477e154c2fdd4ea9a1a521ccce17e823615830b28702227b15f814e9b551"
+        }
+      ]
+    },
+    {
+      "selector": "m7-mixed/run/webassembly",
+      "manifest": "{\n  \"format\": \"zryna.generic-bundle.v1\",\n  \"profile\": \"bounded-generics-v1\",\n  \"syntaxProtocol\": 5,\n  \"command\": \"run\",\n  \"artifactStem\": \"m418_m7_mixed_run_webassembly\",\n  \"source\": {\n    \"entrypoint\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n    \"entryModule\": 0,\n    \"modules\": [\n      {\n        \"id\": 0,\n        \"path\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n        \"bytes\": 2269,\n        \"sha256\": \"5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6\"\n      }\n    ],\n    \"edges\": [],\n    \"graphSha256\": \"82f4fad70b4f2d7cdca046bf7b10e4d55131efed7c7f446556764ce40dbc8d9c\",\n    \"executionSha256\": \"53d74f92604402f34e92996b43298ea62bfb1c03782c23e768e839bf770661e1\",\n    \"typeUniverseSha256\": \"ea07bad0ee95d765939c7f863806f713300ff1da66880e281657d7fce9ad2015\",\n    \"linear32Sha256\": \"f0787917332b14a28b930b2889b22d050b22c252216a62bc193b1b813aa388df\",\n    \"linuxX8664Sha256\": \"ed7cd09ffda2e6bc4cb29d0f4221a4c7c91a5386854702e51e548e2478c7376d\",\n    \"runtimeAbiSha256\": \"1c973650ff38e080bb3104a7181709e886967f35ac78cc9b71ba094ca3ec441d\"\n  },\n  \"exports\": [\n    {\n      \"name\": \"entry\",\n      \"parameters\": [],\n      \"result\": \"i32\"\n    }\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"webassembly\",\n      \"kind\": \"core-webassembly-module\",\n      \"path\": \"webassembly/m418_m7_mixed_run_webassembly.wasm\",\n      \"bytes\": 13467,\n      \"sha256\": \"2dffe7c665db451e070980afa26fb188efe6efe15f024b4cfc81cdf09445fac4\"\n    }\n  ],\n  \"native\": null,\n  \"invocation\": {\n    \"export\": \"entry\",\n    \"arguments\": [],\n    \"outcomes\": [\n      {\n        \"target\": \"webassembly\",\n        \"outcome\": {\n          \"kind\": \"returned\",\n          \"value\": {\n            \"type\": \"i32\",\n            \"value\": 97\n          }\n        }\n      }\n    ]\n  }\n}\n",
+      "files": [
+        {
+          "bytes": 13467,
+          "path": ".zryna/out/m418_m7_mixed_run_webassembly.run/webassembly/m418_m7_mixed_run_webassembly.wasm",
+          "sha256": "2dffe7c665db451e070980afa26fb188efe6efe15f024b4cfc81cdf09445fac4"
+        },
+        {
+          "bytes": 1797,
+          "path": ".zryna/out/m418_m7_mixed_run_webassembly.run/zryna-generic-manifest-v1.json",
+          "sha256": "8246a80e206578f95aaad6e1d2781941535f320259d01ab2d5a1e848aac092cc"
+        }
+      ]
+    },
+    {
+      "selector": "m7-mixed/run/native",
+      "manifest": "{\n  \"format\": \"zryna.generic-bundle.v1\",\n  \"profile\": \"bounded-generics-v1\",\n  \"syntaxProtocol\": 5,\n  \"command\": \"run\",\n  \"artifactStem\": \"m418_m7_mixed_run_native\",\n  \"source\": {\n    \"entrypoint\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n    \"entryModule\": 0,\n    \"modules\": [\n      {\n        \"id\": 0,\n        \"path\": \"tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry\",\n        \"bytes\": 2269,\n        \"sha256\": \"5d28cef948a289b7e808b5efe8a94c4c4d7f73ef5d47896195e1e2fc6077f8b6\"\n      }\n    ],\n    \"edges\": [],\n    \"graphSha256\": \"82f4fad70b4f2d7cdca046bf7b10e4d55131efed7c7f446556764ce40dbc8d9c\",\n    \"executionSha256\": \"53d74f92604402f34e92996b43298ea62bfb1c03782c23e768e839bf770661e1\",\n    \"typeUniverseSha256\": \"ea07bad0ee95d765939c7f863806f713300ff1da66880e281657d7fce9ad2015\",\n    \"linear32Sha256\": \"f0787917332b14a28b930b2889b22d050b22c252216a62bc193b1b813aa388df\",\n    \"linuxX8664Sha256\": \"ed7cd09ffda2e6bc4cb29d0f4221a4c7c91a5386854702e51e548e2478c7376d\",\n    \"runtimeAbiSha256\": \"1c973650ff38e080bb3104a7181709e886967f35ac78cc9b71ba094ca3ec441d\"\n  },\n  \"exports\": [\n    {\n      \"name\": \"entry\",\n      \"parameters\": [],\n      \"result\": \"i32\"\n    }\n  ],\n  \"artifacts\": [\n    {\n      \"target\": \"native\",\n      \"kind\": \"linux-x86-64-relocatable-object\",\n      \"path\": \"native/m418_m7_mixed_run_native.o\",\n      \"bytes\": 33488,\n      \"sha256\": \"1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a\"\n    }\n  ],\n  \"native\": {\n    \"target\": \"x86_64-unknown-linux-gnu\",\n    \"templateSha256\": \"df9be4eee10a50225414335502f6b8153874b8d6d4b9ea0903932f505d77f980\",\n    \"headerSha256\": \"24669a8f02db050f00dd351738f337f5f1d7e5bfa4387c0e942372991945c070\",\n    \"renderedSha256\": \"32dc404f88a6b67cce60627b80a89ce92ddaaff199d94f70df2d24fa5de35188\",\n    \"ordinaryObjectSha256\": \"1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a\",\n    \"requiredTlsBytes\": 33554448,\n    \"execution\": {\n      \"ordinaryObjectSha256\": \"1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a\",\n      \"runtimeObjectSha256\": \"7af4d713fb48209dde7dba6c2ea6e217c329092c1cfd1e385b80524e1b1898e2\",\n      \"invocationObjectSha256\": \"1478b053e5bbfb12efaef7cb30c92992f1dec5ac3ab18ee965d646bfb13ae20c\",\n      \"harnessSha256\": \"5625d5c94108c6070293f68032c9ab0e664cf2dcf5b4f78e77c940b7ee089c2b\",\n      \"executableSha256\": \"7d8eae8c17a0c82c5fdb3f72d24ded121b13c98289f11a6ebf05cb887ab5f899\",\n      \"dependencyReceiptSha256\": \"d9963aba251eee0432e408a3fc13f10f0dd143003622ac25dbce3319ffa8ac6a\"\n    }\n  },\n  \"invocation\": {\n    \"export\": \"entry\",\n    \"arguments\": [],\n    \"outcomes\": [\n      {\n        \"target\": \"native\",\n        \"outcome\": {\n          \"kind\": \"returned\",\n          \"value\": {\n            \"type\": \"i32\",\n            \"value\": 97\n          }\n        }\n      }\n    ]\n  }\n}\n",
+      "files": [
+        {
+          "bytes": 33488,
+          "path": ".zryna/out/m418_m7_mixed_run_native.run/native/m418_m7_mixed_run_native.o",
+          "sha256": "1ed7b954ace27328d7abcaea9253c82697778a48af5a779c5449b9863952e54a"
+        },
+        {
+          "bytes": 2823,
+          "path": ".zryna/out/m418_m7_mixed_run_native.run/zryna-generic-manifest-v1.json",
+          "sha256": "b16e05e010d88ebfc760625fa841c032c7b4b0884e6734565264507ec7b4c6b2"
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "examples/universal/add.zry": "export function add(a: i32, b: i32): i32 {\n  return a + b;\n}\n",
+    "tests/m2-fixtures/valid/main.zry": "import { addPair } from \"./math.zry\";\n\nexport function addWrapsMaximum(left: i32, right: i32): i32 {\n  return left + right;\n}\n\nexport function subtractWrapsMinimum(left: i32, right: i32): i32 {\n  return left - right;\n}\n\nexport function multiplyKeepsLowBits(left: i32, right: i32): i32 {\n  return left * right;\n}\n\nexport function negateMinimumWraps(value: i32): i32 {\n  return -value;\n}\n\nexport function signedLessThan(left: i32, right: i32): bool {\n  return left < right;\n}\n\nexport function signedLessEqual(left: i32, right: i32): bool {\n  return left <= right;\n}\n\nexport function signedGreaterThan(left: i32, right: i32): bool {\n  return left > right;\n}\n\nexport function signedGreaterEqual(left: i32, right: i32): bool {\n  return left >= right;\n}\n\nexport function i32ExactEquality(left: i32, right: i32): bool {\n  return left === right;\n}\n\nexport function i32ExactInequality(left: i32, right: i32): bool {\n  return left !== right;\n}\n\nexport function booleanExactEquality(left: bool, right: bool): bool {\n  return left === right;\n}\n\nexport function booleanExactInequality(left: bool, right: bool): bool {\n  return left !== right;\n}\n\nexport function mutableLocalAssignment(left: i32, right: i32): i32 {\n  let result: i32 = left;\n  result = result + right;\n  return result;\n}\n\nfunction sum(left: i32, right: i32): i32 {\n  return left + right;\n}\n\nfunction forwardSum(left: i32, right: i32): i32 {\n  return sum(left, right);\n}\n\nexport function directCallChain(left: i32, right: i32): i32 {\n  return forwardSum(left, right);\n}\n\nexport function argumentOrder(left: i32, right: i32): i32 {\n  return left - right;\n}\n\nexport function selectEdge(condition: bool, whenTrue: i32, whenFalse: i32): i32 {\n  if (condition) {\n    return whenTrue;\n  }\n  return whenFalse;\n}\n\nexport function loopCount(limit: i32): i32 {\n  let value: i32 = 0;\n  while (value < limit) {\n    value = value + 1;\n  }\n  return value;\n}\n\nexport function namedCrossModuleCall(left: i32, right: i32): i32 {\n  return addPair(left, right);\n}\n",
+    "tests/m2-fixtures/valid/math.zry": "export function addPair(left: i32, right: i32): i32 {\n  return left + right;\n}\n",
+    "tests/m3-fixtures/conformance/owned-aggregate.zry": "import { aggregate } from \"./math.zry\";\nexport function score(): i32 { return aggregate(); }\n",
+    "tests/m3-fixtures/conformance/owned-aggregate-body.zry": "interface TextPair extends ZrynaStruct { left: String; right: String; }\nexport function aggregate(): i32 { const pair: TextPair = TextPair({ left: \"left\", right: \"right\" }); const copied: TextPair = clone(pair); const moved: TextPair = copied; return 29; }\n",
+    "tests/m7-generic-execution-recursive-owner/mixed/mixed-catalogue.zry": "interface Node<T extends ZrynaValue> extends ZrynaEnum { leaf: T; branch: Vec<Node<T>>; }\ninterface Pair<T extends ZrynaValue> extends ZrynaStruct { value: T; }\ninterface Signal extends ZrynaEnum { quiet: ZrynaNone; yes: String; }\nexport function entry(): i32 {\n  const leaf: Node<String> = Node.leaf<String>(\"n\");\n  const children: Vec<Node<String>> = Vec<Node<String>>([leaf]);\n  const recursiveRoot: Node<String> = Node.branch<String>(children);\n  { const root0: bool = true; const loan0: Borrow<bool> = borrow(root0); const copied0: bool = clone(loan0); }\n  { const root1: i32 = 7; const loan1: Borrow<i32> = borrow(root1); const copied1: i32 = clone(loan1); }\n  { const root2: String = \"text\"; const loan2: Borrow<String> = borrow(root2); const copied2: String = clone(loan2); }\n  { const root3: Pair<String> = Pair<String>({ value: \"field\" }); const loan3: Borrow<Pair<String>> = borrow(root3); const copied3: Pair<String> = clone(loan3); }\n  { const root4: Signal = Signal.yes(\"payload\"); const loan4: Borrow<Signal> = borrow(root4); const copied4: Signal = clone(loan4); }\n  { const root5: Option<String> = Option.some<String>(\"option\"); const loan5: Borrow<Option<String>> = borrow(root5); const copied5: Option<String> = clone(loan5); }\n  { const root6: Result<String, i32> = Result.ok<String, i32>(\"result\"); const loan6: Borrow<Result<String, i32>> = borrow(root6); const copied6: Result<String, i32> = clone(loan6); }\n  { const root7: FixedArray<String, 2> = FixedArray<String, 2>([\"a\", \"b\"]); const loan7: Borrow<FixedArray<String, 2>> = borrow(root7); const copied7: FixedArray<String, 2> = clone(loan7); }\n  { const root8: Vec<String> = Vec<String>([\"element\"]); const loan8: Borrow<Vec<String>> = borrow(root8); const copied8: Vec<String> = clone(loan8); }\n  { const root9: Shared<String> = shared(\"shared\"); const loan9: Borrow<Shared<String>> = borrow(root9); const copied9: Shared<String> = clone(loan9); }\n  { const owner: Shared<String> = shared(\"weak\"); const root10: Weak<String> = downgrade(owner); const loan10: Borrow<Weak<String>> = borrow(root10); const copied10: Weak<String> = clone(loan10); }\n  const recursiveLoan: Borrow<Node<String>> = borrow(recursiveRoot);\n  const recursiveCopy: Node<String> = clone(recursiveLoan);\n  return 97;\n}\n"
+  }
+}

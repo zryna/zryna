@@ -9,7 +9,7 @@ import {
   renderM4SupportPage, validateSupportProjection, workspaceRoot,
 } from '../scripts/m4/support.mjs';
 
-test('compiled and Markdown canonical bytes independently retain every projected source and contract field', () => {
+test('compact compiled data and canonical Markdown retain every projected source and contract field', () => {
   const registry = loadAndValidateM4Conformance();
   const plan = loadReviewedLimitContracts(registry, workspaceRoot);
   const expected = {
@@ -44,7 +44,10 @@ test('compiled and Markdown canonical bytes independently retain every projected
   };
   const expectedBytes = Buffer.from(JSON.stringify(expected, null, 2) + '\n');
   const compiled = readFileSync(path.join(workspaceRoot, 'apps/zryna/src/m4_support.json'));
-  assert(compiled.equals(expectedBytes), 'complete source-derived bytes, independent of projector');
+  assert(compiled.equals(Buffer.from(JSON.stringify(expected) + '\n')),
+    'complete compact source-derived bytes, independent of projector');
+  assert(Buffer.from(JSON.stringify(JSON.parse(compiled), null, 2) + '\n').equals(expectedBytes),
+    'compaction preserves every field, ordering and canonical public byte');
   const markdown = readFileSync(path.join(workspaceRoot, 'docs/M4_SUPPORT.md'), 'utf8');
   assert(extractM4SupportFence(markdown).equals(expectedBytes));
 });
