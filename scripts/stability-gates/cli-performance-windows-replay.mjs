@@ -6,18 +6,7 @@ import { matrixFor } from './cli-performance-methodology-v4.mjs';
 import { localAbsolute, validateWindowsAdmission, validateWindowsCapture } from './cli-performance-windows-binding.mjs';
 import { validateWindowsOracles } from './cli-performance-windows-files.mjs';
 import { windowsInvocation } from './cli-performance-windows-round.mjs';
-import { checkedWindowsMetrics, MEMORY_METHOD, summarizeWindowsFive } from './cli-performance-windows-metrics.mjs';
-
-function helper(bytes) {
-  assert(bytes.length <= 4096 && bytes.every(byte => byte < 128), 'bounded ASCII helper protocol');
-  const text = bytes.toString('ascii');
-  assert(text.endsWith('\n'), 'complete helper metadata newline');
-  const member = '"[A-Za-z][A-Za-z0-9]*"\\s*:\\s*(?:"[A-Za-z0-9_. -]*"|true|false|null|0|[1-9][0-9]*)';
-  assert(new RegExp(`^\\s*\\{\\s*${member}(?:\\s*,\\s*${member})*\\s*\\}\\s*$`, 'u').test(text), 'flat primitive helper grammar');
-  const h = JSON.parse(text);
-  assert.equal([...text.matchAll(/"[A-Za-z][A-Za-z0-9]*"\s*:/gu)].length, Object.keys(h).length, 'no duplicate helper keys');
-  return h; // checkedWindowsMetrics applies the existing closed keys/types and exact-u64 semantics.
-}
+import { checkedWindowsMetrics, MEMORY_METHOD, parseWindowsHelperMetadata, summarizeWindowsFive } from './cli-performance-windows-metrics.mjs';
 function unqualified(value) {
   assert.equal(value.sourceAuthenticated, false); assert.equal(value.performanceQualified, false);
   assert.equal(value.baselineAuthority, null); assert.equal(value.thresholds, null);
@@ -67,7 +56,7 @@ export function replayWindowsRound({ document, capture, session, operator, oracl
         assert(bytes(`${prefix}.sample/${name}`).equals(retained), 'original sample equals flattened retained bytes');
       assert.deepEqual(parse(bytes(`${prefix}.sample-read.json`)), { error: null,
         metadataBytes: raw.length, stdoutBytes: stdout.length, stderrBytes: stderr.length });
-      const metrics = checkedWindowsMetrics(helper(raw), capture, call.argv.length - 5, stdout, stderr);
+      const metrics = checkedWindowsMetrics(parseWindowsHelperMetadata(raw), capture, call.argv.length - 5, stdout, stderr);
       assert.deepEqual(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(stdout)), row.expectedResponse, 'original typed source outcome');
       assert(stdout.equals(Buffer.from(oracles[cellIndex].stdout)) && stderr.equals(Buffer.from(oracles[cellIndex].stderr)), 'exact paired oracle streams');
       const reconciled = { id, role, ...metrics };

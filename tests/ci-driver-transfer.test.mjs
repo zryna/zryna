@@ -12,6 +12,7 @@ const debugProfile = {
 function transferred() {
   const value = structuredClone(legacy), jobs = value.jobs;
   const moved = jobs.rust.steps.splice(8, 7);
+  delete moved[3].if; // Current selected proof adds Linux; frozen legacy input above stays untouched.
   jobs['m2-platform'].steps.splice(7, 0, ...moved);
   jobs.rust.steps.splice(8, 0, structuredClone(moved[1]));
   jobs['m2-platform'].steps[1].with.components = 'rustfmt, clippy';

@@ -46,6 +46,8 @@ const MOVED = [
     "run": "cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact"
   }
 ];
+const BOTH_HOST_MOVED = structuredClone(MOVED);
+delete BOTH_HOST_MOVED[3].if; // Current proof covers both hosts; inverse restoration below preserves historical bytes.
 const RESULT = '${{ needs.m2-platform.result }}';
 const REQUIRE = ' && test "$M2_PLATFORM_RESULT" = success';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -78,7 +80,7 @@ export function withoutDriverTransfer(candidate) {
     assert.deepEqual(rust.env, HOST_DEBUG_PROFILE, 'only reviewed Linux host debug profile');
     delete rust.env;
   }
-  assert.deepEqual(m2.steps.slice(7, 14), MOVED, 'exact seven moved steps after fetch');
+  assert.deepEqual(m2.steps.slice(7, 14), BOTH_HOST_MOVED, 'exact seven moved steps with mandatory both-host resource proof');
   assert.equal(m2.steps[6].name, 'Fetch locked Rust dependencies');
   assert.deepEqual(m2.steps[14], { run: 'pnpm m2:check' }, 'moved work precedes canonical M2');
   assert.equal(m2.steps.length, 15);
@@ -124,6 +126,14 @@ export function withoutDriverTransferText(text) {
     const start = job.indexOf('      - name: Verify M2 semantics\n');
     const end = job.indexOf('      - run: pnpm m2:check\n'); assert(start > 0 && end > start);
     moved = job.slice(start, end);
+    const currentResource = '      - name: Verify native source resource limits\n' +
+      '        run: node scripts/run-native-source-resource-tests.mjs\n';
+    const legacyResource = '      - name: Verify native source resource limits\n' +
+      "        if: runner.os == 'Windows'\n" +
+      '        run: node scripts/run-native-source-resource-tests.mjs\n';
+    assert.equal(moved.split(currentResource).length, 2, 'one exact both-host resource step');
+    moved = moved.replace(currentResource, legacyResource); // Historical inverse only, never a live CI skip.
+
     return (job.slice(0, start) + job.slice(end)).replace('          components: rustfmt, clippy\n', '');
   });
   legacy = editJob(legacy, 'rust', job => {

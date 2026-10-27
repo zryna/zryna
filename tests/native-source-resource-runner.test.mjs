@@ -96,3 +96,15 @@ test('spawn errors, nonzero exits and signals cannot satisfy resource proof', ()
     { status: 0, error: new Error('spawn failed') },
   ]) assert.throws(() => runNativeSourceResourceTests(() => ({ stdout: '', stderr: '', ...failed })));
 });
+
+test('live M2 source-resource proof is mandatory on both unchanged supported hosts', () => {
+  const live = parsed.toJS().jobs['m2-platform'];
+  assert.deepEqual(live.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
+  const actual = live.steps.filter(entry => entry.name === step.name || entry.run === step.run);
+  assert.deepEqual(actual, [{ name: step.name, run: step.run }]);
+  for (const condition of ["runner.os == 'Windows'", "runner.os == 'Linux'", 'false']) {
+    const changed = parsed.toJS();
+    changed.jobs['m2-platform'].steps.find(entry => entry.name === step.name).if = condition;
+    assert.throws(() => withoutDriverTransfer(changed));
+  }
+});

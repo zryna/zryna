@@ -1,19 +1,29 @@
-# M418 portable Linux provider proposal, unexecuted
+# Portable GNU time provider
 
-This packet replaces the unadopted private absolute-origin provider with a single fixed acquisition recipe for Ubuntu 24.04 x86-64. It preserves the existing GNU executable and package bytes. The provider is a binding, never source authentication, release admission, baseline authority, or performance qualification. Both authority booleans remain false, thresholds and baselineAuthority remain null, and release admission remains an outer-driver decision.
+The Ubuntu 24.04 x86-64 acquisition recipe is implemented in merged #576. It
+produces a private provider binding; source, host and performance admission remain
+separate. Authority flags stay false and thresholds stay null.
 
-The operator recipe lives at `scripts/stability-gates/provider-inputs/linux-gnu-time-debian-trixie-v2.json`. The only download URL is `https://deb.debian.org/debian/pool/main/t/time/time_1.9-0.2_amd64.deb`; redirects and encoded responses are rejected. The download is bounded at 128 KiB and must match 50,776 bytes and SHA256 `10257c6fe888e6578550b1f20705d282dd630b76f8df0c006aec3031fefe5e23` before `dpkg-deb --extract`. The extracted sole executable leaf must match 27,384 bytes and SHA256 `efc0d1112e36ec76c14bf7508e287935cf1631d9d0d91fb532802d07aef51cea`. There is no install, maintainer-script invocation, elevation, or host-system write.
+```sh
+node scripts/stability-gates/cli-performance-linux-provision-provider.mjs /absolute/canonical/checkout
+```
 
-The future operator entry is `node scripts/stability-gates/cli-performance-linux-provision-provider.mjs /absolute/canonical/checkout`. It accepts no URL, hash, program, or grant arguments. It creates a fresh `/tmp/m418-linux-provider-XXXXXX` directory, owned by the operator with mode 0700, outside the specified checkout. The fixed package, extracted payload, and create-only canonical `runtime-receipt.json` remain there; incomplete roots remain visibly incomplete for inspection. This command has not been executed by the packet author.
+The fixed [v2 recipe](../scripts/stability-gates/provider-inputs/linux-gnu-time-debian-trixie-v2.json)
+pins the sole package URL, 128 KiB download bound, package/executable hashes and
+runtime record. The command accepts no replacement URL, hash, program or grant.
+It extracts into a fresh mode-0700 root outside the checkout, with no install,
+maintainer scripts, elevation or system overwrite. Incomplete roots remain visible.
 
-The receipt captures this host's package and executable identities, actual GNU version (`time (GNU Time) UNKNOWN`), dpkg-deb/dpkg-query identities, actual dpkg version, glibc and loader versions and identities, and shared-provider identities from the actual ELF loader's bounded `--list` output. Local dpkg package-version output is observed host provenance, not upstream authentication. Runtime projections accept only the defined fields and system-library locations. Provider input, receipt, package, executable, os-release and runtime-provider file size, mode, link count, SHA256 and persistent device/inode/time identities are rechecked around every measured call. Provisioning subprocess inputs and executables are likewise checked before and after each provisioning subprocess. Real canonical paths, trusted private ancestors, and the normal trusted operator/system account are prerequisites; this is not a hostile same-UID process sandbox.
+Capture binds the actual provider root and receipt digest. Package, executable,
+loader, runtime libraries and persistent file identities are checked around each
+call. Historical GPG provenance is explicitly not current-host verification.
+Trusted canonical ancestors and the operator/system account remain prerequisites;
+this is not a hostile same-UID sandbox.
 
-Historical GPG verification is retained solely as an immutable historical anchor: SHA256 `a719cdffdae1f744c92b2d93f65103a1e4cfc3429d2fc55cdb85fe3ffbf8470a` of the original TOOL_IDENTITY.json. The record explicitly marks it `currentHostVerification:false`. Neither admission nor provisioning rereads that old host file or claims fresh GPG verification. Current package and tool hash capture is a separate event and receipt.
+The [collection contract](CLI_PERFORMANCE_DRAFT.md) retains 24 Linux cells and six
+attempts per cell. Memory remains GNU wait4 maximum RSS KiB, not simultaneous
+summed tree RSS. Current package/runtime observation does not grant baseline or
+release authority.
 
-Admission takes the explicit fresh provider root and reads its sole fixed receipt filename. It derives the executable leaf from the recipe; a caller cannot select an executable or supply a new expected binary hash. Capture binds `providerRoot`, fixed `providerRecordSha256`, and actual `providerReceiptSha256`. The real IO adapter compares the receipt digest against the freshly opened provider and retains `provider-admission.json` and `provider-runtime-receipt.json`. A receipt digest binds an observed instance; it is not a grant. Synthetic controller fixtures can check binding shape without issuing admission.
-
-The IO and round-controller changes are limited to provider opening, retained provider bytes, and binding fields. Existing 24 cells, one warmup plus five measured attempts (144 calls), wall-clock measurement, quotas, source and artifact checks, owned cleanup, build classes, command flags, and the metric string `gnu-time-wait4-maxrss-kib.v1` are unchanged. The metric remains GNU wait4 maximum-RSS KiB, not simultaneous aggregate tree RSS. Methodology v4 bytes keep the current security-tree Cargo2 pins; all 27 original reader source pins stay unchanged. No baseline or full release workflow is introduced.
-
-The portable provider tests are pure positive and negative projection tests: fixed recipe, arbitrary tool/path/hash/grant rejection, root/leaf derivation, receipt projection, historical/fresh proof separation, file identity/mode/nlink checks, host constraints, package download bounds and same-size wrong-digest rejection, and closed loader-list parsing. Existing synthetic round tests retain the 144-call and correctness/containment semantics and receive only the new binding fixture fields. Test names and exact source hashes are frozen in `PACKET_MAP.json` before any root execution. No unit, CLI, native, guest, network, Cargo, benchmark, or CI execution was performed by this packet author. Review and root-owned checks are still required before adoption.
-
-The packet changes four production modules (provider replacement, provision entry, existing IO/round modules narrowly adapted), relocates one fixed record, adapts/replaces two test modules, and includes unchanged shared support and methodology files plus this design. The root-level `providers` directory from the earlier proposal is omitted. `PACKET_MAP.json` lists exact file identities and distinguishes unchanged support, provider work, and narrow integration changes.
+The [original proposal](https://github.com/zryna/zryna/blob/c1ae34fe421e3dfe63d1182054c9753ea2128dad/docs/CLI_PERFORMANCE_PORTABLE_PROVIDER_PROPOSAL.md)
+preserves the historical packet scope and pre-execution author record.
