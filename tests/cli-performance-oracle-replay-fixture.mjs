@@ -9,7 +9,9 @@ import { matrixFor, parseMethodology } from '../scripts/stability-gates/cli-perf
 import { metadata } from './cli-performance-windows-fixture.mjs';
 export const document = parseMethodology(readFileSync(new URL('./cli-performance-methodology-v4.json', import.meta.url)));
 const examples = JSON.parse(readFileSync(new URL('./cli-performance-oracle-manifest-examples.json', import.meta.url)));
-const container = readSafe(fileURLToPath(new URL('.', import.meta.url)), 'cli-performance-oracle-m2-artifacts.json.gz', 4334);
+const encoded = readSafe(fileURLToPath(new URL('.', import.meta.url)), 'cli-performance-oracle-m2-artifacts.json.gz.base64', 5781);
+const container = Buffer.from(encoded.toString('ascii'), 'base64');
+assert(Buffer.from(container.toString('base64') + '\n').equals(encoded), 'canonical bounded base64 test data');
 assert.equal(container.length, 4334);
 assert.equal(sha256(container), '46e485bbfcdead0fbab9e0e37862879eb7d473772882a27e9d4b93f925f4fe8a');
 const expanded = gunzipSync(container, { maxOutputLength: 65536 });

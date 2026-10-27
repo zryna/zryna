@@ -45,6 +45,6 @@ bytes and inventories under their historical pins without adding authority.
 `replayOracleArchitecture` checks both untimed attempts for every selector,
 original process/stream and retained artifact bytes, frozen source graphs and
 staging aliases, after-material claims and architecture records. Temporal staging
-and before-material evidence is not retained. The opaque compressed test dataset
+and before-material evidence is not retained. The opaque base64-compressed test dataset
 contains only existing M2 golden preimages, bounded to 64 KiB expanded and checked
 against their original hashes; it is never executed.
