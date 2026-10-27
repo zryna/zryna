@@ -90,7 +90,10 @@ async function admissionApi(f,privateFailure='403'){
     captures.push({method:'GET',path,status:200,data:bytes(data)});return data;
   };
   const api={request,captures,asset:async()=>privateFailure==='wrong-packet'?Buffer.from('WRONG PRIVATE PACKET'):f.packet};
-  inventory=await expectedJobs(repo,api,source);assert.equal(inventory.jobs.length,42);calls.length=0;captures.length=0;
+  inventory=await expectedJobs(repo,api,source);assert.equal(inventory.jobs.length,44);
+  assert.deepEqual(inventory.jobs.filter(job=>job.name.startsWith('m7 generic (')).map(job=>job.name).sort(),
+    ['m7 generic (ubuntu-latest)','m7 generic (windows-latest)']);
+  calls.length=0;captures.length=0;
   const eventPath=join(f.root,'event.json');writeFileSync(eventPath,bytes({ref:REF,created:true,deleted:false,forced:false,repository:{full_name:'zryna/zryna'}}));
   const environment={GITHUB_EVENT_NAME:'push',GITHUB_REF:REF,GITHUB_REF_TYPE:'tag',GITHUB_REF_PROTECTED:'true',
     GITHUB_REPOSITORY:'zryna/zryna',GITHUB_SHA:source.commit,GITHUB_WORKFLOW_SHA:source.commit,
