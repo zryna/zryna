@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, renameSync, symlinkSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -6,7 +7,7 @@ import test from 'node:test';
 import { checkRepository } from '../scripts/check-repository-structure.mjs';
 import { moduleLines } from '../scripts/structure/module-size.mjs';
 import { moduleInventory } from '../scripts/structure/module-history.mjs';
-import { physicalLines, POLICY_PATH, validatePolicy } from '../scripts/structure/policy.mjs';
+import { physicalLines, POLICY_PATH, reviewChanges, validatePolicy } from '../scripts/structure/policy.mjs';
 import { git } from '../scripts/structure/repository.mjs';
 import { validateUnsafeRustDocuments } from '../scripts/structure/unsafe-rust.mjs';
 import { PREFLIGHT_COMMANDS, validatePreflightCommands } from '../scripts/run-preflight.mjs';
@@ -485,4 +486,32 @@ test('deleted and reintroduced policy has ambiguous adoption and cannot reset ce
   f.savePolicy();
   f.save();
   assert.throws(() => f.check(), /adoption history is absent or ambiguous/);
+});
+
+test('policy storage reconstructs every original byte and semantic authority value', () => {
+  const bytes = readFileSync(new URL('../scripts/repository-structure-policy.json', import.meta.url));
+  const policy = JSON.parse(bytes), original = Buffer.from(`${JSON.stringify(policy, null, 2)}\n`);
+  assert.equal(original.length, 152292);
+  assert.equal(createHash('sha256').update(original).digest('hex'),
+    '2dde43666290543a30fe65b9f39092c9aab45bf1e915f9046725bab20cae29d5');
+  const previous = JSON.parse(original);
+  assert.deepEqual(policy, previous);
+  assert.equal(JSON.stringify(policy), JSON.stringify(previous), 'all object and array order retained');
+  validatePolicy(policy, '2026-10-27'); validatePolicy(previous, '2026-10-27');
+  assert.deepEqual(reviewChanges(previous, policy), [], 'no semantic policy change or approval claim');
+  assert.deepEqual([policy.baseline.length, policy.classifications.length,
+    policy.exceptions.length, policy.modules.baseline.length], [46, 299, 0, 285]);
+});
+
+test('policy storage keeps its complete inventories readable one record per line', () => {
+  const bytes = readFileSync(new URL('../scripts/repository-structure-policy.json', import.meta.url));
+  const policy = JSON.parse(bytes), lines = bytes.toString('utf8').split('\n');
+  assert.equal(lines[0], '{'); assert.equal(lines.at(-2), '}'); assert.equal(lines.at(-1), '');
+  const records = lines.filter(line => /^\s+\{"/u.test(line))
+    .map(line => JSON.parse(line.trim().replace(/,$/u, '')));
+  assert.deepEqual(records, [...policy.baseline, ...policy.classifications,
+    ...policy.exceptions, ...policy.modules.baseline]);
+  assert.equal(bytes.length, 126958);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),
+    '64886b9eecf32668cacea32cb459e0af858389f903a19de3a1b27efd8be09eca');
 });

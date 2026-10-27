@@ -1,4 +1,5 @@
 // Pure workflow declaration controls. Never starts Cargo, a compiler, a guest or CI.
+import './ci-m7-transfer.test.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -12,6 +13,7 @@ const debugProfile = {
 function transferred() {
   const value = structuredClone(legacy), jobs = value.jobs;
   const moved = jobs.rust.steps.splice(8, 7);
+  delete moved[3].if; // Current selected proof adds Linux; frozen legacy input above stays untouched.
   jobs['m2-platform'].steps.splice(7, 0, ...moved);
   jobs.rust.steps.splice(8, 0, structuredClone(moved[1]));
   jobs['m2-platform'].steps[1].with.components = 'rustfmt, clippy';
@@ -55,7 +57,7 @@ test('debug profile rejects partial unknown or broadened declarations and retain
 });
 test('text inverse rejects a moved debug profile block even when parsed workflow is equivalent', () => {
   const bytes = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  const start = bytes.indexOf('  rust:\n'), end = bytes.indexOf('\n  adapter-platform:\n', start);
+  const start = bytes.indexOf('  rust:\n'), end = bytes.indexOf('\n  m7-platform:\n', start);
   const block = '    env:\n' + Object.entries(debugProfile).map(([key, value]) => `      ${key}: "${value}"\n`).join('');
   const rust = bytes.slice(start, end); assert.equal(rust.split(block).length, 2);
   const moved = rust.replace(block, '').replace('    steps:\n', block + '    steps:\n');

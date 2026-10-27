@@ -6,6 +6,7 @@ import urllib.error
 import urllib.request
 from dependency_audit_inputs import AuditError, decode, encode, require, retain, sha
 from dependency_audit_msal import backport_record
+import dependency_audit_block_buffer as block_buffer
 
 ENDPOINT = "https://api.osv.dev/v1/"
 ADVISORY = "GHSA-xcx6-jx8p-x3h5"
@@ -53,12 +54,17 @@ def bind_modified(results, details):
                 match["modified"] == "2026-10-23T22:30:05.010413Z" and
                 detail["modified"] == "2026-10-23T22:30:05.010413241Z" and
                 sha(encode(detail)) == ADVISORY_SHA)
-            require(match["modified"] == detail["modified"] or retained_pair,
+            original_buffer_pair = (row["query"] == block_buffer.QUERY and match["id"] == block_buffer.ADVISORY and
+                match["modified"] == "2026-08-19T19:30:06.686866Z" and
+                detail["modified"] == "2026-08-19T19:30:06.686866977Z" and
+                sha(encode(detail)) == block_buffer.DETAIL_SHA)
+            require(match["modified"] == detail["modified"] or retained_pair or original_buffer_pair,
                     "querybatch/full-advisory modified binding")
 
 
-def classify(results, details, backport):
+def classify(results, details, backport, original_buffer=None):
     reviewed_backport = backport_record(backport) if backport is not None else None
+    reviewed_buffer = block_buffer.not_affected_record(original_buffer) if original_buffer is not None else None
     visible = [{"query": row["query"], "advisory": advisory["id"]}
                for row in results for advisory in row["advisories"]]
     msal = [row for row in results if row["query"] == {
@@ -66,7 +72,7 @@ def classify(results, details, backport):
     if msal:
         require(len(msal) == 1 and any(x["id"] == ADVISORY for x in msal[0]["advisories"]),
                 "known raw MSAL6 advisory must remain visible")
-    unresolved, remediated = [], []
+    unresolved, remediated, not_affected = [], [], []
     for row in visible:
         identifier = row["advisory"]
         detail = details[identifier]
@@ -74,10 +80,15 @@ def classify(results, details, backport):
         if exact and identifier == ADVISORY and sha(encode(detail)) == ADVISORY_SHA and reviewed_backport is not None:
             remediated.append({**row, "disposition": "exact-reviewed-upstream-backport-and-current-owner-execution",
                                "backport": reviewed_backport})
+        elif row["query"] == block_buffer.QUERY and identifier == block_buffer.ADVISORY and \
+                sha(encode(detail)) == block_buffer.DETAIL_SHA and reviewed_buffer is not None:
+            not_affected.append({**row, "disposition": "exact-reviewed-original-source-not-affected",
+                                 "originalSourceOwner": reviewed_buffer})
         else:
             unresolved.append(row)
     return {"observedDependencyGate": "pass" if not unresolved else "fail",
-            "rawAdvisoryMatches": visible, "sourceBoundRemediations": remediated, "unresolved": unresolved}
+            "rawAdvisoryMatches": visible, "sourceBoundRemediations": remediated,
+            "sourceBoundNotAffected": not_affected, "unresolved": unresolved}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):

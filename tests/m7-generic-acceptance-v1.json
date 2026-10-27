@@ -123,7 +123,7 @@
         "native MIR/backend SSA and object audit, JS/Wasm ordinary/observed/fault/resource controls",
         "applicable driver source/target integration and doc tests"
       ],
-      "counts": "not independently counted by this packet; corroborate actual same-job canonical M0 logs"
+      "counts": "not independently counted by this packet; corroborate actual same-source upstream Rust matching-host canonical M0 logs"
     },
     "linux_preflight": {
       "workflow_job": "preflight",

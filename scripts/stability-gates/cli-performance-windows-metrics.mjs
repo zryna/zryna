@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import { helperKeys, helperTypes, u64 } from './windows-job-metrics-v1/calibration/protocol.mjs';
 import { MAX_LOG } from './input.mjs';
 export const MEMORY_METHOD = 'job-peak-committed-bytes.v1';
+export function parseWindowsHelperMetadata(bytes) {
+  assert(bytes.length <= 4096 && bytes.every(byte => byte < 128), 'bounded ASCII helper protocol');
+  const text = bytes.toString('ascii');
+  assert(text.endsWith('\n'), 'complete helper metadata newline');
+  const member = '"[A-Za-z][A-Za-z0-9]*"\\s*:\\s*(?:"[A-Za-z0-9_. -]*"|true|false|null|0|[1-9][0-9]*)';
+  assert(new RegExp(`^\\s*\\{\\s*${member}(?:\\s*,\\s*${member})*\\s*\\}\\s*$`, 'u').test(text), 'flat primitive helper grammar');
+  const h = JSON.parse(text);
+  assert.equal([...text.matchAll(/"[A-Za-z][A-Za-z0-9]*"\s*:/gu)].length, Object.keys(h).length, 'no duplicate helper keys');
+  return h; // checkedWindowsMetrics applies the existing closed keys/types and exact-u64 semantics.
+}
 export function checkedWindowsMetrics(h, capture, childArgc, stdout, stderr) {
   assert(Buffer.isBuffer(stdout) && Buffer.isBuffer(stderr));
   assert.deepEqual(Object.keys(h).sort(), [...helperKeys].sort(), 'closed helper metadata');

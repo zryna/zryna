@@ -41,3 +41,10 @@ oracle provenance. Qualification flags remain false and thresholds null. Reviewe
 baseline policy, held-out admission and final M7 closure remain separate.
 [Receipt storage](CLI_PERFORMANCE_RECEIPT_STORAGE.md) preserves complete original
 bytes and inventories under their historical pins without adding authority.
+
+`replayOracleArchitecture` checks both untimed attempts for every selector,
+original process/stream and retained artifact bytes, frozen source graphs and
+staging aliases, after-material claims and architecture records. Temporal staging
+and before-material evidence is not retained. The opaque base64-compressed test dataset
+contains only existing M2 golden preimages, bounded to 64 KiB expanded and checked
+against their original hashes; it is never executed.

@@ -20,8 +20,9 @@ checkpoint substitutes for the following current implementation gates.
 
 The reviewed finite public packet is registered in
 [`tests/m7-generic-acceptance-v1.json`](../tests/m7-generic-acceptance-v1.json) and run by
-[`scripts/run-m7-generic-acceptance.mjs`](../scripts/run-m7-generic-acceptance.mjs) after the
-existing canonical M0 step in each Rust platform job. Its required names total **11 on Linux**
+[`scripts/run-m7-generic-acceptance.mjs`](../scripts/run-m7-generic-acceptance.mjs) in the
+dedicated both-host `m7-platform` matrix after both Rust jobs succeed. Canonical M0 remains in
+each upstream Rust platform job; corroborate its same-source matching-host logs separately. Its required names total **11 on Linux**
 and **18 on Windows**: 12 public CLI, 3 portable-deep and 3 shared ignored ABI tests on Windows. These are
 required packet counts, not recorded passing results. Workspace/preflight totals are separate;
 the packet does not rerun or relabel them. Linux preflight already includes the shared ABI

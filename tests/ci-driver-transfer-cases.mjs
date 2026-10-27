@@ -1,3 +1,4 @@
+import { withoutM7Transfer, withoutM7TransferText } from './ci-m7-transfer-cases.mjs';
 // Strict reviewed relocation only; never a fallback or replacement CI authority.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -46,6 +47,8 @@ const MOVED = [
     "run": "cargo test --locked -p zryna --test cli javascript_build_and_run_publish_exact_bundles -- --exact"
   }
 ];
+const BOTH_HOST_MOVED = structuredClone(MOVED);
+delete BOTH_HOST_MOVED[3].if; // Current proof covers both hosts; inverse restoration below preserves historical bytes.
 const RESULT = '${{ needs.m2-platform.result }}';
 const REQUIRE = ' && test "$M2_PLATFORM_RESULT" = success';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -72,13 +75,13 @@ function acyclic(jobs) {
   for (const id of Object.keys(jobs)) visit(id);
 }
 export function withoutDriverTransfer(candidate) {
-  const original = structuredClone(candidate);
+  const original = withoutM7Transfer(candidate);
   const rust = original.jobs.rust, m2 = original.jobs['m2-platform'], m0 = original.jobs.m0;
   if (Object.hasOwn(rust, 'env')) {
     assert.deepEqual(rust.env, HOST_DEBUG_PROFILE, 'only reviewed Linux host debug profile');
     delete rust.env;
   }
-  assert.deepEqual(m2.steps.slice(7, 14), MOVED, 'exact seven moved steps after fetch');
+  assert.deepEqual(m2.steps.slice(7, 14), BOTH_HOST_MOVED, 'exact seven moved steps with mandatory both-host resource proof');
   assert.equal(m2.steps[6].name, 'Fetch locked Rust dependencies');
   assert.deepEqual(m2.steps[14], { run: 'pnpm m2:check' }, 'moved work precedes canonical M2');
   assert.equal(m2.steps.length, 15);
@@ -116,6 +119,7 @@ function editJob(text, id, edit) {
   return text.slice(0, start) + edit(text.slice(start, end)) + text.slice(end);
 }
 export function withoutDriverTransferText(text) {
+  text = withoutM7TransferText(text);
   assert(typeof text === 'string' && Buffer.byteLength(text) <= 512 * 1024);
   const parsed = parseDocument(text, { uniqueKeys: true }); assert.deepEqual(parsed.errors, []);
   withoutDriverTransfer(parsed.toJS()); // once at the raw-reader boundary, before old projections
@@ -124,6 +128,14 @@ export function withoutDriverTransferText(text) {
     const start = job.indexOf('      - name: Verify M2 semantics\n');
     const end = job.indexOf('      - run: pnpm m2:check\n'); assert(start > 0 && end > start);
     moved = job.slice(start, end);
+    const currentResource = '      - name: Verify native source resource limits\n' +
+      '        run: node scripts/run-native-source-resource-tests.mjs\n';
+    const legacyResource = '      - name: Verify native source resource limits\n' +
+      "        if: runner.os == 'Windows'\n" +
+      '        run: node scripts/run-native-source-resource-tests.mjs\n';
+    assert.equal(moved.split(currentResource).length, 2, 'one exact both-host resource step');
+    moved = moved.replace(currentResource, legacyResource); // Historical inverse only, never a live CI skip.
+
     return (job.slice(0, start) + job.slice(end)).replace('          components: rustfmt, clippy\n', '');
   });
   legacy = editJob(legacy, 'rust', job => {

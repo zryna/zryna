@@ -71,7 +71,7 @@ test('tested merge revision and clean state are checked, never replaced by PR he
     'failed observation with plausible source text is never acceptance');
   }
 });
-test('existing canonical M0, checkouts and job deadlines remain intact before finite packet', () => {
+test('canonical M0 remains in Rust and the dedicated finite packet binds actual upstream Rust success', () => {
   const workflow = parseDocument(readFileSync(resolve(ROOT, '.github/workflows/ci.yml'), 'utf8')).toJS();
   const rust = workflow.jobs.rust;
   assert.deepEqual(rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
@@ -80,12 +80,15 @@ test('existing canonical M0, checkouts and job deadlines remain intact before fi
   assert.equal(checkout.with.ref, undefined, 'preserve existing merge-revision integration policy');
   assert.equal(rust['timeout-minutes'], "${{ matrix.os == 'windows-latest' && 60 || 40 }}");
   const m0 = rust.steps.findIndex(row => row.id === 'm0-complete');
-  const m7 = rust.steps.findIndex(row => row.id === 'm7-generic');
-  assert(m0 >= 0 && m7 > m0);
+  assert.equal(m0, rust.steps.length - 1);
   assert.equal(rust.steps[m0].run, 'node scripts/run-m0-conformance.mjs');
-  assert.equal(rust.steps[m7].env.ZRYNA_M7_UPSTREAM_M0_RESULT, '${{ steps.m0-complete.outcome }}');
-  assert(rust.steps[m7].run.includes('--expected-source-revision "${{ github.sha }}"'));
-  const upload = rust.steps.find(row => row.name === 'Retain M7 generic acceptance commands and actual counts');
+  const job = workflow.jobs['m7-platform']; assert.deepEqual(job.needs, ['rust']);
+  assert.deepEqual(job.strategy.matrix.os, rust.strategy.matrix.os);
+  const packet = job.steps.find(row => row.id === 'm7-generic');
+  assert.equal(packet.env.ZRYNA_M7_UPSTREAM_M0_RESULT, '${{ needs.rust.result }}');
+  assert(packet.run.includes('--expected-source-revision "${{ github.sha }}"'));
+  assert.equal(job.steps[0].with.ref, undefined, 'same tested merge revision in the dedicated job');
+  const upload = job.steps.find(row => row.name === 'Retain M7 generic acceptance commands and actual counts');
   assert.equal(upload.with['if-no-files-found'], 'error');
   assert(upload.with.name.includes('${{ github.sha }}'));
 });

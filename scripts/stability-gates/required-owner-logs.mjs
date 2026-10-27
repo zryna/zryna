@@ -94,5 +94,5 @@ export function reconcileRequiredOwnerLogs(index, observation, { source: expecte
     coverageCardinality: consumed.length, rawIgnoredSubtracted: 0,
     sourceAuthenticated: false, proofQualified: false, closureStatus: 'blocked', thresholds: null,
     unresolved: ['full-M0 target framing/extraction and source/host/log authentication', 'all other required owner evidence',
-      'Linux native-source owner selection', 'conditional installed lifecycle scope/material/supervisor', 'numeric thresholds and other #418 gates'] });
+      'authenticated native-source execution evidence on both selected hosts', 'conditional installed lifecycle scope/material/supervisor', 'numeric thresholds and other #418 gates'] });
 }

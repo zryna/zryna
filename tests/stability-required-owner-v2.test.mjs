@@ -63,8 +63,19 @@ test('unknown target, duplicate execution section and other-target required row 
   const names = index.rows.filter(row => row.package === one.package && row.target === one.target).map(row => ({ name: row.fullTestName, outcome: 'ok' }));
   names.push({ name: 'pinned_provider_matches_frozen_diagnostic_corpus', outcome: 'ok' }); z.rewrite(one.stdout, transcript(names)); assert.throws(() => run(z));
 });
-test('Linux native-source and lifecycle remain unresolved, not waived or assigned Windows receipts', () => {
-  assert.throws(() => run(fixture('native-source-resource', 'linux-x86_64')));
+test('both native-source hosts select all four exact resource names without claiming authenticated proof', () => {
+  for (const host of ['linux-x86_64', 'windows-x86_64']) {
+    const result = run(fixture('native-source-resource', host));
+    assert.equal(result.coverageCardinality, 4);
+    assert.equal(result.ownerTargets[0].counts.passed, 4);
+    assert.equal(result.rawIgnoredSubtracted, 0);
+    assert.equal(result.sourceAuthenticated, false); assert.equal(result.proofQualified, false);
+    assert.equal(result.closureStatus, 'blocked'); assert.equal(result.thresholds, null);
+    for (const row of index.rows.filter(row => row.alternatives.includes('native-source-resource')))
+      assert.equal(row.primaryOwnerByHost[host], 'native-source-resource');
+  }
+});
+test('conditional lifecycle remains unresolved and cannot borrow another selected owner', () => {
   const f = validFixture(); f.observation.owner = 'installed-lifecycle'; assert.throws(() => run(f));
 });
 test('fixed declaration/material identity and blocked/no-auth output cannot be promoted', () => {

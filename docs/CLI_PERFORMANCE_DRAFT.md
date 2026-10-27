@@ -1,21 +1,53 @@
 # CLI performance collection draft
 
-This draft describes four fixed, genuine source families, with 24 Linux and 20 Windows build/run selectors. The current declaration is `tests/cli-performance-methodology-v4.json`; its single reader pins the complete canonical document. Existing v1 registry, reader, runner and null thresholds stay unchanged. Historical methodology versions are review evidence outside the adopted dependency graph.
+The frozen `tests/cli-performance-methodology-v4.json` defines four original
+families, 24 Linux and 20 Windows build/run selectors. Its single reader pins the
+complete canonical document, 27 selected source/material files and original import
+graphs. Historical methodology versions remain review evidence; the v1 registry,
+reader, runner and null thresholds retain their existing contracts.
 
-The four expected Run values remain M1 -2147483648, M2 42, M3 29 and M7 97. Original source bytes, arguments, profiles, module graphs, deterministic oracles, one warmup/five measured attempts and all five samples are fixed. Run means CLI compilation plus execution, not runtime-only measurement. M3 stages the original public fixture as main.zry plus math.zry under its fixed create-only ignored cache directory; --root remains the compiler checkout. No source rewrite is permitted.
+Expected Run values are M1 -2147483648, M2 42, M3 29 and M7 97. Arguments,
+profiles, source bytes, deterministic outcomes, one warmup and five measured
+attempts are fixed. Run includes CLI compilation plus execution. M3 stages its
+original main.zry/math.zry copies in a create-only ignored directory while --root
+remains the compiler checkout; source rewriting is forbidden.
 
-The Linux IO adapter is `scripts/stability-gates/cli-performance-linux-io-v2.mjs`, exported function `captureLinuxDraft({document,capture,oracles,root,output})`. It uses the current reader directly. Its finite controller, source/artifact checks, original process owner, raw-before-validation capture, exact output inventory, create-only files and cleanup are preserved. Host containment is at most 900000ms, cleanup is 10000ms and combined streams are 16777216 bytes. These are containment limits, not performance thresholds. Failed sessions remain invalid and retain bounded owned diagnostic state; they are not automatically retried.
+The Linux adapter `captureLinuxDraft({document,capture,oracles,root,output})` uses
+the [portable provider](CLI_PERFORMANCE_PORTABLE_PROVIDER_PROPOSAL.md), whose root,
+fixed recipe and actual receipt hashes bind the selected GNU executable. It uses
+no caller-selected replacement or installation. Private absolute-origin v1
+provider packets are historical IO qualification, not portable CI admission.
 
-For root-owned IO qualification only, the separate frozen operator record admits exactly `/tmp/m418-gnu-time-tool/extracted/usr/bin/time` (27384 bytes; SHA-256 efc0d1112e36ec76c14bf7508e287935cf1631d9d0d91fb532802d07aef51cea) and its exact signed-package-origin record. Reported version remains `time (GNU Time) UNKNOWN`; package version 1.9-0.2 is separately recorded. No install, elevation, system path overwrite or caller-selected replacement is supported. This private path is not portable CI admission. Source/tool/host admission is an independent operator responsibility; labels and hashes alone grant none.
+Hosted collection builds an actual locked offline release CLI, checks architecture
+and measures its independently copied/rehashed single-link image. Debug builds
+can qualify IO only. Explicit source, tools, runtime providers and environment are
+rechecked; private output/cache leaves start absent. Raw statuses, argv, streams
+and timing records precede semantic validation. Invalid sessions retain bounded
+diagnostics and are not retried automatically.
 
-Wall timing brackets awaited owned execution with hrtime.bigint. The end includes bounded EOF and descendant cleanup, before artifact validation/deletion. Nanosecond representation is not a precision or CPU-time claim. Linux memory is GNU time wait4 maxRSS in KiB, not simultaneous summed process-tree RSS. Windows peak job committed bytes is a separate method; no Windows collector or host qualification is supplied here.
+Each selector first completes two untimed correctness/artifact replays with exact
+owned cleanup between them. Typed original outcomes and existing artifact/source
+audits fix both streams and complete sorted artifact inventories before timed
+observations exist. Timed outputs cannot supply their own goldens. Original M3
+staging bytes and import closure are checked before and after commands.
 
-Before any real collection, the owner must:
+Linux uses hrtime.bigint around owned execution, including bounded EOF/descendant
+cleanup before artifact validation/deletion. Nanoseconds imply neither CPU time
+nor a precision guarantee. Memory is GNU wait4 maximum RSS KiB, not simultaneous
+summed tree RSS. [Windows](CLI_PERFORMANCE_WINDOWS_DRAFT.md) instead uses native
+QPC and Job committed bytes. Generic host containment is at most 900000 ms;
+cleanup is 10000 ms and combined streams 16777216 bytes. The hosted operator
+record fixes 15000 ms. Containment caps are not performance thresholds.
 
-1. Independently review the exact source delta and frozen map. Admit actual clean whole-source commit/tree, tools/build receipts, runtime providers, collector closure, host/CPU/quota/cache policy and exclusive process ownership. Selected pins are consistency observations only.
-2. Execute the original public correctness cases for every fixed selector outside measurement. Check original source-derived typed values and existing source-bound decoders/audits. Perform deterministic same-path paired replay with exact cleanup between runs; independently freeze all 24 Linux stdout bytes and complete sorted artifact inventories/sizes/hashes before timed output exists. Do not learn artifact goldens from a measured candidate.
-3. Freeze canonical capture and independent oracle/review hashes. Admit exact CLI, Node, GNU tool and environment. A debug CLI is allowed only in `io-qualification`, with an actual debug build receipt; it cannot issue baseline or held-out evidence. Use private output ancestors and absent output/cache leaves.
-4. Qualify real CLI/source/FS/provider/cleanup behavior with the fixed 144 attempts (24 cells, one warmup plus five), retaining every raw status/stdout/stderr/argv/time record. Require no timeout, omissions, retries, artifact mismatch or remaining owned child/cache/output bundle. Existing three trusted Node calibration controls qualify only their narrow earlier ownership/metric seam, not this collector.
-5. Review actual results before any baseline work. Release-class actual build/source/host admission and two independent baseline rounds are still required. Keep variance, medians, maxima and every sample; freeze separately reviewed threshold authority before a held-out candidate. Timeout caps and synthetic units cannot become performance thresholds.
+The four #576 jobs collected 528 attempts: 440 measured and 88 warmups, alongside
+176 untimed paired invocations. Both host pairs reproduced their complete release
+image byte-for-byte. These are unqualified observations, not baseline admission.
+The [retained-evidence readers](CLI_PERFORMANCE_ARCHIVE.md) and
+[live platform link](CLI_PERFORMANCE_PLATFORM_LINK.md) provide separate checks.
 
-All draft outputs retain sourceAuthenticated=false, performanceQualified=false, baselineAuthority=null, thresholds=null and closureStatus=blocked. `collectorImplemented=false` in the declaration status means the admitted collection capability is still unqualified; prototype code or a synthetic controller pass does not promote it. Windows implementation/qualification, required ignored-proof accounting, security, reproducibility and final #418 closure remain separate gates.
+Draft reports retain sourceAuthenticated=false, performanceQualified=false,
+baselineAuthority=null, thresholds=null and closureStatus=blocked. The declaration's
+collectorImplemented=false describes absent admitted capability. Source/build/host
+and oracle provenance, reviewed variance policy, externally frozen baseline and
+threshold authority, genuine held-out verification, required resource/security
+proofs and the final #418 report remain necessary. No label or hash grants them.
