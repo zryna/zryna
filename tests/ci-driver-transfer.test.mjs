@@ -9,6 +9,9 @@ const debugProfile = {
   CARGO_PROFILE_DEV_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}",
   CARGO_PROFILE_TEST_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}",
 };
+const m4DebugKeys = ['CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG'];
+const m4DebugText = '      # Keep full core verification inside its fixed job budget without debug-symbol generation.\n' +
+  "      CARGO_PROFILE_DEV_DEBUG: '0'\n      CARGO_PROFILE_TEST_DEBUG: '0'\n";
 function transferred() {
   const value = structuredClone(legacy), jobs = value.jobs;
   const moved = jobs.rust.steps.splice(8, 7);
@@ -28,9 +31,71 @@ test('actual workflow transfers all seven steps before canonical M2 and gates M0
   const bytes = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   const parsed = parseDocument(bytes); assert.deepEqual(parsed.errors, []);
   assert.deepEqual(parsed.toJS().jobs.rust.env, debugProfile, 'actual Linux CI uses reviewed debug profile');
+  for (const key of m4DebugKeys) assert.equal(parsed.toJS().jobs['m4-platform'].env[key], '0');
   assert.deepEqual(withoutDriverTransfer(parsed.toJS()), legacy);
   const text = withoutDriverTransferText(bytes);
   const old = parseDocument(text); assert.deepEqual(old.errors, []); assert.deepEqual(old.toJS(), legacy);
+});
+test('exact M4 dev/test debug omission reverses without changing old fixtures or its input', () => {
+  const value = transferred(); Object.assign(value.jobs['m4-platform'].env,
+    { CARGO_PROFILE_DEV_DEBUG: '0', CARGO_PROFILE_TEST_DEBUG: '0' });
+  const before = structuredClone(value);
+  assert.deepEqual(withoutDriverTransfer(value), legacy); assert.deepEqual(value, before);
+  const text = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  assert.equal(text.split(m4DebugText).length, 2);
+  const previous = text.replace(m4DebugText, '');
+  assert.equal(withoutDriverTransferText(text), withoutDriverTransferText(previous));
+});
+test('M4 debug inverse rejects each missing wrong unknown nonstring or moved field', () => {
+  for (const key of m4DebugKeys) for (const mutate of [
+    w => { delete w.jobs['m4-platform'].env[key]; },
+    w => { const value = w.jobs['m4-platform'].env[key]; delete w.jobs['m4-platform'].env[key];
+      w.jobs['m4-platform'].env[`${key}_UNKNOWN`] = value; },
+    ...['1', 'line-tables-only', '', 'false', 0, null].map(value => w => { w.jobs['m4-platform'].env[key] = value; }),
+    w => { const value = w.jobs['m4-platform'].env[key]; delete w.jobs['m4-platform'].env[key]; w.env[key] = value; },
+    w => { const value = w.jobs['m4-platform'].env[key]; delete w.jobs['m4-platform'].env[key];
+      w.jobs['m4-platform'].steps[0].env = { [key]: value }; },
+  ]) {
+    const value = transferred(); Object.assign(value.jobs['m4-platform'].env,
+      { CARGO_PROFILE_DEV_DEBUG: '0', CARGO_PROFILE_TEST_DEBUG: '0' });
+    mutate(value); assert.throws(() => withoutDriverTransfer(value));
+  }
+  for (const target of ['workflow', 'step']) {
+    const value = transferred();
+    const destination = target === 'workflow' ? value.env : (value.jobs['m4-platform'].steps[0].env = {});
+    Object.assign(destination, { CARGO_PROFILE_DEV_DEBUG: '0', CARGO_PROFILE_TEST_DEBUG: '0' });
+    assert.throws(() => withoutDriverTransfer(value));
+  }
+  rejects(w => { w.jobs['m4-platform'].env.UNKNOWN_DEBUG_SETTING = '0'; });
+});
+test('M4 reviewed debug pair does not waive caps commands assertions optimization or other env keys', () => {
+  for (const mutate of [
+    w => { w.jobs['m4-platform']['timeout-minutes'] = 91; },
+    w => { w.jobs['m4-platform'].env.CARGO_BUILD_JOBS = 4; },
+    w => { w.jobs['m4-platform'].env.RUST_TEST_THREADS = 4; },
+    w => { w.jobs['m4-platform'].env.CARGO_PROFILE_TEST_DEBUG_ASSERTIONS = 'false'; },
+    w => { w.jobs['m4-platform'].env.CARGO_PROFILE_DEV_OPT_LEVEL = '1'; },
+    w => { w.jobs['m4-platform'].env.CARGO_PROFILE_TEST_OPT_LEVEL = '1'; },
+    w => { w.jobs['m4-platform'].env.UNKNOWN_DEBUG_SETTING = '0'; },
+    w => { w.jobs['m4-platform'].steps.find(step => step.name === 'Execute complete M0 through M4 core matrix').run = 'true'; },
+    w => { w.jobs['m4-platform'].steps[0]['continue-on-error'] = true; },
+  ]) {
+    const value = transferred(); Object.assign(value.jobs['m4-platform'].env,
+      { CARGO_PROFILE_DEV_DEBUG: '0', CARGO_PROFILE_TEST_DEBUG: '0' });
+    mutate(value); assert.throws(() => withoutDriverTransfer(value));
+  }
+});
+test('M4 text inverse admits only the exact reviewed three lines in their original placement', () => {
+  const text = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const anchor = '      RUST_TEST_THREADS: 3\n' + m4DebugText + '    steps:\n';
+  assert.equal(text.split(anchor).length, 2);
+  const moved = text.replace(anchor, m4DebugText + '      RUST_TEST_THREADS: 3\n    steps:\n');
+  assert.deepEqual(parseDocument(moved).toJS(), parseDocument(text).toJS());
+  const variants = [moved, text.replace(m4DebugText, m4DebugText + m4DebugText),
+    text.replace(m4DebugText, m4DebugText.replace('full core', 'core')),
+    text.replace("      CARGO_PROFILE_DEV_DEBUG: '0'\n", '      CARGO_PROFILE_DEV_DEBUG: "0"\n'),
+    text.replace("      CARGO_PROFILE_TEST_DEBUG: '0'\n", '      CARGO_PROFILE_TEST_DEBUG: "0"\n')];
+  for (const variant of variants) assert.throws(() => withoutDriverTransferText(variant));
 });
 test('exact Linux host debug profile reverses without changing historical authority or its input', () => {
   const value = transferred(); value.jobs.rust.env = structuredClone(debugProfile);

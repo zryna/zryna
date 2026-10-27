@@ -10,6 +10,9 @@ const HOST_DEBUG_PROFILE = {
 };
 const HOST_DEBUG_TEXT = '    env:\n' + Object.entries(HOST_DEBUG_PROFILE)
   .map(([key, value]) => `      ${key}: "${value}"\n`).join('');
+const M4_DEBUG_KEYS = ['CARGO_PROFILE_DEV_DEBUG', 'CARGO_PROFILE_TEST_DEBUG'];
+const M4_DEBUG_TEXT = '      # Keep full core verification inside its fixed job budget without debug-symbol generation.\n' +
+  "      CARGO_PROFILE_DEV_DEBUG: '0'\n      CARGO_PROFILE_TEST_DEBUG: '0'\n";
 const MOVED = [
   {
     "name": "Verify M2 semantics",
@@ -78,6 +81,13 @@ export function withoutDriverTransfer(candidate) {
     assert.deepEqual(rust.env, HOST_DEBUG_PROFILE, 'only reviewed Linux host debug profile');
     delete rust.env;
   }
+  const m4 = original.jobs['m4-platform'];
+  if (M4_DEBUG_KEYS.some(key => Object.hasOwn(m4.env, key))) {
+    for (const key of M4_DEBUG_KEYS) {
+      assert.equal(m4.env[key], '0', 'only the complete reviewed M4 debug-symbol pair');
+      delete m4.env[key];
+    }
+  }
   assert.deepEqual(m2.steps.slice(7, 14), MOVED, 'exact seven moved steps after fetch');
   assert.equal(m2.steps[6].name, 'Fetch locked Rust dependencies');
   assert.deepEqual(m2.steps[14], { run: 'pnpm m2:check' }, 'moved work precedes canonical M2');
@@ -143,6 +153,14 @@ export function withoutDriverTransferText(text) {
   legacy = editJob(legacy, 'm0', job => job.replace(', m2-platform]', ']')
     .replace('          M2_PLATFORM_RESULT: ${{ needs.m2-platform.result }}\n', '')
     .replace(REQUIRE, ''));
+  legacy = editJob(legacy, 'm4-platform', job => {
+    if (M4_DEBUG_KEYS.some(key => Object.hasOwn(parsed.toJS().jobs['m4-platform'].env, key))) {
+      const block = '      RUST_TEST_THREADS: 3\n' + M4_DEBUG_TEXT + '    steps:\n';
+      assert.equal(job.split(block).length, 2, 'exact reviewed M4 debug-symbol text placement');
+      return job.replace(block, '      RUST_TEST_THREADS: 3\n    steps:\n');
+    }
+    return job;
+  });
   assert.equal(digest(legacy), LEGACY_TEXT_SHA, 'exact legacy text for unchanged text assertions');
   return legacy;
 }

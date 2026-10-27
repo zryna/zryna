@@ -762,6 +762,9 @@ jobs:
       M4_SOURCE_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
       CARGO_BUILD_JOBS: 3
       RUST_TEST_THREADS: 3
+      # Keep full core verification inside its fixed job budget without debug-symbol generation.
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
     steps:
       - name: Checkout exact M4 candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
