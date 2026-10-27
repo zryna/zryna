@@ -1,4 +1,5 @@
 import './lifecycle-owner-inputs.test.mjs';
+import './lifecycle-owner-materials.test.mjs';
 import './dependency-lock-parser.test.mjs';
 import './msal-backport.test.mjs';
 import './stability-contract-coverage-v2.test.mjs';
