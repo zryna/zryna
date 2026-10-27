@@ -62,40 +62,43 @@ test('detached push and dispatch source observations bind their exact selected c
       env: { ...env, GITHUB_REF: 'refs/tags/v0.2.3' } }), /actual detached source branch/));
 });
 
-test('actual fix branch observations preserve detached source proof and cannot relabel another head', () => {
-  const fixed = 'refs/heads/fix/bounded-generics-profile';
-  const branch = fixed.slice('refs/heads/'.length);
-  const attached = selectNativeSourceRef({ head, attachedRef: fixed,
-    env: { GITHUB_REF: 'refs/heads/main' } });
-  assert.equal(attached.ref, fixed); assert.equal(attached.commit, head);
-  assert.equal(attached.observation, 'actual-git-symbolic-ref');
-  const event = pr(); event.pull_request.head.ref = branch;
-  withEvent('pull_request', event, env => {
-    const actual = { ...env, GITHUB_REF: 'refs/pull/572/merge', GITHUB_HEAD_REF: branch };
-    const observed = selectNativeSourceRef({ head, attachedRef: null, env: actual });
-    assert.equal(observed.ref, fixed); assert.equal(observed.commit, head);
-    assert.equal(observed.observation, 'actual-github-event-head');
-    assert.equal(observed.event.name, 'pull_request');
-    for (const changed of [
-      { GITHUB_HEAD_REF: 'main' }, { GITHUB_HEAD_REF: 'codex/native-install' },
-      { GITHUB_REPOSITORY: 'foreign/repo' }, { GITHUB_ACTIONS: 'false' },
-    ]) assert.throws(() => selectNativeSourceRef({ head, attachedRef: null,
-      env: { ...actual, ...changed } }));
-    assert.throws(() => selectNativeSourceRef({ head: 'b'.repeat(40), attachedRef: null, env: actual }));
-  });
-  for (const [name, event] of [['push', { after: head, ref: fixed }],
-    ['workflow_dispatch', { ref: fixed }]]) {
-    withEvent(name, event, env => {
-      const actual = { ...env, GITHUB_REF: fixed };
-      assert.equal(selectNativeSourceRef({ head, attachedRef: null, env: actual }).ref, fixed);
+for (const [kind, fixed] of [['fix', 'refs/heads/fix/bounded-generics-profile'],
+  ['test', 'refs/heads/test/windows-resource-calibration']]) {
+  test(`actual ${kind} branch observations preserve detached source proof and cannot relabel another head`, () => {
+    const branch = fixed.slice('refs/heads/'.length);
+    const attached = selectNativeSourceRef({ head, attachedRef: fixed,
+      env: { GITHUB_REF: 'refs/heads/main' } });
+    assert.equal(attached.ref, fixed); assert.equal(attached.commit, head);
+    assert.equal(attached.observation, 'actual-git-symbolic-ref');
+    const event = pr(); event.pull_request.head.ref = branch;
+    withEvent('pull_request', event, env => {
+      const actual = { ...env, GITHUB_REF: 'refs/pull/572/merge', GITHUB_HEAD_REF: branch };
+      const observed = selectNativeSourceRef({ head, attachedRef: null, env: actual });
+      assert.equal(observed.ref, fixed); assert.equal(observed.commit, head);
+      assert.equal(observed.observation, 'actual-github-event-head');
+      assert.equal(observed.event.name, 'pull_request');
+      for (const changed of [
+        { GITHUB_HEAD_REF: 'main' }, { GITHUB_HEAD_REF: 'codex/native-install' },
+        { GITHUB_REPOSITORY: 'foreign/repo' }, { GITHUB_ACTIONS: 'false' },
+      ]) assert.throws(() => selectNativeSourceRef({ head, attachedRef: null,
+        env: { ...actual, ...changed } }));
       assert.throws(() => selectNativeSourceRef({ head: 'b'.repeat(40), attachedRef: null, env: actual }));
-      assert.throws(() => selectNativeSourceRef({ head, attachedRef: null,
-        env: { ...actual, GITHUB_REF: 'refs/heads/main' } }));
     });
-  }
-  for (const unsafe of ['refs/heads/feature/native', 'refs/heads/fix/../main',
-    'refs/heads/fix/a.lock', 'refs/tags/v0.2.3']) {
-    assert.throws(() => selectNativeSourceRef({ head, attachedRef: unsafe,
-      env: { GITHUB_REF: fixed } }), /actual attached source branch/);
-  }
-});
+    for (const [name, event] of [['push', { after: head, ref: fixed }],
+      ['workflow_dispatch', { ref: fixed }]]) {
+      withEvent(name, event, env => {
+        const actual = { ...env, GITHUB_REF: fixed };
+        assert.equal(selectNativeSourceRef({ head, attachedRef: null, env: actual }).ref, fixed);
+        assert.throws(() => selectNativeSourceRef({ head: 'b'.repeat(40), attachedRef: null, env: actual }));
+        assert.throws(() => selectNativeSourceRef({ head, attachedRef: null,
+          env: { ...actual, GITHUB_REF: 'refs/heads/main' } }));
+      });
+    }
+    for (const unsafe of ['refs/heads/feature/native', 'refs/heads/fix/../main',
+      'refs/heads/fix/a.lock', 'refs/heads/test/../main', 'refs/heads/test/a.lock',
+      'refs/heads/test/a.', 'refs/heads/test/', 'refs/tags/v0.2.3']) {
+      assert.throws(() => selectNativeSourceRef({ head, attachedRef: unsafe,
+        env: { GITHUB_REF: fixed } }), /actual attached source branch/);
+    }
+  });
+}
