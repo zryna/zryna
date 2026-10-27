@@ -27,3 +27,10 @@ it does not read the receipt or impose a physical receipt hash/format contract.
 This proof preserves historical syntax-only observations. It adds no source,
 semantic, backend, runtime, host or performance authentication, and no baseline,
 threshold, waiver or execution qualification.
+
+The same storage suite also covers the imported Copy enum v5 syntax DTO at
+`tests/m7-generic-owned-copy-enum-phi/2-reference.json`. Compact JSON preserves
+every value and ordering; reconstructing its original two-space representation
+recovers all 508,297 bytes and their original SHA-256. The compact form has its
+own physical pin. Existing source/arena/semantic checks consume the same DTO;
+the single/imported source seal and nine-export attack/recovery proof still run.

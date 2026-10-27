@@ -73,3 +73,16 @@ for (const fixture of fixtures) {
     assert(/source authentication|No compiler source\/semantic\/seal\/runtime claim/iu.test(receipts.status));
   });
 }
+
+test('frozen Copy enum DTO retains its complete original byte identity', () => {
+  const bytes = readFileSync(new URL('./m7-generic-owned-copy-enum-phi/2-reference.json', import.meta.url));
+  const original = Buffer.from(`${JSON.stringify(JSON.parse(bytes), null, 2)}\n`);
+  assert.equal(original.length, 508297);
+  assert.equal(sha(original), '6c34a7ba79583de8d612371c5ead79989989a22a4e2fbe32bb68204404672eb0');
+});
+test('frozen Copy enum DTO storage has an independent compact identity', () => {
+  const bytes = readFileSync(new URL('./m7-generic-owned-copy-enum-phi/2-reference.json', import.meta.url));
+  assert.equal(bytes.length, 159910);
+  assert.equal(sha(bytes), 'e073b60885c6c90a5c7f6f17811c968d416c4d134f553a2876266d04d5f06aaa');
+  assert.equal(bytes.toString(), `${JSON.stringify(JSON.parse(bytes))}\n`);
+});
