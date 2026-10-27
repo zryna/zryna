@@ -6,6 +6,7 @@ import block_buffer_fixture as fixture
 import dependency_audit as gate
 import dependency_audit_block_buffer as owner
 from dependency_audit_inputs import AuditError, encode, sha
+from dependency_audit_inputs import snapshot
 from dependency_audit_osv import bind_modified, classify
 
 
@@ -90,6 +91,28 @@ class BlockBufferControls(unittest.TestCase):
         value = self.fresh(); value.receipt["commands"]["probe"]["logs"]["stdout"]["sha256"] = "0" * 64
         with self.assertRaises(AuditError): value.validate()
         value = self.fresh(); (value.output / "binary").write_bytes(b"substituted")
+        with self.assertRaises(AuditError): value.validate()
+
+    def test_windows_receipt_requires_its_actual_admitted_linker_pin(self):
+        value = self.fresh()
+        value.receipt["host"].update(platform="win32", target="x86_64-pc-windows-msvc")
+        with self.assertRaises(AuditError): value.validate()
+        linker = value.base / "selected-link.exe"; linker.write_bytes(b"synthetic Microsoft linker; never executed\n")
+        value.tools["linker"] = snapshot(linker)
+        for phase in ["before", "after"]:
+            value.receipt["tools"][phase]["linker"] = value.project(value.tools["linker"])
+        value.receipt["environment"].update(ZRYNA_DEPENDENCY_LINKER=str(linker),
+            CARGO_ENCODED_RUSTFLAGS="-C\x1flinker=" + str(linker))
+        value.receipt["commands"]["compile"]["command"]["args"] = ["-C", "linker=" + str(linker)]
+        value.validate()
+        value.receipt["environment"]["CARGO_ENCODED_RUSTFLAGS"] = "-C\x1flinker=wrong"
+        with self.assertRaises(AuditError): value.validate()
+        value.receipt["environment"]["CARGO_ENCODED_RUSTFLAGS"] = "-C\x1flinker=" + str(linker)
+        value.receipt["commands"]["compile"]["command"]["args"] = []
+        with self.assertRaises(AuditError): value.validate()
+        value.receipt["commands"]["compile"]["command"]["args"] = ["-C", "linker=" + str(linker)]
+        for phase in ["before", "after"]:
+            value.receipt["tools"][phase]["linker"]["path"] = str(value.base / "unrelated-link.exe")
         with self.assertRaises(AuditError): value.validate()
 
     def test_owning_source_mutation_and_failed_actual_call_cannot_mint(self):

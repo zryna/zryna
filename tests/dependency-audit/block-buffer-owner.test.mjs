@@ -1,11 +1,19 @@
 // Pure parser/projection controls; no process, Cargo, compiler or candidate execution.
 import assert from 'node:assert/strict';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, win32 } from 'node:path';
 import test from 'node:test';
 import { ownerEnvironment, selectOwnerGraph, selectSha2Artifact, TESTS, validateProbe }
   from '../../scripts/stability-gates/dependency-block-buffer-owner.mjs';
+import * as owner from '../../scripts/stability-gates/dependency-block-buffer-owner.mjs';
 const source = 'registry+https://github.com/rust-lang/crates.io-index';
 const bytes = value => Buffer.from(JSON.stringify(value) + '\n');
+function windowsEnvironment() {
+  const root = 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC\\14.44.35207\\';
+  return { HOME: 'C:\\Users\\runneradmin', CARGO_HOME: 'C:\\Users\\runneradmin\\.cargo',
+    RUSTUP_HOME: 'C:\\Users\\runneradmin\\.rustup', SystemRoot: 'C:\\Windows', PATH: 'Git-bin;DevShell-bin',
+    VCToolsInstallDir: root, INCLUDE: 'C:\\SDK Include', LIB: 'C:\\SDK Lib', LIBPATH: 'C:\\SDK LibPath',
+    ZRYNA_DEPENDENCY_LINKER: win32.join(root, 'bin', 'Hostx64', 'x64', 'link.exe') };
+}
 function metadata() {
   const packages = [['sha2', '0.10.9'], ['digest', '0.10.7'], ['block-buffer', '0.10.4']]
     .map(([name, version]) => ({ name, version, source, id: `${source}#${name}@${version}`,
@@ -65,7 +73,7 @@ test('only the complete three passing unfiltered probe names satisfy the owner t
   assert.throws(() => validateProbe(Buffer.from(stdout), Buffer.from('unaccounted error')));
 });
 test('owner environment drops credentials, flags and wrappers and fixes offline tool/target inputs', () => {
-  const env = { HOME: resolve('home'), CARGO_HOME: resolve('cargo'), RUSTUP_HOME: resolve('rustup'),
+  const env = { ...windowsEnvironment(), HOME: resolve('home'), CARGO_HOME: resolve('cargo'), RUSTUP_HOME: resolve('rustup'),
     PATH: 'trusted-path', SystemRoot: resolve('Windows'), RUSTFLAGS: '--cfg skip', RUSTC_WRAPPER: 'wrapper',
     RUSTC: 'wrong', CARGO_TARGET_DIR: 'old', CARGO_BUILD_JOBS: '999', SECRET_TOKEN: 'private' };
   const rustc = resolve('toolchain', 'rustc'), target = resolve('target');
@@ -76,4 +84,31 @@ test('owner environment drops credentials, flags and wrappers and fixes offline 
   assert.equal(actual.RUSTUP_TOOLCHAIN, '1.97.1');
   assert.throws(() => ownerEnvironment({ ...env, CARGO_HOME: 'relative' }, rustc, target));
   assert.throws(() => ownerEnvironment({ ...env, PATH: 'bad\0path' }, rustc, target));
+});
+test('Windows binds the DevShell MSVC linker for Cargo and direct rustc without splitting spaces', () => {
+  const input = { ...windowsEnvironment(), RUSTFLAGS: '--cfg injected',
+    CARGO_ENCODED_RUSTFLAGS: '-C\x1flinker=C:\\Git\\usr\\bin\\link.exe' };
+  const linker = input.ZRYNA_DEPENDENCY_LINKER;
+  const actual = ownerEnvironment(input, 'C:\\Rust\\rustc.exe', 'D:\\owner\\target', 'win32');
+  assert.equal(actual.CARGO_ENCODED_RUSTFLAGS, `-C\x1flinker=${linker}`);
+  assert.deepEqual(actual.CARGO_ENCODED_RUSTFLAGS.split('\x1f'), ['-C', `linker=${linker}`]);
+  assert(!Object.hasOwn(actual, 'RUSTFLAGS'));
+  assert.deepEqual(owner.linkerArguments(actual, 'win32'), ['-C', `linker=${linker}`]);
+  for (const key of ['INCLUDE', 'LIB', 'LIBPATH', 'VCToolsInstallDir']) assert.equal(actual[key], input[key]);
+  for (const bad of ['-C\x1flinker=link.exe', '-C linker=' + linker, `-C\x1flinker=${linker}\x1f--cfg=injected`])
+    assert.throws(() => owner.linkerArguments({ ...actual, CARGO_ENCODED_RUSTFLAGS: bad }, 'win32'));
+});
+test('Windows rejects other linkers, wrong tool roots and missing SDK while Linux keeps no linker binding', () => {
+  const input = windowsEnvironment();
+  for (const changes of [{ ZRYNA_DEPENDENCY_LINKER: 'C:\\Git\\usr\\bin\\link.exe' },
+    { ZRYNA_DEPENDENCY_LINKER: input.ZRYNA_DEPENDENCY_LINKER.replace('link.exe', 'lld-link.exe') },
+    { VCToolsInstallDir: 'C:\\Other\\VC\\' }, { VCToolsInstallDir: 'relative\\VC\\' },
+    { ZRYNA_DEPENDENCY_LINKER: input.ZRYNA_DEPENDENCY_LINKER.replace('x64\\link', 'x64\\..\\x64\\link') },
+    { ZRYNA_DEPENDENCY_LINKER: input.ZRYNA_DEPENDENCY_LINKER + '\x1f-C' },
+    { INCLUDE: '' }, { LIB: undefined }, { LIBPATH: undefined }])
+    assert.throws(() => ownerEnvironment({ ...input, ...changes }, 'C:\\Rust\\rustc.exe', 'D:\\target', 'win32'));
+  const linux = ownerEnvironment({ ...input, HOME: '/home/runner', CARGO_HOME: '/cache/cargo', RUSTUP_HOME: '/cache/rustup',
+    CARGO_ENCODED_RUSTFLAGS: '--cfg\x1finjected' }, '/tools/rustc', '/owner/target', 'linux');
+  for (const key of ['ZRYNA_DEPENDENCY_LINKER', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTFLAGS']) assert(!Object.hasOwn(linux, key));
+  assert.deepEqual(owner.linkerArguments(linux, 'linux'), []);
 });

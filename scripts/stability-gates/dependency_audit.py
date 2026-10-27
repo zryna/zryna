@@ -43,10 +43,14 @@ def collect(node, root, output, cargo=None, rustc=None):
     tools = [snapshot(node, 256 * 1024 * 1024), snapshot(Path(sys.executable).resolve(), 256 * 1024 * 1024)]
     if cargo is not None and rustc is not None:
         tools.extend(snapshot(path, 256 * 1024 * 1024) for path in (cargo, rustc))
+        if os.environ.get("ZRYNA_DEPENDENCY_LINKER"):
+            tools.append(snapshot(Path(os.environ["ZRYNA_DEPENDENCY_LINKER"]), 256 * 1024 * 1024))
     tool_versions = {"python": sys.version, "pythonExecutable": str(Path(sys.executable).resolve()),
                      "nodeExecutable": str(node), "pnpm": "not executed; lock generator is a declaration only"}
     if cargo is not None and rustc is not None:
         tool_versions.update({"cargoExecutable": str(cargo), "rustcExecutable": str(rustc)})
+        if os.environ.get("ZRYNA_DEPENDENCY_LINKER"):
+            tool_versions["linkerExecutable"] = os.environ["ZRYNA_DEPENDENCY_LINKER"]
     own = Path(__file__).parent
     tracked.extend(snapshot(own / path) for path in ("dependency_audit.py", "dependency_audit_inputs.py",
         "dependency_audit_node.py", "dependency_audit_osv.py", "dependency_audit_msal.py", "dependency_audit_block_buffer.py",

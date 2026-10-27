@@ -26,7 +26,7 @@ TESTS = ["every_partial_position_and_input_byte_preserves_cursor_on_panic",
          "exact_advisory_eager_panic_keeps_separate_cursor",
          "generator_and_padding_panics_keep_valid_separate_cursors"]
 # Complete reviewed source closure of the actual regression owner.
-PINS = {'scripts/stability-gates/dependency-block-buffer-owner.mjs': 'fa888466f4bc934a5da545cd1b85d48ed5844ec6207ad7e2137a82ad50ed3a06',
+PINS = {'scripts/stability-gates/dependency-block-buffer-owner.mjs': '963722f0cf9df7bfb6e6435d2639680cf9bb3e9a6283713582a068095ad0dc55',
         'tests/dependency-audit/block-buffer-owner.rs': '0c5b8fd9c0eea321d89c921ec185e44627238b7af31d9e2a54268102f1801a6d',
         'scripts/stability-gates/process.mjs': '12391db1cca0420525756ad4c601b5f4ac3354ee763e077298ebfcbe827a9cfb',
         'scripts/stability-gates/input.mjs': '09e5212dc41e61536461a8e1a13655463427db974ad59e82944b0d01efe80da0',
@@ -75,7 +75,9 @@ def _call(node, root, output, cargo, rustc):
     retain(output, "block-buffer-bridge.command.json", encode({"argv": argv, "timeoutSeconds": 120}))
     allowed = ("PATH", "HOME", "USERPROFILE", "TMP", "TEMP", "TMPDIR", "SystemRoot", "WINDIR",
                "CARGO_HOME", "RUSTUP_HOME", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy",
-               "https_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "NODE_EXTRA_CA_CERTS", "NODE_USE_SYSTEM_CA")
+               "https_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "NODE_EXTRA_CA_CERTS", "NODE_USE_SYSTEM_CA",
+               "INCLUDE", "LIB", "LIBPATH", "WindowsSdkDir", "WindowsSDKVersion", "UniversalCRTSdkDir", "UCRTVersion",
+               "VCToolsInstallDir", "VCToolsVersion", "ZRYNA_DEPENDENCY_LINKER")
     environment = {key: os.environ[key] for key in allowed if key in os.environ}
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         code, error = None, None
@@ -118,8 +120,17 @@ def validate_result(value, root, output, tools, sources):
     require({pin["path"]: _projection(pin) for pin in value["proofSources"]["before"]} ==
             {pin["path"]: _expected(pin) for pin in sources}, "every reviewed owning source")
     require(len(value["proofSources"]["before"]) == len(sources), "unique owning source pins")
-    for key in ("cargo", "rustc", "node"):
+    expected_tools = {"cargo", "rustc", "node"} | ({"linker"} if value["host"]["platform"] == "win32" else set())
+    require(set(tools) == set(value["tools"]["before"]) == expected_tools, "exact supported-platform admitted tools")
+    for key in expected_tools:
         require(_projection(value["tools"]["before"][key]) == _expected(tools[key]), "actual admitted owner tool " + key)
+    if "linker" in expected_tools:
+        linker = tools["linker"]["path"]
+        require(value["environment"].get("ZRYNA_DEPENDENCY_LINKER") == linker and
+                value["environment"].get("CARGO_ENCODED_RUSTFLAGS") == "-C\x1flinker=" + linker,
+                "fixed admitted Cargo linker binding")
+        require(value["commands"]["compile"]["command"]["args"][-2:] == ["-C", "linker=" + linker],
+                "fixed admitted direct probe compiler linker binding")
     for key, name, version in (("sha2", "sha2", "0.10.9"), ("digest", "digest", "0.10.7"),
                                ("blockBuffer", "block-buffer", "0.10.4")):
         package = value["graph"][key]
@@ -169,6 +180,8 @@ def qualify_not_affected(node, root, output, cargo, rustc):
     require(len(selected) == 1 and selected[0]["version"] == "0.10.4" and selected[0]["source"] == SOURCE and
             selected[0]["checksum"] == CHECKSUM, "exact locked original package archive")
     tools = {name: snapshot(path, 256 * 1024 * 1024) for name, path in (("node", node), ("cargo", cargo), ("rustc", rustc))}
+    if os.environ.get("ZRYNA_DEPENDENCY_LINKER"):
+        tools["linker"] = snapshot(Path(os.environ["ZRYNA_DEPENDENCY_LINKER"]), 256 * 1024 * 1024)
     value = _call(node, root, output, cargo, rustc)
     validate_result(value, root, output / "block-buffer-owner", tools, captured)
     for material in [*captured, *inputs, *tools.values()]:

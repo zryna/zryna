@@ -83,6 +83,13 @@ execution remain unresolved or invalid. The general source/cache/toolchain and
 host admission gates remain separate. Cargo files and frozen performance v4
 materials are unchanged.
 
+On Windows the workflow selects the installed Visual Studio developer environment
+and its explicit x64 Microsoft linker. Its SDK paths and actual linker pin are
+retained, and both Cargo and the probe compiler receive that exact linker path.
+This prevents an unrelated `link.exe` earlier on PATH from handling Rust objects.
+Manual Windows runs require the same developer environment and canonical
+`ZRYNA_DEPENDENCY_LINKER` selection. SDK/host admission remains a separate gate.
+
 ## Scope
 
 The report always retains `sourceAuthenticated: false`,

@@ -52,15 +52,31 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Checkout path resolution failed' }
           $admittedNode = (& node -p 'require("node:fs").realpathSync(process.execPath)').Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Node path resolution failed' }
-          $auditOutput = (& node -p 'require("node:path").join(require("node:fs").realpathSync(process.env.RUNNER_TEMP), "zryna-dependency-security")').Trim()
+          if ($env:RUNNER_OS -eq 'Windows') {
+            $developer = 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+            & $developer -SkipAutomaticLocation -Arch amd64 -HostArch amd64 | Out-Null
+            if (-not $?) { throw 'Windows developer environment selection failed' }
+            $compiler = (Get-Command cl.exe -CommandType Application | Select-Object -First 1).Source
+            $selectedLinker = Join-Path (Split-Path -Parent $compiler) 'link.exe'
+            $env:ZRYNA_DEPENDENCY_LINKER = (& $admittedNode -p 'require("node:fs").realpathSync(process.argv[1])' "$selectedLinker").Trim()
+            if ($LASTEXITCODE -ne 0) { throw 'Canonical Microsoft linker path required' }
+            foreach ($name in @('INCLUDE','LIB','LIBPATH','WindowsSdkDir','WindowsSDKVersion',
+              'UniversalCRTSdkDir','UCRTVersion','VCToolsInstallDir','VCToolsVersion')) {
+              $value = [Environment]::GetEnvironmentVariable($name)
+              if ([string]::IsNullOrWhiteSpace($value) -or $value.Contains("`n") -or $value.Contains("`r")) {
+                throw "Selected Windows SDK environment missing: $name"
+              }
+            }
+          }
+          $auditOutput = (& $admittedNode -p 'require("node:path").join(require("node:fs").realpathSync(process.env.RUNNER_TEMP), "zryna-dependency-security")').Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Output path resolution failed' }
           $admittedCargo = (& rustup which --toolchain 1.97.1 cargo).Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Pinned Cargo selection failed' }
           $admittedRustc = (& rustup which --toolchain 1.97.1 rustc).Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Pinned rustc selection failed' }
-          $admittedCargo = (& node -p 'require("node:fs").realpathSync(process.argv[1])' "$admittedCargo").Trim()
+          $admittedCargo = (& $admittedNode -p 'require("node:fs").realpathSync(process.argv[1])' "$admittedCargo").Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Canonical Cargo path required' }
-          $admittedRustc = (& node -p 'require("node:fs").realpathSync(process.argv[1])' "$admittedRustc").Trim()
+          $admittedRustc = (& $admittedNode -p 'require("node:fs").realpathSync(process.argv[1])' "$admittedRustc").Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Canonical rustc path required' }
           if (-not $env:HOME) { $env:HOME = $env:USERPROFILE }
           if (-not $env:CARGO_HOME) { $env:CARGO_HOME = Join-Path $env:HOME '.cargo' }

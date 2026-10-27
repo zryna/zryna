@@ -1,7 +1,7 @@
 // Actual local regression owner only; it never classifies or authenticates an advisory.
 import assert from 'node:assert/strict';
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TextDecoder } from 'node:util';
 import { execute } from './process.mjs';
@@ -75,16 +75,33 @@ export function validateProbe(stdout, stderr) {
   assert.deepEqual(lines.slice(1, 4).sort(), TESTS.map(name => `test ${name} ... ok`));
   assert.match(lines[4], /^test result: ok\. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s$/u);
 }
-export function ownerEnvironment(input, rustc, target) {
+function selectedWindowsLinker(input) {
+  for (const key of ['VCToolsInstallDir', 'INCLUDE', 'LIB', 'LIBPATH', 'ZRYNA_DEPENDENCY_LINKER'])
+    assert(typeof input[key] === 'string' && input[key].length > 0 && input[key].length <= 32768 &&
+      !/[\x00-\x1f\x7f]/u.test(input[key]), 'explicit bounded DevShell linker/SDK inputs');
+  const root = input.VCToolsInstallDir, linker = input.ZRYNA_DEPENDENCY_LINKER;
+  assert(/^[A-Za-z]:\\/u.test(root) && win32.normalize(root) === root, 'canonical absolute VC tools root');
+  assert.equal(linker, win32.join(root, 'bin', 'Hostx64', 'x64', 'link.exe'), 'exact selected native MSVC linker');
+  return linker;
+}
+export function linkerArguments(environment, platform = process.platform) {
+  if (platform !== 'win32') return [];
+  const argument = `linker=${selectedWindowsLinker(environment)}`;
+  assert.equal(environment.CARGO_ENCODED_RUSTFLAGS, `-C\x1f${argument}`, 'fixed encoded Cargo linker flags');
+  return ['-C', argument];
+}
+export function ownerEnvironment(input, rustc, target, platform = process.platform) {
   const keys = ['PATH', 'HOME', 'CARGO_HOME', 'RUSTUP_HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'SystemRoot', 'WINDIR',
     'TEMP', 'TMP', 'USERPROFILE', 'INCLUDE', 'LIB', 'LIBPATH', 'WindowsSdkDir', 'WindowsSDKVersion',
     'UniversalCRTSdkDir', 'UCRTVersion', 'VCToolsInstallDir', 'VCToolsVersion'];
+  if (platform === 'win32') keys.push('ZRYNA_DEPENDENCY_LINKER');
   const env = Object.fromEntries(keys.filter(key => input[key] !== undefined).map(key => [key, input[key]]));
   for (const value of Object.values(env)) assert(typeof value === 'string' && value.length > 0 && value.length <= 32768 && !value.includes('\0'));
-  for (const key of ['HOME', 'CARGO_HOME', 'RUSTUP_HOME']) assert(isAbsolute(env[key]), 'explicit absolute cache/home');
-  assert(env.PATH); if (process.platform === 'win32') assert(env.SystemRoot);
+  for (const key of ['HOME', 'CARGO_HOME', 'RUSTUP_HOME']) assert((platform === 'win32' ? win32.isAbsolute : isAbsolute)(env[key]), 'explicit absolute cache/home');
+  assert(env.PATH); if (platform === 'win32') assert(env.SystemRoot);
   return { ...env, RUSTC: rustc, RUSTUP_TOOLCHAIN: '1.97.1', CARGO_TARGET_DIR: target,
-    CARGO_BUILD_JOBS: '2', CARGO_INCREMENTAL: '0', CARGO_NET_OFFLINE: 'true' };
+    CARGO_BUILD_JOBS: '2', CARGO_INCREMENTAL: '0', CARGO_NET_OFFLINE: 'true',
+    ...(platform === 'win32' ? { CARGO_ENCODED_RUSTFLAGS: `-C\x1flinker=${selectedWindowsLinker(env)}` } : {}) };
 }
 function checkedPins(root, specs) {
   return specs.map(([path, bytes, hash]) => {
@@ -108,7 +125,13 @@ export async function runBlockBufferOwner({ root, output, cargo, rustc }) {
   let created = false;
   const inputs = () => Object.fromEntries(checkedPins(root, INPUTS).map((pin, i) => [i ? 'lock' : 'manifest', pin]));
   const sources = () => SOURCES.map(path => pinFile(join(root, path), 256 * 1024));
-  const tools = () => Object.fromEntries(Object.entries({ cargo, rustc, node: process.execPath }).map(([key, path]) => [key, pinFile(path)]));
+  const tools = () => {
+    const selected = { cargo, rustc, node: process.execPath };
+    if (process.platform === 'win32') {
+      selected.linker = selectedWindowsLinker(process.env); assert.equal(realpathSync(selected.linker), selected.linker);
+    }
+    return Object.fromEntries(Object.entries(selected).map(([key, path]) => [key, pinFile(path)]));
+  };
   const registry = () => checkedPins(dirname(receipt.graph.blockBuffer.manifestPath), REGISTRY_PINS);
   try {
     assert.equal(process.version, 'v22.22.1'); assert(['linux', 'win32'].includes(process.platform) && process.arch === 'x64');
@@ -146,7 +169,7 @@ export async function runBlockBufferOwner({ root, output, cargo, rustc }) {
     const build = await observe('build', cargo, ['build', '--offline', '--locked', '-p', 'sha2', '--lib', '--message-format=json']);
     const library = selectSha2Artifact(build.stdout, receipt.graph, target); receipt.artifacts.sha2 = pinFile(library);
     await observe('compile', rustc, ['--edition=2024', '--test', join(root, PROBE), '--extern', `sha2=${library}`,
-      '-L', `dependency=${join(dirname(library), 'deps')}`, '-o', binary]);
+      '-L', `dependency=${join(dirname(library), 'deps')}`, '-o', binary, ...linkerArguments(env)]);
     receipt.artifacts.binary = pinFile(binary); validateBinary(receipt.artifacts.binary, receipt.host.target);
     const probe = await observe('probe', binary, ['--test-threads=1', '--color', 'never']);
     validateProbe(probe.stdout, probe.stderr); receipt.status = 'passed';
