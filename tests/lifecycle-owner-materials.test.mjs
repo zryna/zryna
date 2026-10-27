@@ -3,6 +3,8 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { graphFixture } from '../scripts/m6/compiler-release/material-fixtures.mjs';
 import { selectLifecycleCrates, captureLifecycleCrates } from '../scripts/stability-gates/lifecycle-owner-materials.mjs';
+import { securityNativeRecipe } from '../scripts/distribution/rust-security-materials.mjs';
+import { sha256 } from '../scripts/distribution/canonical.mjs';
 
 function fixture(name = 'wasmtime', version = '48.0.7') {
   const { metadata, sourceRoot } = graphFixture();
@@ -35,4 +37,15 @@ test('lifecycle requires original captures and rejects caller supplied authority
   const value = { ...fixture(), crateArchives: [], upstreamLicense: null };
   assert.throws(() => captureLifecycleCrates(value), /capture count/);
   assert.throws(() => captureLifecycleCrates({ ...value, executionApproved: true }));
+});
+test('mutating a shared recipe export cannot substitute the lifecycle lock before or after module import', async () => {
+  const value = fixture(), original = { ...securityNativeRecipe.cargoLock };
+  const substituted = { ...value, cargoLock: Buffer.concat([value.cargoLock, Buffer.from('\n')]) };
+  try {
+    Object.assign(securityNativeRecipe.cargoLock, { bytes: substituted.cargoLock.length, sha256: sha256(substituted.cargoLock) });
+    assert.throws(() => selectLifecycleCrates(substituted), /exact lock/);
+    const fresh = await import('../scripts/stability-gates/lifecycle-owner-materials.mjs?recipe-mutation');
+    assert.throws(() => fresh.selectLifecycleCrates(substituted), /exact lock/);
+    assert.equal(fresh.selectLifecycleCrates(value).external.length, 1);
+  } finally { Object.assign(securityNativeRecipe.cargoLock, original); }
 });

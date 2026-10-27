@@ -1,6 +1,7 @@
 // Current security-candidate crate observations; no release or execution authority.
 import { bytes, exactKeys, requireValue, sha256 } from '../distribution/canonical.mjs';
-import { securityNativeRecipe, securityRustMaterials } from '../distribution/rust-security-materials.mjs';
+import { readFileSync } from 'node:fs';
+import { SECURITY_NATIVE_RECIPE_SHA256, securityRustMaterials } from '../distribution/rust-security-materials.mjs';
 import { captureTarGzipMembers } from '../distribution/npm-materials.mjs';
 import { selectCompilerGraph } from '../m6/compiler-release/material-graph.mjs';
 import { compilerTreeSelection } from '../m6/compiler-release/material-tree.mjs';
@@ -11,12 +12,15 @@ const TARGET = 'x86_64-unknown-linux-gnu';
 const UPSTREAM = 'https://raw.githubusercontent.com/bytecodealliance/wasmtime/'
   + 'c6846e13f64b07b7912d372db141397058b55f99/LICENSE';
 const APPROVED = new Map(securityRustMaterials(TARGET).map(pin => [identity(pin), pin]));
+const recipe = readFileSync(new URL('../distribution/native-recipe-security-candidate-v1.json', import.meta.url));
+requireValue(sha256(recipe) === SECURITY_NATIVE_RECIPE_SHA256, 'lifecycle original security recipe identity');
+const { bytes: LOCK_BYTES, sha256: LOCK_SHA256 } = JSON.parse(recipe).cargoLock;
 
 export function selectLifecycleCrates(input) {
   exactKeys(input, ['metadata', 'sourceRoot', 'cargoLock', 'cargoTree']);
   const { metadata, sourceRoot, cargoLock, cargoTree } = input;
-  requireValue(Buffer.isBuffer(cargoLock) && cargoLock.length === securityNativeRecipe.cargoLock.bytes
-    && sha256(cargoLock) === securityNativeRecipe.cargoLock.sha256, 'lifecycle security-candidate exact lock');
+  requireValue(Buffer.isBuffer(cargoLock) && cargoLock.length === LOCK_BYTES
+    && sha256(cargoLock) === LOCK_SHA256, 'lifecycle security-candidate exact lock');
   const app = metadata?.packages?.filter(pkg => pkg.name === 'zryna-playground-compiler' && pkg.source === null);
   requireValue(app?.length === 1 && Array.isArray(app[0].dependencies)
     && !app[0].dependencies.some(dep => dep.kind === 'dev'), 'lifecycle normal/build selection forbids root dev dependencies');

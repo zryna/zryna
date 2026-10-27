@@ -58,6 +58,35 @@ function configurations(expected, captured) {
   assert.deepEqual(captured.before, absent, 'all source-ancestor and Cargo-home configurations absent before build');
   assert.deepEqual(captured.after, absent, 'same complete absence after build');
 }
+// Cargo -vv echoes build-script output even with --message-format=json. Account for
+// every original line; tagged text never becomes a Cargo JSON record or authority.
+export function parseLifecycleCargoOutput(bytes, metadata) {
+  assert(Array.isArray(metadata.packages) && metadata.packages.length <= 4096);
+  const scripts = new Map();
+  for (const pkg of metadata.packages.filter(pkg => pkg.targets?.some(target => target.kind?.includes('custom-build')))) {
+    const tag = `${pkg.name} ${pkg.version}`;
+    assert(!scripts.has(tag) && typeof pkg.id === 'string', 'unambiguous metadata build-script identity');
+    scripts.set(tag, pkg.id);
+  }
+  const lines = text(bytes).split('\n'); assert.equal(lines.pop(), '');
+  assert(lines.length > 0 && lines.length <= 4096, 'bounded complete Cargo output');
+  const rows = [], tagged = new Set();
+  for (const line of lines) {
+    assert(Buffer.byteLength(line) <= 256 * 1024, 'bounded Cargo output line');
+    if (line.startsWith('{')) {
+      const row = json(Buffer.from(line + '\n'));
+      assert(['compiler-artifact', 'compiler-message', 'build-script-executed', 'build-finished'].includes(row.reason), 'known Cargo JSON record');
+      rows.push(row);
+    } else {
+      const match = /^\[([A-Za-z0-9_-]+ [0-9][A-Za-z0-9+._-]*)\] ([^\x00-\x08\x0b-\x1f\x7f]*)$/u.exec(line);
+      assert(match && scripts.has(match[1]), 'only original metadata build-script tagged output'); tagged.add(scripts.get(match[1]));
+    }
+  }
+  assert([...tagged].every(id => rows.some(row => row.reason === 'build-script-executed' && row.package_id === id)), 'tagged output has a Cargo build-script record');
+  assert.equal(rows.at(-1)?.reason, 'build-finished', 'Cargo completion is the final JSON record');
+  assert(lines.at(-1).startsWith('{'), 'no tagged output after Cargo completion');
+  return rows;
+}
 export function validateLifecyclePrebuild(expected, capture) {
   exact(capture, ['source', 'inputs', 'tools', 'versions', 'configuration', 'command', 'termination', 'metadata', 'stdout', 'stderr', 'artifacts'], 'prebuild capture');
   configurations(expected, capture.configuration);
@@ -73,14 +102,21 @@ export function validateLifecyclePrebuild(expected, capture) {
   assert.deepEqual(capture.command, { executable: expected.tools.cargo.path, args, cwd: expected.root, environment: expected.environment });
   assert.deepEqual(capture.termination, { exitCode: 0, signal: null, error: null });
   assert.deepEqual(capture.artifacts, expected.artifacts, 'independently selected actual artifact identities');
+  validateLifecycleCargoArtifacts({ root: expected.root, tools: expected.tools, artifacts: expected.artifacts },
+    { metadata: capture.metadata, stdout: capture.stdout, stderr: capture.stderr });
+}
+// Structural replay of original Cargo bytes only. This does not establish tool
+// snapshots, source capture, independent artifact selection or execution approval.
+export function validateLifecycleCargoArtifacts(expected, capture) {
+  exact(expected, ['root', 'tools', 'artifacts'], 'Cargo artifact replay selection');
+  exact(capture, ['metadata', 'stdout', 'stderr'], 'original Cargo artifact streams');
   const metadata = json(capture.metadata);
   assert(Array.isArray(metadata.packages) && metadata.packages.length <= 4096);
   const packages = metadata.packages.filter(row => row.name === PACKAGE); assert.equal(packages.length, 1);
   const pkg = packages[0], directory = expected.root + '/apps/' + PACKAGE;
   assert.equal(pkg.version, '0.1.0'); assert.equal(pkg.source, null); assert.equal(pkg.manifest_path, directory + '/Cargo.toml');
   assert([`path+file://${directory}#0.1.0`, `path+file://${directory}#${PACKAGE}@0.1.0`].includes(pkg.id));
-  const lines = text(capture.stdout).split('\n'); assert.equal(lines.pop(), ''); assert(lines.length > 0 && lines.length <= 4096);
-  const rows = lines.map(line => json(Buffer.from(line + '\n'))), finished = rows.filter(row => row.reason === 'build-finished');
+  const rows = parseLifecycleCargoOutput(capture.stdout, metadata), finished = rows.filter(row => row.reason === 'build-finished');
   assert.equal(finished.length, 1); assert.equal(finished[0], rows.at(-1)); assert.equal(finished[0].success, true);
   for (const [key, name, kind, sourcePath] of [['test', 'lifecycle', 'test', directory + '/tests/lifecycle.rs'],
     ['compiler', PACKAGE, 'bin', directory + '/src/main.rs']]) {

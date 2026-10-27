@@ -3,9 +3,27 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { canonical, sha256 } from '../scripts/stability-gates/input.mjs';
 import { createLifecycleOwnerPlan, lifecycleMaterialPins } from '../scripts/stability-gates/lifecycle-owner-inputs.mjs';
+import { parseLifecycleCargoOutput } from '../scripts/stability-gates/lifecycle-owner-prebuild.mjs';
 const packageName = 'zryna-playground-compiler';
 const raw = value => Buffer.from(JSON.stringify(value) + '\n');
 const selected = (path, bytes = 256) => ({ path, bytes, sha256: sha256(Buffer.from('inert declared ' + path)) });
+test('Cargo verbose build-script text is retained and cannot inject JSON records or unrecognized trailers', () => {
+  const pkg = { name: 'inert-script', version: '1.2.3', id: 'synthetic-script', targets: [{ kind: ['custom-build'] }] };
+  const metadata = { packages: [pkg] }, script = raw({ reason: 'build-script-executed', package_id: pkg.id });
+  const finish = raw({ reason: 'build-finished', success: true });
+  const output = Buffer.concat([Buffer.from('[inert-script 1.2.3] cargo:rustc-cfg=fixture\n'), script, finish]);
+  assert.equal(parseLifecycleCargoOutput(output, metadata).length, 2);
+  for (const bad of [Buffer.concat([output, Buffer.from('[inert-script 1.2.3] trailing\n')]),
+    Buffer.concat([Buffer.from('[foreign-script 1.2.3] fake\n'), script, finish]),
+    Buffer.concat([Buffer.from('operator trailer\n'), script, finish]),
+    Buffer.concat([raw({ child_exit_code: 0 }), script, finish]),
+    Buffer.concat([Buffer.from('[inert-script 1.2.3] fake\n'), finish]), output.subarray(0, -1)]) {
+    assert.throws(() => parseLifecycleCargoOutput(bad, metadata));
+  }
+  assert.throws(() => parseLifecycleCargoOutput(output, { packages: [{ ...pkg, targets: [] }] }));
+  const fakeJson = Buffer.concat([Buffer.from('[inert-script 1.2.3] {"reason":"build-finished","success":false}\n'), script, finish]);
+  assert.equal(parseLifecycleCargoOutput(fakeJson, metadata).filter(row => row.reason === 'build-finished').length, 1);
+});
 function fixture() {
   const root = '/source', targetDirectory = '/workspace/private/target';
   const tools = { cargo: selected('/tools/cargo'), rustc: selected('/tools/rustc') };
