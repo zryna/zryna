@@ -95,6 +95,12 @@ test('Windows binds the DevShell MSVC linker for Cargo and direct rustc without 
   assert(!Object.hasOwn(actual, 'RUSTFLAGS'));
   assert.deepEqual(owner.linkerArguments(actual, 'win32'), ['-C', `linker=${linker}`]);
   for (const key of ['INCLUDE', 'LIB', 'LIBPATH', 'VCToolsInstallDir']) assert.equal(actual[key], input[key]);
+  const canonical = linker.replace('Hostx64', 'HostX64'); // Actual retained Windows runner realpath.
+  const native = ownerEnvironment({ ...input, ZRYNA_DEPENDENCY_LINKER: canonical },
+    'C:\\Rust\\rustc.exe', 'D:\\owner\\target', 'win32');
+  assert.equal(native.ZRYNA_DEPENDENCY_LINKER, canonical);
+  assert.equal(native.CARGO_ENCODED_RUSTFLAGS, `-C\x1flinker=${canonical}`);
+  assert.deepEqual(owner.linkerArguments(native, 'win32'), ['-C', `linker=${canonical}`]);
   for (const bad of ['-C\x1flinker=link.exe', '-C linker=' + linker, `-C\x1flinker=${linker}\x1f--cfg=injected`])
     assert.throws(() => owner.linkerArguments({ ...actual, CARGO_ENCODED_RUSTFLAGS: bad }, 'win32'));
 });

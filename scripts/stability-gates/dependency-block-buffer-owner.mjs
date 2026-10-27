@@ -81,7 +81,8 @@ function selectedWindowsLinker(input) {
       !/[\x00-\x1f\x7f]/u.test(input[key]), 'explicit bounded DevShell linker/SDK inputs');
   const root = input.VCToolsInstallDir, linker = input.ZRYNA_DEPENDENCY_LINKER;
   assert(/^[A-Za-z]:\\/u.test(root) && win32.normalize(root) === root, 'canonical absolute VC tools root');
-  assert.equal(linker, win32.join(root, 'bin', 'Hostx64', 'x64', 'link.exe'), 'exact selected native MSVC linker');
+  // Windows directory casing may differ; runtime still pins and executes the exact canonical realpath.
+  assert.equal(linker.toLowerCase(), win32.join(root, 'bin', 'Hostx64', 'x64', 'link.exe').toLowerCase(), 'exact selected native MSVC linker');
   return linker;
 }
 export function linkerArguments(environment, platform = process.platform) {

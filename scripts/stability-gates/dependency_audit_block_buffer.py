@@ -26,7 +26,7 @@ TESTS = ["every_partial_position_and_input_byte_preserves_cursor_on_panic",
          "exact_advisory_eager_panic_keeps_separate_cursor",
          "generator_and_padding_panics_keep_valid_separate_cursors"]
 # Complete reviewed source closure of the actual regression owner.
-PINS = {'scripts/stability-gates/dependency-block-buffer-owner.mjs': '963722f0cf9df7bfb6e6435d2639680cf9bb3e9a6283713582a068095ad0dc55',
+PINS = {'scripts/stability-gates/dependency-block-buffer-owner.mjs': '7b94a9164647279c07103003045c146c12a21e49dbe69bf0c2fcf942e1072313',
         'tests/dependency-audit/block-buffer-owner.rs': '0c5b8fd9c0eea321d89c921ec185e44627238b7af31d9e2a54268102f1801a6d',
         'scripts/stability-gates/process.mjs': '12391db1cca0420525756ad4c601b5f4ac3354ee763e077298ebfcbe827a9cfb',
         'scripts/stability-gates/input.mjs': '09e5212dc41e61536461a8e1a13655463427db974ad59e82944b0d01efe80da0',
