@@ -37,5 +37,14 @@ paired output bytes. JSON and log entry sizes are bounded before returned copies
 This establishes raw consistency with the selected platform artifact. Source
 execution, host classification, paired-oracle provenance, baseline policy and
 held-out admission still require their own verification; all qualification flags
-remain false and thresholds remain null. Both compact receipt families retain
+remain false and thresholds remain null. The compacted receipt families retain
 exact original-byte reconstruction under their unchanged historical pins.
+
+`reconcileSourceCensuses` separately checks the three retained before/after-build
+and after-round source inventories against a supplied complete recursive Git tree.
+It verifies all regular paths, modes, Git blob identities, file sizes, bounded
+shards and exact inventory/manifest digests. Its caller must authenticate the Git
+response and selected commit/tree. The helper has no source file bytes, so retained
+per-file SHA-256 claims are checked for consistency only. It grants no source
+execution, host, binary or performance qualification. Historical receipt-storage
+compatibility is described in [the storage note](CLI_PERFORMANCE_RECEIPT_STORAGE.md).
