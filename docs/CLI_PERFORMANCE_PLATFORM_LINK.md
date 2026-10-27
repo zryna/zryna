@@ -45,3 +45,8 @@ measurement replay, reviewed host and variance policy, externally anchored
 threshold authority, fresh held-out measurements, resource-owner evidence and
 the final supported-platform closure report. Existing M4 schemas and archive
 bounds are unchanged. Unit fixtures are synthetic metadata, not hosted proof.
+
+GitHub can clear `run.pull_requests` after PR closure. An empty association still
+requires the exact selected PR number in the same-run reusable execution ref and
+the immutable execution commit with its ordered base/candidate Git parents.
+Nonempty associations retain their complete existing checks.

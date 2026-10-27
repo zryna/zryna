@@ -1,50 +1,43 @@
-# Bounded performance archive reader
+# Retained performance evidence
 
-This preparatory #418 reader validates complete ZIP32 layout, CRCs, exact archive
-length/SHA-256, regular portable paths, case collisions, descriptors and expansion
-before returning an opaque selection. It extracts no files and executes no data.
-Input snapshots, inflated entries and returned reads use private unpooled storage;
-editing an inspected report or an exposed backing ArrayBuffer cannot rewrite a
-validated entry. Close each selection after use to release its retained contents.
+The #418 ZIP32 reader checks exact archive length/SHA-256, complete layout,
+CRCs, descriptors, expansion and portable regular paths without case collisions.
+It extracts no files and executes no data. Closed roles have fixed limits:
 
-Two closed roles have fixed limits. Primary artifacts allow 4,096 entries, 128 MiB
-archive/expanded bytes and 64 MiB per entry. Linux provider supplements allow 256
-entries, 1 MiB archive/expanded bytes and 256 KiB per entry. Caller-defined limits
-are rejected. Existing M4 archive profiles, schemas and limits remain unchanged.
+| Role | Entries | Archive / expanded bytes | Per entry |
+| --- | ---: | ---: | ---: |
+| Primary | 4,096 | 128 MiB | 64 MiB |
+| Linux provider | 256 | 1 MiB | 256 KiB |
 
-The API exports `openPerformanceArchive`, `inspectPerformanceArchive`,
-`listPerformanceArchive`, `readPerformanceArchiveEntry`, and `closePerformanceArchive`.
-The supplied archive digest must later be joined to the live platform selection.
-Archive integrity alone authenticates neither source execution nor measurements;
-reports retain false source/performance qualification and null thresholds. Raw
-record/source replay, host policy and threshold/held-out admission remain separate.
+`openPerformanceArchive` returns an opaque selection after validation;
+`inspectPerformanceArchive`, `listPerformanceArchive`, and
+`readPerformanceArchiveEntry` expose copies. Input, inflated entries and returned
+buffers use private unpooled storage. Close selections with
+`closePerformanceArchive`. Caller-defined limits are rejected; M4 schemas and
+archive profiles retain their existing limits.
 
-The accompanying receipt-storage proof preserves all 24 historical Struct Clone
-observations and reconstructs their exact original bytes under the unchanged old
-pin. Its JSON whitespace reduction keeps this work inside the existing complete
-source census budget; it adds no new execution or support claim.
+`replayHostedPerformanceArchive(selection, artifactId, bytes)` requires a live
+opaque platform selection and its primary artifact identity/digest. It checks the
+independently frozen methodology, source/round/platform bindings and exact paired
+outputs. All 24 Linux or 20 Windows cells retain one warmup and five measured
+attempts; medians, maxima and spreads exclude warmup. Linux uses GNU wait4 maximum
+RSS KiB; Windows uses native QPC and Job COMMIT bytes. JSON/log sizes are checked
+before entry copies.
 
-`replayHostedPerformanceArchive(selection, artifactId, bytes)` joins a primary
-archive to an opaque, live platform selection. It checks the selected archive's
-length and digest, independently frozen methodology, source/round/platform
-bindings, and all retained raw process records against session samples. Linux
-uses GNU time wait4 maximum RSS in KiB; Windows uses native QPC timing and Job
-COMMIT bytes. Each cell includes one warmup and five measured attempts, with
-medians, maxima and spreads recomputed from the five measured samples.
+`reconcileSourceCensuses` checks before/after-build and after-round inventories
+against a supplied complete recursive Git tree: paths, modes, blob identities,
+file sizes, bounded shards and exact manifest/inventory digests. Its caller owns
+Git response and commit/tree authentication. Source-file bytes are unavailable;
+per-file SHA-256 values remain retained consistency claims.
 
-The replay verifies all 24 Linux or 20 Windows cells per round and their exact
-paired output bytes. JSON and log entry sizes are bounded before returned copies.
-This establishes raw consistency with the selected platform artifact. Source
-execution, host classification, paired-oracle provenance, baseline policy and
-held-out admission still require their own verification; all qualification flags
-remain false and thresholds remain null. The compacted receipt families retain
-exact original-byte reconstruction under their unchanged historical pins.
+`replayReleaseImage({host, expectedSource, read})` reconciles retained release
+commands/results/logs, tool/version pins, controlled environment, Cargo config,
+SDK records and the observed/final profile transition. It checks the whole
+retained ELF/PE image, digest, copy links, and measured-round bindings using the
+selected host's path rules. It executes no retained image or tool.
 
-`reconcileSourceCensuses` separately checks the three retained before/after-build
-and after-round source inventories against a supplied complete recursive Git tree.
-It verifies all regular paths, modes, Git blob identities, file sizes, bounded
-shards and exact inventory/manifest digests. Its caller must authenticate the Git
-response and selected commit/tree. The helper has no source file bytes, so retained
-per-file SHA-256 claims are checked for consistency only. It grants no source
-execution, host, binary or performance qualification. Historical receipt-storage
-compatibility is described in [the storage note](CLI_PERFORMANCE_RECEIPT_STORAGE.md).
+These checks establish consistency, not build/source execution, host or paired
+oracle provenance. Qualification flags remain false and thresholds null. Reviewed
+baseline policy, held-out admission and final M7 closure remain separate.
+[Receipt storage](CLI_PERFORMANCE_RECEIPT_STORAGE.md) preserves complete original
+bytes and inventories under their historical pins without adding authority.

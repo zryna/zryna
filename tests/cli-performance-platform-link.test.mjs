@@ -119,3 +119,33 @@ test('run restarted or replaced during metadata reads rejects at the final live 
     assert.equal(reads, 2);
   }
 });
+
+test('closed PRs retain immutable same-run execution proof without a mutable PR association', async () => {
+  const f = platformFixture(true); f.run.pull_requests = [];
+  const key = await linkReviewedPerformanceRun(...f.selection());
+  assert.equal(inspectPerformancePlatformLink(key).run.executionCommit, f.value.execution.commit);
+  assert.deepEqual(f.run.pull_requests, [], 'verification must not invent platform PR records');
+});
+test('absent PR associations cannot waive the selected immutable PR ref or Git merge identities', async () => {
+  for (const mutate of [f => { f.run.referenced_workflows = []; },
+    f => { f.run.referenced_workflows[0].ref = 'refs/pull/999/merge'; },
+    f => { f.run.referenced_workflows[0].ref = 'refs/heads/main'; },
+    f => { f.run.referenced_workflows[0].sha = '9'.repeat(40); },
+    f => { f.run.referenced_workflows[0].path = `other/zryna/${CALLEE}@${f.value.execution.commit}`; },
+    f => { const row = platformFixture(true).run.pull_requests[0]; f.run.pull_requests = [row, { ...row, number: 999 }]; },
+    f => { f.responses.get(`${PREFIX}/git/commits/${f.value.execution.commit}`).parents.reverse(); },
+    f => { f.responses.get(`${PREFIX}/git/commits/${f.value.execution.commit}`).tree.sha = '9'.repeat(40); }]) {
+    const f = platformFixture(true); f.run.pull_requests = [];
+    await linkReviewedPerformanceRun(...f.selection());
+    mutate(f); await assert.rejects(linkReviewedPerformanceRun(...f.selection()));
+  }
+});
+test('PR association removal during verification preserves the same immutable execution proof', async () => {
+  const f = platformFixture(true); let reads = 0;
+  const api = async endpoint => {
+    if (endpoint === `${PREFIX}/actions/runs/100` && ++reads === 2) f.run.pull_requests = [];
+    return f.api(endpoint);
+  };
+  const [bytes, digest] = f.selection();
+  await linkReviewedPerformanceRun(bytes, digest, api, NOW); assert.equal(reads, 2);
+});

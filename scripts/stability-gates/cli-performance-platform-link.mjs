@@ -42,16 +42,24 @@ function validateRun(run, expected) {
   assert(Array.isArray(run.referenced_workflows) && run.referenced_workflows.length === 1,
     'S418 hosted: exact same-run reusable execution attachment required');
   const reference = run.referenced_workflows[0];
-  authenticateWorkflowReference(reference, PERFORMANCE_REPOSITORY, PERFORMANCE_CALLEE, expected.execution.commit, run);
+  if (run.event === 'pull_request' && Array.isArray(run.pull_requests) && run.pull_requests.length === 0) {
+    // GitHub drops closed PR associations; its same-run execution ref remains immutable.
+    // The execution commit and both Git parents are verified before any key is issued.
+    assert.equal(reference.path, `${PERFORMANCE_REPOSITORY}/${PERFORMANCE_CALLEE}@${expected.execution.commit}`);
+    assert.equal(reference.sha, expected.execution.commit);
+    assert.equal(reference.ref, `refs/pull/${expected.run.pullRequest}/merge`);
+  } else authenticateWorkflowReference(reference, PERFORMANCE_REPOSITORY, PERFORMANCE_CALLEE, expected.execution.commit, run);
   if (run.event === 'pull_request') {
     assert(Array.isArray(run.pull_requests) && run.pull_requests.length <= 32);
-    const attached = run.pull_requests.filter(row => row.number === expected.run.pullRequest);
-    assert.equal(attached.length, 1, 'S418 hosted: explicitly selected attached PR');
-    const pr = attached[0];
-    assert.equal(pr.head?.sha, expected.source.commit); assert.equal(pr.head?.ref, run.head_branch);
-    assert.equal(pr.base?.sha, expected.execution.parents[0]);
-    assert.equal(pr.head?.repo?.id, PERFORMANCE_REPOSITORY_ID);
-    assert.equal(pr.base?.repo?.id, PERFORMANCE_REPOSITORY_ID);
+    if (run.pull_requests.length > 0) {
+      const attached = run.pull_requests.filter(row => row.number === expected.run.pullRequest);
+      assert.equal(attached.length, 1, 'S418 hosted: explicitly selected attached PR');
+      const pr = attached[0];
+      assert.equal(pr.head?.sha, expected.source.commit); assert.equal(pr.head?.ref, run.head_branch);
+      assert.equal(pr.base?.sha, expected.execution.parents[0]);
+      assert.equal(pr.head?.repo?.id, PERFORMANCE_REPOSITORY_ID);
+      assert.equal(pr.base?.repo?.id, PERFORMANCE_REPOSITORY_ID);
+    }
   }
 }
 export async function linkReviewedPerformanceRun(expectationsBytes, reviewedSha256, api = githubApi(), now = Date.now()) {
