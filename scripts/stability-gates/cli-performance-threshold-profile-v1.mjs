@@ -36,8 +36,8 @@ export function identity(value) {
   integer(value.jobId); integer(value.artifactId); digest(value.rawSha256);
 }
 function build(value) {
-  exact(value, ['class', 'cliSha256', 'recordSha256'], 'declared CLI build');
-  assert.equal(value.class, 'release'); digest(value.cliSha256); digest(value.recordSha256);
+  exact(value, ['class', 'cliSha256'], 'common declared release image');
+  assert.equal(value.class, 'release'); digest(value.cliSha256);
 }
 function hostClass(row, host) {
   exact(row, ['host', 'classId', 'facts', 'acceptedUnknownFacts', 'wallMethod', 'memoryMethod',

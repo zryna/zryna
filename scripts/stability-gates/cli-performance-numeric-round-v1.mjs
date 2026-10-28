@@ -30,7 +30,10 @@ export function checkedRound(value, profile, catalogue, hostPolicy, role) {
   identity(round.identity); source(round.source);
   const reference = role !== 'held-out-candidate';
   assert.deepEqual(round.source, profile.sources[reference ? 'reference' : 'candidate'], 'same declared source role');
-  assert.deepEqual(round.build, hostPolicy[reference ? 'referenceBuild' : 'candidateBuild'], 'same declared release material');
+  exact(round.build, ['class', 'cliSha256', 'recordSha256'], 'original per-round release build');
+  digest(round.build.recordSha256); // Original records include run-specific paths, logs and elapsed time.
+  assert.deepEqual({ class: round.build.class, cliSha256: round.build.cliSha256 },
+    hostPolicy[reference ? 'referenceBuild' : 'candidateBuild'], 'same declared release image');
   for (const key of ['toolchainSha256', 'collectorSha256', 'catalogueSha256']) {
     digest(round[key]); assert.equal(round[key], profile[key], key);
   }

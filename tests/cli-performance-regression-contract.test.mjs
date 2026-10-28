@@ -27,6 +27,23 @@ test('source, release bytes, tools, collector and frozen workload identity canno
     f => { f.rounds[2].toolchainSha256 = 'f'.repeat(64); }, f => { f.rounds[2].collectorSha256 = 'f'.repeat(64); },
     f => { f.rounds[2].catalogueSha256 = 'f'.repeat(64); }, f => { f.profile.catalogueSha256 = 'f'.repeat(64); }]) fail(mutate);
 });
+test('independent original build records remain per round while common release image stays fixed', () => {
+  const f = fixture(), result = run(f);
+  for (const offset of [0, 3]) {
+    assert.equal(f.rounds[offset].build.cliSha256, f.rounds[offset + 1].build.cliSha256);
+    assert.notEqual(f.rounds[offset].build.recordSha256, f.rounds[offset + 1].build.recordSha256);
+    assert.equal(Object.hasOwn(f.profile.hosts[offset / 3].referenceBuild, 'recordSha256'), false);
+  }
+  assert.equal(result.status, 'within-declared-limits');
+  const changed = clone(f); changed.rounds[1].build.recordSha256 = 'f'.repeat(64);
+  const declared = run(changed);
+  assert.notEqual(declared.inputs[1].normalizedSha256, result.inputs[1].normalizedSha256);
+  assert.equal(declared.sourceAuthenticated, false, 'original-byte linkage still belongs to raw replay owner');
+  fail(g => { delete g.rounds[0].build.recordSha256; });
+  fail(g => { g.rounds[0].build.recordSha256 = 'not-a-hash'; });
+  fail(g => { g.rounds[0].build.extra = true; });
+  fail(g => { g.profile.hosts[0].referenceBuild.recordSha256 = 'f'.repeat(64); });
+});
 test('missing, pooled and changing host facts reject; named unknowns are never unlimited observations', () => {
   for (const mutate of [f => { f.rounds[2].classBefore.cpuModel.value = 'different CPU'; },
     f => { f.rounds[2].classAfter.osImage.value = 'different image'; }, f => { delete f.profile.hosts[0].facts.affinity; },

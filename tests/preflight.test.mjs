@@ -1,3 +1,5 @@
+import './cli-performance-numeric-host.test.mjs';
+import './cli-performance-threshold-derive-v1.test.mjs';
 import './cli-performance-prospective-policy-v1.test.mjs';
 import './cli-performance-linked-metrics-v1.test.mjs';
 import './cli-performance-regression-v1.test.mjs';

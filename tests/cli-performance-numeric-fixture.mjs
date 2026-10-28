@@ -16,7 +16,7 @@ const facts = host => ({ cpuModel: observed(`synthetic ${host}`), osImage: obser
   kernel: observed(host === 'linux-x86_64' ? 'synthetic-linux-kernel-v1' : 'synthetic-windows-kernel-v1'),
   visibleCpuCount: observed('4'), affinity: observed('0-3'), virtualization: observed('synthetic-shared-vm'),
   outerCpuQuota: unavailable(), outerMemoryQuota: unavailable(), powerManagement: unavailable(), physicalExclusivity: unavailable() });
-const build = label => ({ class: 'release', cliSha256: hash(`${label}-cli`), recordSha256: hash(`${label}-record`) });
+const build = label => ({ class: 'release', cliSha256: hash(`${label}-cli`) });
 const source = label => ({ commit: hash(`${label}-commit`).slice(0, 40), tree: hash(`${label}-tree`).slice(0, 40) });
 const flags = () => ({ sourceAuthenticated: false, proofQualified: false, performanceQualified: false,
   closureStatus: 'blocked', thresholdAuthority: null });
@@ -38,7 +38,8 @@ export function fixture() {
     const h = profile.hosts[HOSTS.indexOf(host)], ordinal = ROLES.indexOf(role), day = [1, 2, 5][ordinal];
     return { format: 'zryna.cli-performance-numeric-input.v1', host, role, identity: clone(identity),
       source: clone(profile.sources[ordinal === 2 ? 'candidate' : 'reference']),
-      build: clone(h[ordinal === 2 ? 'candidateBuild' : 'referenceBuild']), toolchainSha256: profile.toolchainSha256,
+      build: { ...clone(h[ordinal === 2 ? 'candidateBuild' : 'referenceBuild']), recordSha256: hash(`${host}/${role}/original-build-record`) },
+      toolchainSha256: profile.toolchainSha256,
       collectorSha256: profile.collectorSha256, catalogueSha256: profile.catalogueSha256,
       classId: h.classId, classBefore: clone(h.facts), classAfter: clone(h.facts),
       wallMethod: h.wallMethod, memoryMethod: h.memoryMethod,
