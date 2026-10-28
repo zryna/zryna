@@ -68,12 +68,8 @@ fn compile(directory: &Path) {
     for name in
         ["observer.c", "observer.h", "observer_alloc.h", "observer_counts.h", "observer_host.h"]
     {
-        let source = if name == "observer.c" {
-            root.join(name)
-        } else {
-            root.with_file_name("generic_execution_v1_native_affine_push").join(name)
-        };
-        std::fs::copy(source, directory.join(name)).expect("retain exact test observer sources");
+        std::fs::copy(root.join(name), directory.join(name))
+            .expect("retain exact test observer sources");
     }
     let mut gcc = Command::new("/usr/bin/gcc");
     gcc.args([

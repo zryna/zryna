@@ -4,7 +4,7 @@
 mod emit;
 #[path = "generic_execution_v1_native_loan_runtime/execute.rs"]
 mod execute;
-#[path = "generic_execution_v1_native_containers/metadata.rs"]
+#[path = "generic_execution_v1_native_loan_runtime/metadata.rs"]
 mod metadata;
 #[path = "generic_execution_v1_native_loan_runtime/oracle.rs"]
 mod oracle;

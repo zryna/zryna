@@ -6,7 +6,7 @@ mod emit;
 mod execute;
 #[path = "generic_execution_v1_native_invocation_traps/ledger.rs"]
 mod ledger;
-#[path = "generic_execution_v1_native_containers/metadata.rs"]
+#[path = "generic_execution_v1_native_concat_runtime/metadata.rs"]
 mod metadata;
 #[path = "generic_execution_v1_native_invocation_traps/originals.rs"]
 mod originals;
