@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`0c00abcf52ea503dee75a9d75ad81240366d888d922891919774cae1bfd4c3ff`. The matrix defines six bounded modes on the two
+`fa6249465d0438a1b83fb7d67c862f06da9874a572ea11ad39f82610df115273`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "0c00abcf52ea503dee75a9d75ad81240366d888d922891919774cae1bfd4c3ff",
+  "registrySha256": "fa6249465d0438a1b83fb7d67c862f06da9874a572ea11ad39f82610df115273",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -5432,8 +5432,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "scripts/run-m4-conformance.mjs",
-      "bytes": 7955,
-      "sha256": "21a3637c2226395d61372399e0b4f2d856da50ff26698d432105f4196e3c18fc"
+      "bytes": 8255,
+      "sha256": "4a43c23a7af0945d0414688346ce08a8b933bdf8d19cc5cd7b978fe19e9790bf"
     },
     {
       "path": "scripts/scalar-host/acquire-browser.py",

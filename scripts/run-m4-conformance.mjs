@@ -12,11 +12,15 @@ import { sourceCommands } from './m4/evidence-source.mjs';
 import { retain, browserAttachments, installedAttachments, stageM4Evidence } from './m4/collect-output.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export function createM4GateTemporaryEnvironment(evidenceRoot, gateId) {
+export function createM4GateTemporaryEnvironment(evidenceRoot, gateId, lane) {
   assert(path.isAbsolute(evidenceRoot), 'absolute existing evidence root required');
+  assert(['core', 'browser', 'installed'].includes(lane), 'fixed M4 lane required');
+  assert(typeof gateId === 'string' && /^[a-z][a-z0-9-]{0,63}$/u.test(gateId), 'fixed portable gate identifier');
+  // Only the core lane replays suites across gates. Browser and installed tools
+  // retain their existing temp environment, including Chromium's socket paths.
+  if (lane !== 'core') return {};
   const stat = lstatSync(evidenceRoot);
   assert(stat.isDirectory() && !stat.isSymbolicLink(), 'owned evidence directory required');
-  assert(typeof gateId === 'string' && /^[a-z][a-z0-9-]{0,63}$/u.test(gateId), 'fixed portable gate identifier');
   // A sibling keeps scratch payloads out of the bounded evidence artifact. Fresh
   // gate namespaces prevent fixed PID/label paths colliding across invocations.
   const directory = `${path.resolve(evidenceRoot)}-tmp-${gateId}`;
@@ -80,7 +84,7 @@ export async function runM4(options) {
     const launchArgv = argv[0] === 'pnpm' ? [tools[0].executable.path, tool.executable.path, ...argv.slice(1)]
       : [tool.executable.path, ...argv.slice(1)];
     console.log(`[m4 ${options.lane}] ${gate.id}`);
-    const temporaryEnvironment = createM4GateTemporaryEnvironment(root, gate.id);
+    const temporaryEnvironment = createM4GateTemporaryEnvironment(root, gate.id, options.lane);
     const started = performance.now();
     const result = spawnSync(launchArgv[0], launchArgv.slice(1), { cwd: sourceRoot, shell: false,
       windowsHide: true, timeout: 6 * 60 * 60 * 1000, maxBuffer: MAX_LOG,

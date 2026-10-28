@@ -45,7 +45,7 @@ test('the shared-temp control reproduces the fixed-token collision without repla
 test('separate gates replay the same fixed evidence token in real children without overwriting either result', () => fixture(root => {
   const originalEnvironment = parentEnvironment(), results = [];
   for (const [gate, marker] of [['m0-full', 'first invocation'], ['m3-full', 'second invocation']]) {
-    const environment = createM4GateTemporaryEnvironment(root, gate);
+    const environment = createM4GateTemporaryEnvironment(root, gate, 'core');
     assert.deepEqual(Object.keys(environment).sort(), [...keys].sort());
     assert.equal(path.dirname(environment.TMP), path.dirname(root), 'scratch is an evidence sibling');
     const result = spawnSync(process.execPath, ['-e', child, marker, environment.TMP], {
@@ -64,26 +64,38 @@ test('separate gates replay the same fixed evidence token in real children witho
 }));
 
 test('reusing a gate namespace fails create-only and preserves prior bytes', () => fixture(root => {
-  const environment = createM4GateTemporaryEnvironment(root, 'm0-full');
+  const environment = createM4GateTemporaryEnvironment(root, 'm0-full', 'core');
   const file = path.join(environment.TMP, 'original.txt');
   writeFileSync(file, 'preserved', { flag: 'wx' });
-  assert.throws(() => createM4GateTemporaryEnvironment(root, 'm0-full'), { code: 'EEXIST' });
+  assert.throws(() => createM4GateTemporaryEnvironment(root, 'm0-full', 'core'), { code: 'EEXIST' });
   assert.equal(readFileSync(file, 'utf8'), 'preserved');
   assert.deepEqual(readdirSync(environment.TMP), ['original.txt']);
 }));
 
 test('invalid selectors and non-directory or linked evidence roots are refused before scratch creation', () => fixture((root, parent) => {
   for (const id of ['', '.', '..', '../escape', '/absolute', 'C:drive', 'back\\slash', 'Upper', 'a'.repeat(65)]) {
-    assert.throws(() => createM4GateTemporaryEnvironment(root, id));
+    assert.throws(() => createM4GateTemporaryEnvironment(root, id, 'core'));
   }
-  assert.throws(() => createM4GateTemporaryEnvironment('relative', 'm0-full'));
+  assert.throws(() => createM4GateTemporaryEnvironment('relative', 'm0-full', 'core'));
   const file = path.join(parent, 'file');
   writeFileSync(file, 'unchanged', { flag: 'wx' });
-  assert.throws(() => createM4GateTemporaryEnvironment(file, 'm0-full'));
+  assert.throws(() => createM4GateTemporaryEnvironment(file, 'm0-full', 'core'));
   const alias = path.join(parent, 'alias');
   symlinkSync(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
-  assert.throws(() => createM4GateTemporaryEnvironment(alias, 'm0-full'));
+  assert.throws(() => createM4GateTemporaryEnvironment(alias, 'm0-full', 'core'));
   assert.equal(readFileSync(file, 'utf8'), 'unchanged');
   assert.deepEqual(readdirSync(root), []);
   assert.deepEqual(readdirSync(parent).sort(), ['alias', 'evidence', 'file']);
+}));
+
+test('browser and installed lanes retain their original temp environment and create no scratch paths', () => fixture((root, parent) => {
+  const before = parentEnvironment();
+  for (const [lane, gate] of [['browser', 'pinned-browser-three-proof'], ['installed', 'installed-qualification']]) {
+    assert.deepEqual(createM4GateTemporaryEnvironment(root, gate, lane), {});
+  }
+  for (const lane of [undefined, 'other']) {
+    assert.throws(() => createM4GateTemporaryEnvironment(root, 'm0-full', lane));
+  }
+  assert.deepEqual(parentEnvironment(), before);
+  assert.deepEqual(readdirSync(parent), ['evidence']);
 }));
