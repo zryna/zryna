@@ -11,7 +11,7 @@ _PINS = {'cli_common': 'c8cfd73e1fde0f97fbf0d65422a42db79df835128511d0e4eca32078
 _PINS['cli_exec'] = '7b2873f39b021ae9176794432b7b679c01d497b1b2fb9de359dac27ec042aa3a'
 _PINS['cli_plan'] = '33857536b36fb1798cf6ce31b67ef7b584ce5b9c7340d6ce20116b3300f1c623'
 _PREPARATION = {'plan': 'cf3c9c080303710e8613c85518864341269ea52c4673b848aa7cf3d7bc23fcfc', 'handles': '014c29ca354c5aacf5aeae27a755f780bd8f14abe82c98576cde0465dfd6760f', 'archive': '95515139e7634237387921a167f4b228260c2019b988b30eb65c265e6e23e172', 'engine': 'f8172f41398656d513366ad6b41f2b3dadd83cc1360d751a9d84b7ccef8e693b', 'install': '9580608303a3a21c437a88765af48accd4f80cec7ee55bf8c921ca2d26c54cac', 'emit': '872a93b32b723c11f55321dc91ea05d5490ebe59130656897d29bf06a9409443', 'material_seed': '1a5a12ca59d78e95447e8b1bcfb676f282a7f11b727abcff34a904860c670a90'}
-_NEW = {'lifecycle_inputs', 'lifecycle_engine', 'lifecycle_cgroup', 'lifecycle_kernel',
+_NEW = {'lifecycle_inputs', 'lifecycle_engine', 'lifecycle_cgroup', 'lifecycle_kernel', 'lifecycle_mounts',
         'lifecycle_execute', 'lifecycle_backend', 'lifecycle_operation',
         'preparation', 'preparation_plan', 'preparation_primitives', 'preparation_volume'}
 _CACHE = {}

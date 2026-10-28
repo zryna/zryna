@@ -4,7 +4,7 @@ import time
 from cli_common import require
 from cli_kernel_read import read as kernel_read, ticks, fields, numbers
 from cli_kernel_net import namespace_links, network
-from cli_mounts import resolve
+from lifecycle_mounts import resolve
 from cli_proc import children_reaped
 from lifecycle_cgroup import ancestry, cpus
 
@@ -63,7 +63,10 @@ class Kernel:
             require(own is not None and target is not None, 'namespace identity cannot be unknown')
             require(own == target if kind == 'user' else own != target, 'actual selected namespace separation')
         record['network'] = network(pid, deadline, links)
-        mounts = resolve(read(f'/proc/{pid}/mountinfo', deadline, 262144), cid); record['mounts'] = mounts
+        mount_text = read(f'/proc/{pid}/mountinfo', deadline, 262144)
+        host_mount_text = read('/proc/self/mountinfo', deadline, 262144)
+        mounts = resolve(mount_text, cid, host_mount_text, self.selected['engine']['dockerRootDir'])
+        record['mounts'] = mounts
         require(mounts['/sys/fs/cgroup']['root'] == membership[3:-1], 'private cgroup mount matches original membership')
         require('/materials' in mounts and 'ro' in mounts['/materials']['options'] and 'rw' not in mounts['/materials']['options'], 'actual read-only material mount')
         for target, count in self.selected['plan']['parent']['writableBytes'].items():
@@ -88,6 +91,9 @@ class Kernel:
         require(ticks(pid, deadline) == first and read(f'/proc/{pid}/cgroup', deadline) == membership, 'original init stable after full observation')
         require(numbers(read(group + '/cgroup.procs', deadline), 32) == [pid] and numbers(read(group + '/cgroup.threads', deadline), 32) == [pid]
                 and read(group + '/pids.current', deadline) == '1\n', 'still exactly the reaping init')
+        require(read(f'/proc/{pid}/mountinfo', deadline, 262144) == mount_text
+                and read('/proc/self/mountinfo', deadline, 262144) == host_mount_text,
+                'same actual host and private mount views around admission')
         record['quiescent'] = True
         return record
 
