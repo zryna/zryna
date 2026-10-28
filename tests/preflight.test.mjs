@@ -1,3 +1,5 @@
+import './cli-performance-regression-v1.test.mjs';
+import '../scripts/stability-gates/windows-parent-affinity-v1/decode.test.mjs';
 import './lifecycle-owner-inputs.test.mjs';
 import './lifecycle-owner-node-elf.test.mjs';
 import './lifecycle-owner-materials.test.mjs';
