@@ -4,6 +4,7 @@ import './lifecycle-owner-materials.test.mjs';
 import './lifecycle-owner-capture.test.mjs';
 import './dependency-lock-parser.test.mjs';
 import './qs-stringify-security.test.mjs';
+import './m4-gate-temporary.test.mjs';
 import './msal-backport.test.mjs';
 import './stability-contract-coverage-v2.test.mjs';
 import './stability-contract-coverage-v2-hostile.test.mjs';
