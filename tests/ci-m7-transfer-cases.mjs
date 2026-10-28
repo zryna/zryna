@@ -89,7 +89,10 @@ export function withoutM7Transfer(candidate) {
   if (!Object.hasOwn(original.jobs, 'm7-platform')) return original; // Older reviewed fixtures continue to their existing authority.
   assert.deepEqual(original.jobs['m7-platform'], expectedJob, 'exact dedicated both-host M7 job');
   const rust = original.jobs.rust;
-  assert.deepEqual(rust.steps.at(-1), { id: 'm0-complete', run: 'node scripts/run-m0-conformance.mjs' });
+  assert.deepEqual(rust.steps.at(-1), { id: 'm0-complete',
+    env: { RUST_TEST_THREADS: '2' }, run: 'node scripts/run-m0-conformance.mjs' },
+  'exact bounded M0 test scheduling; no additional environment grant');
+  delete rust.steps.at(-1).env; // Restore only this reviewed scheduling declaration before old authority.
   const moved = structuredClone(expectedJob.steps.slice(-2));
   moved[0].env.ZRYNA_M7_UPSTREAM_M0_RESULT = '${{ steps.m0-complete.outcome }}';
   rust.steps.push(...moved); delete original.jobs['m7-platform'];
@@ -109,7 +112,10 @@ export function withoutM7TransferText(text) {
   assert.equal(text.split(JOB_TEXT + '\n').length, 2, 'exact dedicated M7 job text once');
   let legacy = text.replace(JOB_TEXT + '\n', '');
   const anchor = '      - id: m0-complete\n        run: node scripts/run-m0-conformance.mjs\n';
-  assert.equal(legacy.split(anchor).length, 2); legacy = legacy.replace(anchor, anchor + OLD_PACKET_TEXT);
+  const current = '      - id: m0-complete\n        env:\n          RUST_TEST_THREADS: \'2\'\n' +
+    '        run: node scripts/run-m0-conformance.mjs\n';
+  assert.equal(legacy.split(current).length, 2, 'exact step-local bounded M0 scheduling placement');
+  legacy = legacy.replace(current, anchor + OLD_PACKET_TEXT);
   legacy = legacy.replace(', m7-platform]', ']')
     .replace('          M7_PLATFORM_RESULT: ${{ needs.m7-platform.result }}\n', '').replace(REQUIRE, '');
   assert.equal(digest(legacy), BASE_TEXT_SHA, 'every other original raw workflow byte unchanged'); return legacy;
