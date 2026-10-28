@@ -2399,8 +2399,8 @@
     },
     {
       "path": "scripts/run-m4-conformance.mjs",
-      "bytes": 8255,
-      "sha256": "4a43c23a7af0945d0414688346ce08a8b933bdf8d19cc5cd7b978fe19e9790bf"
+      "bytes": 8482,
+      "sha256": "653045454f6885df5b976a7950da83dde4dda97b784a0475f77c4757d40ddd13"
     },
     {
       "path": "scripts/scalar-host/acquire-browser.py",

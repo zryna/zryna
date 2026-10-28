@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { lstatSync, mkdirSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { loadAndValidateM4Conformance, expectedRegistrySha256 } from './check-m4-conformance.mjs';
 import { parseCanonical, readStableFile } from './m4/registry-files.mjs';
@@ -12,6 +13,7 @@ import { sourceCommands } from './m4/evidence-source.mjs';
 import { retain, browserAttachments, installedAttachments, stageM4Evidence } from './m4/collect-output.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const allocatedGateTemporaryRoots = new Set();
 export function createM4GateTemporaryEnvironment(evidenceRoot, gateId, lane) {
   assert(path.isAbsolute(evidenceRoot), 'absolute existing evidence root required');
   assert(['core', 'browser', 'installed'].includes(lane), 'fixed M4 lane required');
@@ -21,10 +23,12 @@ export function createM4GateTemporaryEnvironment(evidenceRoot, gateId, lane) {
   if (lane !== 'core') return {};
   const stat = lstatSync(evidenceRoot);
   assert(stat.isDirectory() && !stat.isSymbolicLink(), 'owned evidence directory required');
-  // A sibling keeps scratch payloads out of the bounded evidence artifact. Fresh
-  // gate namespaces prevent fixed PID/label paths colliding across invocations.
-  const directory = `${path.resolve(evidenceRoot)}-tmp-${gateId}`;
-  mkdirSync(directory, { mode: 0o700 });
+  const key = `${path.resolve(evidenceRoot)}\0${gateId}`;
+  assert(!allocatedGateTemporaryRoots.has(key), 'one temporary namespace per gate');
+  // Keep socket paths short and scratch outside the bounded evidence artifact.
+  // mkdtemp creates an exclusive private directory without reusing prior data.
+  const directory = mkdtempSync(path.join(tmpdir(), 'z4-'));
+  allocatedGateTemporaryRoots.add(key);
   return { TMPDIR: directory, TEMP: directory, TMP: directory };
 }
 function options(argv) {
