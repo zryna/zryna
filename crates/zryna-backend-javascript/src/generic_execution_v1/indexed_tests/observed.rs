@@ -7,7 +7,9 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 fn actual(case: &str) {
-    let bytes = include_bytes!("observed/OBSERVED_EXPECTED_FREEZE.json");
+    let bytes = include_bytes!(
+        "../../../../zryna-driver/tests/generic_execution_v1_native_indexed_runtime/OBSERVED_EXPECTED_FREEZE.json"
+    );
     assert_eq!(digest(bytes), "e4ffbd6b69f42d8d023fa9265b51a3bc1b08cebdc679caaa0cd3bb852032bad3");
     let expected: serde_json::Value =
         serde_json::from_slice(bytes).expect("immutable pre-observer source oracle");

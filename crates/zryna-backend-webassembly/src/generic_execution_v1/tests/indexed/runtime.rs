@@ -18,7 +18,9 @@ pub(super) fn check(case: &str, provider: &str, wire: &[u8], bytes: &[u8], obser
         .iter()
         .find(|row| row["case"] == case)
         .expect("same case");
-    let source = include_bytes!("OBSERVED_EXPECTED_FREEZE.json");
+    let source = include_bytes!(
+        "../../../../../zryna-driver/tests/generic_execution_v1_native_indexed_runtime/OBSERVED_EXPECTED_FREEZE.json"
+    );
     assert_eq!(digest(source), "e4ffbd6b69f42d8d023fa9265b51a3bc1b08cebdc679caaa0cd3bb852032bad3");
     let source: Value = serde_json::from_slice(source).expect("unchanged source oracle");
     let source = source["cases"]
