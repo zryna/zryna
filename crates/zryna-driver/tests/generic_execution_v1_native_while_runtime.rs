@@ -10,7 +10,7 @@ mod metadata;
 mod oracle;
 #[path = "generic_struct_v4_nested/process.rs"]
 mod process;
-#[path = "generic_execution_v1_native_while_runtime/source.rs"]
+#[path = "generic_execution_v1_while_source_seal/source.rs"]
 mod source;
 #[test]
 fn finite_while_and_assignment_inputs_preserve_dynamic_cleanup_and_canonical_faults() {
