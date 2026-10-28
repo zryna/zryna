@@ -42,7 +42,10 @@ fn scratch(m: &Model<'_, '_, '_>) -> i32 {
     i32::try_from(m.memory.claims().scratch_start).expect("checked scratch")
 }
 fn oracle() -> serde_json::Value {
-    let bytes = include_bytes!("HELD_COUNTER_EXPECTED_FREEZE.json");
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting_vec/HELD_COUNTER_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
         "5c6cbfc840dd06b29a409b5994002c294bf7436dd7d6be7a0abddede76f632f0"

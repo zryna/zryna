@@ -34,5 +34,7 @@ fn callee_denial_cleans_retained_parent_with_held_credit() {
 
 const SOURCE_ROOT: &str = "../../tests/m7-generic-execution-native-accounting-string";
 const EVIDENCE_PREFIX: &str = "m416-native-accounting-string";
-const RUNTIME_ORACLE: &[u8] =
-    include_bytes!("generic_execution_v1_native_accounting_string/RUNTIME_EXPECTED_FREEZE.json");
+const RUNTIME_ORACLE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/m7-generic-execution-native-accounting-string/RUNTIME_EXPECTED_FREEZE.json"
+));
