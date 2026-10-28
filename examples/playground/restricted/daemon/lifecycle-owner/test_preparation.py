@@ -1,17 +1,35 @@
 """Synthetic transport controls only: no daemon, signature binary, Python candidate or guest."""
 import copy
+import io
 import json
+import tarfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 import preparation_volume as volume_module
 from preparation import image_state
 from preparation_fixture import repin, selection
-from preparation_plan import CONFIG, FLAGS, NODE, validate
+from preparation_plan import CONFIG, FLAGS, NODE, validate, document, PYTHON_LANDMARK_DIRECTORIES
+from preparation_primitives import emit
 from preparation_volume import holder, holder_config, no_writers
 
 
 class PreparationTests(unittest.TestCase):
+    def test_python_exec_prefix_landmark_is_an_empty_sealed_directory(self):
+        image, _, _ = validate(selection())
+        landmark = 'usr/lib/python3.12/lib-dynload'
+        self.assertIn(landmark, image['directories'])
+        self.assertFalse(any(row['path'] == landmark or row['path'].startswith(landmark + '/') for row in image['files']))
+        self.assertEqual(image['bytes'], sum(row['bytes'] for row in image['files']))
+        sources = SimpleNamespace(revalidate_files=lambda: None)
+        output = io.BytesIO()
+        receipt = emit(document([], PYTHON_LANDMARK_DIRECTORIES), sources, output)
+        self.assertEqual((receipt['files'], receipt['sourceBytes']), (0, 0))
+        with tarfile.open(fileobj=io.BytesIO(output.getvalue()), mode='r:') as archive:
+            row = archive.getmember(landmark)
+            self.assertTrue(row.isdir())
+            self.assertEqual((row.uid, row.gid, row.mode, row.size), (0, 0, 0o555, 0))
+
     def test_complete_ten_materials_and_node_only_external(self):
         image, materials, manifest = validate(selection())
         self.assertEqual((len(materials['files']), materials['bytes']), (10, 133968848))

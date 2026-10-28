@@ -10,6 +10,9 @@ ENV = ['LANG=C.UTF-8', 'LC_ALL=C.UTF-8', 'TMPDIR=/tmp', 'ZRYNA_PLAYGROUND_TEST_M
 CONFIG = {'User': '65534:65534', 'Entrypoint': ['/lifecycle/supervisor'], 'Cmd': ['idle'],
           'WorkingDir': '/tmp', 'Env': ENV}
 MOUNTS = {'materials', 'input', 'output', 'tmp', 'dev', 'dev/shm', 'proc', 'sys'}
+# CPython 3.12 locates exec_prefix using this directory even when the selected
+# os/resource/sys bootstrap needs no dynamically loaded extension files.
+PYTHON_LANDMARK_DIRECTORIES = {'usr/lib/python3.12/lib-dynload'}
 NODE = '/materials/runtime/node/bin/node'
 PROVIDERS = [
     ('limits-v3.mjs', 123, 'c3e5d4adea4e08d4f9475269cee3f4e5f870ba052a6ea76ff1e6cb5fb23f6913'),
@@ -143,7 +146,7 @@ def validate(selection):
         exact(value, ['path', 'bytes', 'sha256']); path(value['path'])
         integer(value['bytes'], 4 * 1024**2, 1); digest(value['sha256'])
     runtime = runtime_inventory(selection['runtime'], plan)
-    image = document(source_rows(selection['runtimeSources'], runtime, provenance), MOUNTS)
+    image = document(source_rows(selection['runtimeSources'], runtime, provenance), MOUNTS | PYTHON_LANDMARK_DIRECTORIES)
     materials = document(source_rows(selection['materialSources'], {row['path']: row for row in MATERIALS}, provenance))
     for row in materials['files']:
         row['path'] = row['path'].removeprefix('materials/')
