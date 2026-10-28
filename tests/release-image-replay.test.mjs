@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { posix, win32 } from 'node:path';
 import { canonical, sha256 } from '../scripts/stability-gates/input.mjs';
-import { replayReleaseImage } from '../scripts/stability-gates/release-image-replay.mjs';
+import { replayNumericReleaseImage, replayReleaseImage } from '../scripts/stability-gates/release-image-replay.mjs';
 function fixture(windows = false) {
   const host = windows ? 'windows-x86_64' : 'linux-x86_64', p = windows ? win32 : posix;
   const root = windows ? 'C:\\source' : '/source', output = windows ? 'D:\\evidence\\capture' : '/evidence/capture';
@@ -164,4 +164,61 @@ test('bounded JSON permits both producer/canonical spelling and rejects duplicat
   f.files.set('release-build/capture.json', Buffer.from(canonical(value))); replayReleaseImage(f);
   for (const bytes of [Buffer.from([255]), Buffer.from('{"protocol":0,"protocol":1}\n'), Buffer.alloc(256 * 1024 + 1)])
     rejects(g => g.files.set('release-build/capture.json', bytes), false, true);
+});
+
+// Additive prospective numeric boundary controls; the original fixture and eight controls stay intact.
+function numericFixture(windows = false, round = 'held-out-candidate') {
+  const f = fixture(windows);
+  f.operator.round = round; f.capture.round = round; f.sync();
+  return f;
+}
+test('numeric held-out replay accepts the original role while legacy rejects the same untouched bytes', () => {
+  for (const windows of [false, true]) {
+    const f = numericFixture(windows);
+    const before = [...f.files].map(([name, bytes]) => [name, sha256(bytes)]);
+    assert.throws(() => replayReleaseImage(f));
+    const result = replayNumericReleaseImage(f);
+    assert.equal(result.round, 'held-out-candidate'); assert.equal(result.rawBuildImageReconciled, true);
+    assert.deepEqual([...f.files].map(([name, bytes]) => [name, sha256(bytes)]), before);
+    assert.equal(f.operator.round, 'held-out-candidate'); assert.equal(f.capture.round, 'held-out-candidate');
+    for (const key of ['sourceAuthenticated', 'hostAuthenticated', 'performanceQualified', 'productionReleaseAdmission']) assert.equal(result[key], false);
+    assert.equal(result.baselineAuthority, null); assert.equal(result.thresholds, null);
+  }
+});
+test('numeric baseline replay exactly agrees with the legacy result and no extra mode argument is accepted', () => {
+  assert.equal(replayReleaseImage.length, 1); assert.equal(replayNumericReleaseImage.length, 1);
+  for (const windows of [false, true]) for (const round of ['baseline-round-1', 'baseline-round-2']) {
+    const f = numericFixture(windows, round);
+    assert.deepEqual(replayNumericReleaseImage(f), replayReleaseImage(f));
+  }
+  assert.throws(() => replayNumericReleaseImage(numericFixture(), true), /fixed numeric release image replay API/u);
+});
+test('numeric roles are closed even when both original records agree on a malformed role', () => {
+  for (const windows of [false, true]) for (const role of ['io-qualification', 'baseline-round-3', 'heldout',
+    'held-out-candidate ', '', null, 1, {}, []]) {
+    const f = numericFixture(windows, role);
+    assert.throws(() => replayNumericReleaseImage(f));
+  }
+});
+test('numeric replay rejects original operator/capture role drift without relabeling or poisoning pristine replay', () => {
+  for (const windows of [false, true]) for (const driftOperator of [false, true]) {
+    const f = numericFixture(windows);
+    if (driftOperator) f.operator.round = 'baseline-round-1'; else f.capture.round = 'baseline-round-1';
+    f.sync(); assert.throws(() => replayNumericReleaseImage(f));
+    const pristine = numericFixture(windows);
+    assert.equal(replayNumericReleaseImage(pristine).round, 'held-out-candidate');
+  }
+});
+test('numeric held-out replay retains independent build/image/tool/source and authority rejection', () => {
+  const changes = [f => { f.commands['release-build'].args.splice(3, 1); },
+    f => { f.streams['release-build'].stderr = Buffer.from('Finished `dev` profile [unoptimized]\n'); },
+    f => { f.build.tools.after.rustc.sha256 = '0'.repeat(64); },
+    f => { f.expectedSource.tree = 'e'.repeat(40); }, f => { f.capture.sourceAuthenticated = true; },
+    f => { f.retained.links.copy = 2; },
+    f => { const name = f.host === 'windows-x86_64' ? 'zryna.exe' : 'zryna'; f.files.get(`retained-release-cli/${name}`)[200] ^= 1; }];
+  for (const windows of [false, true]) for (const change of changes) {
+    const f = numericFixture(windows); change(f); f.sync();
+    assert.throws(() => replayNumericReleaseImage(f));
+    assert.equal(replayNumericReleaseImage(numericFixture(windows)).round, 'held-out-candidate');
+  }
 });

@@ -1,3 +1,4 @@
+import './release-image-replay.test.mjs';
 import './cli-performance-numeric-host.test.mjs';
 import './cli-performance-threshold-derive-v1.test.mjs';
 import './cli-performance-prospective-policy-v1.test.mjs';
