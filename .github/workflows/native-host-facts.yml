@@ -1,0 +1,92 @@
+name: Native Linux host facts (unqualified)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/native-host-facts.yml'
+      - 'scripts/stability-gates/collect-native-host-facts.py'
+      - 'scripts/stability-gates/native_host_facts.py'
+      - 'tests/test_native_host_facts.py'
+  workflow_dispatch:
+
+concurrency:
+  group: native-host-facts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: synthetic observer contracts (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Replay inert host and source-loader contracts
+        run: python -I -B -m unittest discover -s tests -p test_native_host_facts.py -v
+
+  observe:
+    needs: contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      ZRYNA_NATIVE_SOURCE_COMMIT: ${{ github.sha }}
+      ZRYNA_NATIVE_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Collect bounded ordinary observer facts
+        id: ordinary
+        shell: bash
+        run: |
+          umask 077
+          mkdir -m 700 "$RUNNER_TEMP/native-host-facts"
+          /usr/bin/timeout --signal=TERM --kill-after=2s 12s \
+            /usr/bin/python3 -I -S -B scripts/stability-gates/collect-native-host-facts.py \
+            > "$RUNNER_TEMP/native-host-facts/ordinary.json" \
+            2> "$RUNNER_TEMP/native-host-facts/ordinary.stderr.log"
+          /usr/bin/python3 -I -S -B - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          path = os.path.join(os.environ['RUNNER_TEMP'], 'native-host-facts', 'ordinary.json')
+          with open(path, 'rb') as stream:
+              raw = stream.read(6 * 1024 * 1024 + 1)
+          assert len(raw) <= 6 * 1024 * 1024
+          value = json.loads(raw)
+          assert value['format'] == 'zryna.linux-native-host-facts.v1'
+          denied = any(record['operation'] == 'readlink' and record['status'] == 'unavailable'
+                       and record['errno'] in [1, 13]
+                       for phase in ['before', 'after'] for subject in ['self', 'pid1']
+                       for record in value['phases'][phase]['subjects'][subject]['namespaces'].values())
+          print('namespace_denied=' + str(denied).lower())
+          PY
+      - name: Collect exact bounded sudo observer only for denied namespace reads
+        if: steps.ordinary.outputs.namespace_denied == 'true'
+        shell: bash
+        run: |
+          umask 077
+          # Runner-owned redirections retain readable artifacts; the root child creates no files.
+          sudo -n --preserve-env=GITHUB_REPOSITORY,GITHUB_SHA,GITHUB_REF,GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT,GITHUB_JOB,GITHUB_WORKFLOW_REF,GITHUB_WORKFLOW_SHA,ImageOS,ImageVersion,RUNNER_OS,RUNNER_ARCH,ZRYNA_NATIVE_SOURCE_COMMIT,ZRYNA_NATIVE_RUNNER_ENVIRONMENT \
+            /usr/bin/timeout --signal=TERM --kill-after=2s 12s \
+            /usr/bin/python3 -I -S -B scripts/stability-gates/collect-native-host-facts.py \
+            > "$RUNNER_TEMP/native-host-facts/sudo.json" \
+            2> "$RUNNER_TEMP/native-host-facts/sudo.stderr.log"
+      - name: Retain original unqualified facts and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-host-facts-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-host-facts
+          if-no-files-found: error
+          retention-days: 90
