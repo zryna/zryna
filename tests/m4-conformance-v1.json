@@ -1869,13 +1869,13 @@
     },
     {
       "path": "pnpm-lock.yaml",
-      "bytes": 46141,
-      "sha256": "5459d16d1f34ecb524f757f982c133681095e48a4502550c9bb212c4172a4534"
+      "bytes": 46161,
+      "sha256": "910ef6dc9de74ba1f59e1861e261fc07bf0f9a8ba63832b5d77390f188c5c973"
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 251,
-      "sha256": "153d1f646dc0a8b39fe956def397578dd1079f31fe6fc8fa60da3deeb52cfef0"
+      "bytes": 273,
+      "sha256": "53c61dac0b516f73c0953e9a7db0ed3885c0e5a7b14d91eb93d8c736f9fb57a0"
     },
     {
       "path": "rust-toolchain.toml",
