@@ -56,9 +56,10 @@ pub(super) fn run(mut native: Command, seconds: u64) -> Output {
             let stdout_bytes = stdout.join().ok().map(|bytes| bytes.len());
             let stderr_bytes = stderr.join().ok().map(|bytes| bytes.len());
             panic!(
-                "child exceeded its existing stream/deadline budget: program={program:?}, \
+                "child exceeded its existing stream/deadline budget: program={}, \
                  seconds={seconds}, elapsed={elapsed:?}, overflow={stream_overflow}, \
-                 stdout_bytes={stdout_bytes:?}, stderr_bytes={stderr_bytes:?}"
+                 stdout_bytes={stdout_bytes:?}, stderr_bytes={stderr_bytes:?}",
+                program.display()
             );
         }
         if let Some(status) = running.child.try_wait().expect("bounded child status") {
