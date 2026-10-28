@@ -277,6 +277,8 @@ jobs:
       - name: Verify M7 acceptance evidence controls
         run: node --test tests/m7-generic-acceptance.test.mjs
       - id: m0-complete
+        env:
+          RUST_TEST_THREADS: '2'
         run: node scripts/run-m0-conformance.mjs
 
   m7-platform:

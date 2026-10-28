@@ -1,7 +1,7 @@
 # Fixed public M4 support contract
 
 This page and `zryna support --json` project one checked registry. The registry SHA-256 is
-`9407fca99945783980e4545e5cb1c82d79cac573ead83bd1cb354e8bef6269c4`. The matrix defines six bounded modes on the two
+`333cb4074f8529b090791470a75d66bdc688d7c4900080c7e122d8e59bae496c`. The matrix defines six bounded modes on the two
 exact hosted contracts below. It is a static contract, not authenticated execution or publication.
 Proof mappings and source limits are requirements; their presence does not show that tests ran.
 The complete canonical JSON below is the authority for every row, identity, limit and exclusion.
@@ -74,7 +74,7 @@ zryna.m4.support.v1:begin
 {
   "schema": "zryna.m4.support.v1",
   "authority": "static-contract",
-  "registrySha256": "9407fca99945783980e4545e5cb1c82d79cac573ead83bd1cb354e8bef6269c4",
+  "registrySha256": "333cb4074f8529b090791470a75d66bdc688d7c4900080c7e122d8e59bae496c",
   "authenticatedEvidence": "not-evaluated",
   "toolchains": {
     "rust": "1.97.1",
@@ -3327,8 +3327,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 38070,
-      "sha256": "17b17c0bf5b93dd93c646a26630ea500fef6c3d9d84310bf7b5a927557263c7e"
+      "bytes": 38116,
+      "sha256": "0f28282d4260cd373602fc1301e2b4b96f1f5d6eeec2f417f3084a8e14e935e6"
     },
     {
       "path": ".github/workflows/documentation.yml",
@@ -4902,13 +4902,13 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "pnpm-lock.yaml",
-      "bytes": 46141,
-      "sha256": "5459d16d1f34ecb524f757f982c133681095e48a4502550c9bb212c4172a4534"
+      "bytes": 46161,
+      "sha256": "910ef6dc9de74ba1f59e1861e261fc07bf0f9a8ba63832b5d77390f188c5c973"
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 251,
-      "sha256": "153d1f646dc0a8b39fe956def397578dd1079f31fe6fc8fa60da3deeb52cfef0"
+      "bytes": 273,
+      "sha256": "53c61dac0b516f73c0953e9a7db0ed3885c0e5a7b14d91eb93d8c736f9fb57a0"
     },
     {
       "path": "rust-toolchain.toml",
@@ -5432,8 +5432,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "scripts/run-m4-conformance.mjs",
-      "bytes": 7094,
-      "sha256": "f472209c8da1653ccf9b6aa2988103c0475e208a857014ef0ca6cebfe714734d"
+      "bytes": 8482,
+      "sha256": "653045454f6885df5b976a7950da83dde4dda97b784a0475f77c4757d40ddd13"
     },
     {
       "path": "scripts/scalar-host/acquire-browser.py",
@@ -5922,8 +5922,8 @@ zryna.m4.support.v1:begin
     },
     {
       "path": "tests/workflow-routing/inventory-contracts.mjs",
-      "bytes": 7970,
-      "sha256": "62d88b5ff7db9e49156cbd5e40180372f8f5a59b4cf85237d562f2103a5e38e8"
+      "bytes": 7995,
+      "sha256": "d7c15cee35bf2d748d78ba85fb427086838018ee15efa95b9cef50a668a564c1"
     },
     {
       "path": "zryna.workspace.json",

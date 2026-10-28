@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { loadAndValidateM4Conformance, expectedRegistrySha256 } from './check-m4-conformance.mjs';
 import { parseCanonical, readStableFile } from './m4/registry-files.mjs';
@@ -12,6 +13,24 @@ import { sourceCommands } from './m4/evidence-source.mjs';
 import { retain, browserAttachments, installedAttachments, stageM4Evidence } from './m4/collect-output.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const allocatedGateTemporaryRoots = new Set();
+export function createM4GateTemporaryEnvironment(evidenceRoot, gateId, lane) {
+  assert(path.isAbsolute(evidenceRoot), 'absolute existing evidence root required');
+  assert(['core', 'browser', 'installed'].includes(lane), 'fixed M4 lane required');
+  assert(typeof gateId === 'string' && /^[a-z][a-z0-9-]{0,63}$/u.test(gateId), 'fixed portable gate identifier');
+  // Only the core lane replays suites across gates. Browser and installed tools
+  // retain their existing temp environment, including Chromium's socket paths.
+  if (lane !== 'core') return {};
+  const stat = lstatSync(evidenceRoot);
+  assert(stat.isDirectory() && !stat.isSymbolicLink(), 'owned evidence directory required');
+  const key = `${path.resolve(evidenceRoot)}\0${gateId}`;
+  assert(!allocatedGateTemporaryRoots.has(key), 'one temporary namespace per gate');
+  // Keep socket paths short and scratch outside the bounded evidence artifact.
+  // mkdtemp creates an exclusive private directory without reusing prior data.
+  const directory = mkdtempSync(path.join(tmpdir(), 'z4-'));
+  allocatedGateTemporaryRoots.add(key);
+  return { TMPDIR: directory, TEMP: directory, TMP: directory };
+}
 function options(argv) {
   const allowed = ['--lane', '--evidence', '--expected-commit', '--expected-tree', '--source-ref', '--context'];
   if (argv.length !== 2 * allowed.length) reject('complete fixed runner arguments required');
@@ -69,10 +88,11 @@ export async function runM4(options) {
     const launchArgv = argv[0] === 'pnpm' ? [tools[0].executable.path, tool.executable.path, ...argv.slice(1)]
       : [tool.executable.path, ...argv.slice(1)];
     console.log(`[m4 ${options.lane}] ${gate.id}`);
+    const temporaryEnvironment = createM4GateTemporaryEnvironment(root, gate.id, options.lane);
     const started = performance.now();
     const result = spawnSync(launchArgv[0], launchArgv.slice(1), { cwd: sourceRoot, shell: false,
       windowsHide: true, timeout: 6 * 60 * 60 * 1000, maxBuffer: MAX_LOG,
-      env: { ...process.env, CARGO_TERM_COLOR: 'never', RUSTUP_TOOLCHAIN: '1.97.1',
+      env: { ...process.env, ...temporaryEnvironment, CARGO_TERM_COLOR: 'never', RUSTUP_TOOLCHAIN: '1.97.1',
         PATH: [path.dirname(tools[0].executable.path), path.dirname(tools[2].executable.path), process.env.PATH].join(path.delimiter) } });
     const entry = { id: gate.id, argv, launchArgv, exitCode: result.status, signal: result.signal,
       error: result.error?.code ?? null, elapsedMs: Math.max(1, Math.round(performance.now() - started)),

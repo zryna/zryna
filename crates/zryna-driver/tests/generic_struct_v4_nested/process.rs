@@ -38,6 +38,7 @@ fn reader(
 }
 pub(super) fn run(mut native: Command, seconds: u64) -> Output {
     native.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).env("LC_ALL", "C");
+    let program = native.get_program().to_owned();
     let mut command = CommandWrap::from(native);
     command.wrap(ProcessGroup::leader());
     let child = zryna_process::spawn(|| command.spawn()).expect("shared-gate child creation");
@@ -45,13 +46,21 @@ pub(super) fn run(mut native: Command, seconds: u64) -> Output {
     let overflow = Arc::new(AtomicBool::new(false));
     let stdout = reader(running.child.stdout().take().expect("stdout pipe"), Arc::clone(&overflow));
     let stderr = reader(running.child.stderr().take().expect("stderr pipe"), Arc::clone(&overflow));
-    let deadline = Instant::now() + Duration::from_secs(seconds);
+    let started = Instant::now();
+    let deadline = started + Duration::from_secs(seconds);
     let status = loop {
-        if overflow.load(Ordering::Acquire) || Instant::now() >= deadline {
+        let stream_overflow = overflow.load(Ordering::Acquire);
+        if stream_overflow || Instant::now() >= deadline {
+            let elapsed = started.elapsed();
             running.child.kill().expect("terminate and reap complete test process group");
-            let _ = stdout.join();
-            let _ = stderr.join();
-            panic!("child exceeded its existing stream/deadline budget");
+            let stdout_bytes = stdout.join().ok().map(|bytes| bytes.len());
+            let stderr_bytes = stderr.join().ok().map(|bytes| bytes.len());
+            panic!(
+                "child exceeded its existing stream/deadline budget: program={}, \
+                 seconds={seconds}, elapsed={elapsed:?}, overflow={stream_overflow}, \
+                 stdout_bytes={stdout_bytes:?}, stderr_bytes={stderr_bytes:?}",
+                program.display()
+            );
         }
         if let Some(status) = running.child.try_wait().expect("bounded child status") {
             break status;
