@@ -9,8 +9,9 @@ import { execute } from './process.mjs';
 import { sha256, readSafe } from './input.mjs';
 import { save, download } from './lifecycle-private-io.mjs';
 import { encodeTar } from '../distribution/archive-tar.mjs';
+import { readStableFile } from '../m4/registry-files.mjs';
 
-async function packCapture(output, base) {
+export async function packCapture(output, base) {
   const pending = [''], files = [];
   let entries = 0;
   while (pending.length) {
@@ -24,7 +25,8 @@ async function packCapture(output, base) {
         if (entry.isDirectory()) pending.push(path);
         else {
           assert(entry.isFile()); assert(files.length < 1024);
-          files.push({ path, mode: 0o644, data: readSafe(output, path, 16 * 1024 ** 2) });
+          // Cargo license paths contain valid SemVer build metadata (for example +spec).
+          files.push({ path, mode: 0o644, data: readStableFile(join(output, path), 16 * 1024 ** 2) });
         }
       }
     } finally { directory.closeSync(); }

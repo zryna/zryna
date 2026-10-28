@@ -4,12 +4,14 @@ import test from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { dispatchData, ORIGINALS, selection } from '../scripts/stability-gates/lifecycle-private-io.mjs';
 import { canonical } from '../scripts/stability-gates/input.mjs';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { relocate, restoreInputs, validateAuth } from '../scripts/stability-gates/lifecycle-private-custody.mjs';
 import { verifierPins } from '../examples/playground/restricted/daemon/compiler-publication-constants.mjs';
 import { release } from '../examples/playground/restricted/daemon/cli-parity/plan.mjs';
+import { packCapture } from '../scripts/stability-gates/lifecycle-private-capture.mjs';
+import { decodeTar } from '../scripts/distribution/archive-tar.mjs';
 
 const capture = () => ({ downloads: ORIGINALS.map(name => ({ name, bytes: 1, sha256: '0'.repeat(64), url: 'https://example.invalid/' + name })) });
 test('manual inputs are bounded data, not an approval or command channel', () => {
@@ -49,5 +51,35 @@ test('a missing original, alias name, unsafe scheme or first-extra descriptor st
     const value = capture(); mutate(value);
     assert.throws(() => selection(canonical(value), 'capture'));
   }
+});
+
+test('raw capture preserves SemVer license paths and original bytes while refusing linked entries', async () => {
+  const work = mkdtempSync(join(realpathSync(tmpdir()), 'life-pack-'));
+  try {
+    const source = join(work, 'capture'), output = join(work, 'packed');
+    mkdirSync(source); mkdirSync(output); mkdirSync(join(source, 'target'));
+    writeFileSync(join(source, 'target', 'excluded-cache'), 'not a raw observation');
+    const expected = new Map([['metadata-before.stdout.raw', Buffer.from('{"original":true}\n')],
+      ...['before', 'after'].map(phase => [
+        `licenses-${phase}/licenses/rust/toml-0.9.12+spec-1.1.0/LICENSE-MIT`, Buffer.from([0, 255, 10]),
+      ])]);
+    for (const [path, data] of expected) {
+      mkdirSync(join(source, ...path.split('/').slice(0, -1)), { recursive: true });
+      writeFileSync(join(source, path), data, { flag: 'wx' });
+    }
+    const pins = await packCapture(source, output), actual = new Map();
+    assert.equal(pins.length, 2);
+    for (const pin of pins) {
+      const bytes = readFileSync(join(output, pin.path)); assert.equal(bytes.length, pin.bytes);
+      for (const file of await decodeTar(bytes, 'capture', 0)) {
+        assert(!actual.has(file.path)); actual.set(file.path, file.data);
+      }
+    }
+    assert.deepEqual(actual, expected);
+    const refused = join(work, 'refused'); mkdirSync(refused);
+    symlinkSync(output, join(source, 'linked-records'), process.platform === 'win32' ? 'junction' : 'dir');
+    await assert.rejects(packCapture(source, refused));
+    assert.equal(existsSync(join(refused, 'capture-main.tar.gz')), false);
+  } finally { rmSync(work, { recursive: true }); }
 });
 
