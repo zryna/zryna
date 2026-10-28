@@ -31,6 +31,8 @@ test('fixed original identity is checked before any restore or tool', () => {
     auth[key] = { sourcePath: base + '/originals/' + (key === 'trustedRoot' ? 'trusted-root' : key), bytes, sha256, ownerUid: 0, mode: 0o600 };
   }
   validateAuth(auth, base); // Pure schema consistency only, not authentication.
+  assert.equal(relocate(base + '/run/manifest.json', base, '/tmp/private'), '/tmp/private/manifest.json');
+  assert.equal(relocate(base + '/originals/python', base, '/tmp/private'), '/tmp/private/input/originals/python');
   const work = mkdtempSync(join(tmpdir(), 'life-'));
   try {
     assert.throws(() => restoreInputs(auth, [{ path: 'originals/archive', mode: 0o644, data: Buffer.from('replaced') }], base, work));

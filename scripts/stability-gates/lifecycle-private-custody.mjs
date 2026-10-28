@@ -1,7 +1,7 @@
 // Physical custody only; these checks never issue source/runtime approval.
 import assert from 'node:assert/strict';
 import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, renameSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, posix } from 'node:path';
 import { release } from '../../examples/playground/restricted/daemon/cli-parity/plan.mjs';
 import { verifierPins } from '../../examples/playground/restricted/daemon/compiler-publication-constants.mjs';
 import { exact, sha256 } from './input.mjs';
@@ -13,10 +13,10 @@ export function validateAuth(auth, base) {
     bundle: { bytes: 10990, sha256: release.bundleSha256 },
     trustedRoot: { bytes: verifierPins.trustedRootBytes, sha256: verifierPins.trustedRootSha256 } };
   for (const [key, pin] of Object.entries(pins)) {
-    assert.deepEqual(auth[key], { sourcePath: join(base, 'originals', key === 'trustedRoot' ? 'trusted-root' : key),
+    assert.deepEqual(auth[key], { sourcePath: posix.join(base, 'originals', key === 'trustedRoot' ? 'trusted-root' : key),
       bytes: pin.bytes, sha256: pin.sha256, ownerUid: 0, mode: 0o600 });
   }
-  assert.deepEqual(auth.verifierPolicy, { ...verifierPins, path: join(base, 'run/cosign') });
+  assert.deepEqual(auth.verifierPolicy, { ...verifierPins, path: posix.join(base, 'run/cosign') });
 }
 
 export function protectedWork() {
@@ -31,7 +31,7 @@ export function protectedWork() {
 }
 
 export function relocate(path, base, work) {
-  assert.equal(resolve(path), path);
+  assert.equal(posix.resolve(path), path);
   for (const prefix of ['originals', 'binaries', 'capture']) {
     if (path.startsWith(base + '/' + prefix + '/')) return work + '/input' + path.slice(base.length);
   }
