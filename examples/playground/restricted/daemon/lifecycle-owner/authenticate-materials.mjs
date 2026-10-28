@@ -18,6 +18,22 @@ function capture(pin, maximum, fixed = null) {
   finally { source.close(); }
 }
 
+// The signed envelope includes tagObject; the archive's distribution source has five fields.
+export function materialArchiveExpectation(document) {
+  assert.equal(document.version, release.version);
+  assert.equal(document.source.commit, release.sourceCommit);
+  assert.equal(document.source.tree, release.sourceTree);
+  const subject = document.subjects.find(row => row.target === 'x86_64-unknown-linux-gnu');
+  assert(subject && subject.archive.size === release.archive.bytes
+    && subject.archive.sha256 === release.archive.sha256);
+  const source = Object.fromEntries(['repository', 'ref', 'commit', 'tree', 'sourceDateEpoch']
+    .map(key => [key, document.source[key]]));
+  return { filename: subject.archive.path, size: subject.archive.size,
+    sha256: subject.archive.sha256, version: document.version, source,
+    target: { triple: subject.target, archiveFormat: 'tar-gzip', platformBaseline: subject.platformBaseline },
+    recipe: document.recipe };
+}
+
 export function selectMaterialBytes(files) {
   assert.equal(files.length, 349); assert.equal(files.reduce((n, file) => n + file.data.length, 0), 154023815);
   const byPath = new Map(files.map(file => [file.path, file])); assert.equal(byPath.size, files.length);
@@ -55,11 +71,7 @@ export async function authenticateMaterials(input) {
   assert.equal(document.source.commit, release.sourceCommit); assert.equal(document.source.tree, release.sourceTree);
   assert.equal(document.version, release.version);
   verifyCompilerSignature(envelope, bundle, input.verifierPolicy, root, release.sourceCommit);
-  const subject = document.subjects.find(value => value.target === 'x86_64-unknown-linux-gnu');
-  assert(subject && subject.archive.size === archive.length && subject.archive.sha256 === release.archive.sha256);
-  const verified = await verifyArchive(archive, { filename: subject.archive.path, size: subject.archive.size,
-    sha256: subject.archive.sha256, version: document.version, source: document.source,
-    target: { triple: subject.target, archiveFormat: 'tar-gzip', platformBaseline: subject.platformBaseline }, recipe: document.recipe });
+  const verified = await verifyArchive(archive, materialArchiveExpectation(document));
   selectMaterialBytes(verified.files); // All ten member bytes/modes are bound to the freshly verified complete archive.
   const original = selectMaterialSources(input.materialSources);
   const captureMaterials = () => {

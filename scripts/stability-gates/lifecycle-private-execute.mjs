@@ -8,7 +8,7 @@ import { validateLifecycleCargoArtifacts } from './lifecycle-owner-prebuild.mjs'
 import { verifyArchive } from '../distribution/verify.mjs';
 import { validateReleaseText } from '../distribution-release/validate.mjs';
 import { extractVerifiedProductionFiles } from '../distribution-release/extract-verified-files.mjs';
-import { authenticateMaterials } from '../../examples/playground/restricted/daemon/lifecycle-owner/authenticate-materials.mjs';
+import { authenticateMaterials, materialArchiveExpectation } from '../../examples/playground/restricted/daemon/lifecycle-owner/authenticate-materials.mjs';
 import { verifyCompilerSignature } from '../../examples/playground/restricted/signature.mjs';
 import { lifecycleMaterialPins } from './lifecycle-owner-inputs.mjs';
 import { save, selection } from './lifecycle-private-io.mjs';
@@ -62,11 +62,10 @@ async function executeProtected(base, input, work) {
     }
   } finally { for (const value of Object.values(captured)) value.close(); }
   const envelope = captured.envelope.bytes;
-  const document = validateReleaseText(envelope.toString('utf8')), subject = document.subjects.find(row => row.target === 'x86_64-unknown-linux-gnu');
+  const document = validateReleaseText(envelope.toString('utf8'));
   verifyCompilerSignature(envelope, captured.bundle.bytes, auth.verifierPolicy,
     captured.trustedRoot.bytes, document.source.commit);
-  const verified = await verifyArchive(captured.archive.bytes, { filename: subject.archive.path, size: subject.archive.size,
-    sha256: subject.archive.sha256, version: document.version, source: document.source, target: { triple: subject.target, archiveFormat: 'tar-gzip', platformBaseline: subject.platformBaseline }, recipe: document.recipe });
+  const verified = await verifyArchive(captured.archive.bytes, materialArchiveExpectation(document));
   const command = (tool, args) => execFileSync(tool, args, { timeout: 30000, maxBuffer: 65536, stdio: ['ignore', 'pipe', 'pipe'] });
   for (const name of ['libc6', 'libgcc-s1', 'libstdcxx6', 'gcc-14-base']) command('/usr/bin/dpkg-deb', ['-x', join(originals, name), join(work, name)]);
   mkdirSync(join(work, 'python')); command('/usr/bin/tar', ['-xzf', join(originals, 'python'), '-C', join(work, 'python')]);

@@ -2,7 +2,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { lifecycleMaterialPins } from '../scripts/stability-gates/lifecycle-owner-inputs.mjs';
-import { authenticateMaterials, selectMaterialBytes, selectMaterialSources } from '../examples/playground/restricted/daemon/lifecycle-owner/authenticate-materials.mjs';
+import { authenticateMaterials, materialArchiveExpectation, selectMaterialBytes, selectMaterialSources } from '../examples/playground/restricted/daemon/lifecycle-owner/authenticate-materials.mjs';
+import { release } from '../examples/playground/restricted/daemon/cli-parity/plan.mjs';
+
+test('signed envelope tag metadata stays outside the archive source identity without accepting another release', () => {
+  const source = { repository: 'https://github.com/zryna/zryna', ref: 'refs/tags/v0.2.3',
+    commit: release.sourceCommit, tree: release.sourceTree, sourceDateEpoch: 0, tagObject: 'c'.repeat(40) };
+  const document = { version: release.version, source, recipe: {}, subjects: [{
+    target: 'x86_64-unknown-linux-gnu', platformBaseline: {},
+    archive: { path: 'selected.tar.gz', size: release.archive.bytes, sha256: release.archive.sha256 },
+  }] };
+  const expected = materialArchiveExpectation(document);
+  assert.equal(Object.hasOwn(expected.source, 'tagObject'), false);
+  assert.equal(document.source.tagObject, 'c'.repeat(40), 'complete signed envelope is retained');
+  for (const change of [value => { value.source.commit = 'f'.repeat(40); },
+    value => { value.source.tree = 'f'.repeat(40); }, value => { value.version = '0.2.2'; },
+    value => { value.subjects[0].archive.sha256 = 'f'.repeat(64); }]) {
+    const mutant = structuredClone(document); change(mutant);
+    assert.throws(() => materialArchiveExpectation(mutant));
+  }
+});
 
 test('material bridge rejects an approval boolean before file access or verification', async () => {
   await assert.rejects(authenticateMaterials({ approved: true }));
