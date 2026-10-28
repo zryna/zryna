@@ -68,10 +68,10 @@ fn compile(directory: &Path) {
     for name in
         ["observer.c", "observer.h", "observer_alloc.h", "observer_counts.h", "observer_host.h"]
     {
-        let source = if name == "observer_alloc.h" {
-            root.with_file_name("generic_execution_v1_native_affine_push").join(name)
-        } else {
+        let source = if name == "observer.c" {
             root.join(name)
+        } else {
+            root.with_file_name("generic_execution_v1_native_affine_push").join(name)
         };
         std::fs::copy(source, directory.join(name)).expect("retain exact test observer sources");
     }

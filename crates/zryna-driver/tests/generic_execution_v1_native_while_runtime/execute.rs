@@ -69,8 +69,12 @@ fn compile(directory: &Path) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/generic_execution_v1_native_while_runtime");
     for name in ["observer.c", "observer.h", "observer_host.h", "observer_strings.h"] {
-        std::fs::copy(root.join(name), directory.join(name))
-            .expect("retain exact test observer sources");
+        let source = if matches!(name, "observer_host.h" | "observer_strings.h") {
+            root.with_file_name("generic_execution_v1_native_concat_runtime").join(name)
+        } else {
+            root.join(name)
+        };
+        std::fs::copy(source, directory.join(name)).expect("retain exact test observer sources");
     }
     let mut gcc = Command::new("/usr/bin/gcc");
     gcc.args([
