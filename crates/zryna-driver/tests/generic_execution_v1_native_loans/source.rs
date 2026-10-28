@@ -25,8 +25,11 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 fn pinned(name: &str) -> Vec<u8> {
-    let identities: serde_json::Value = serde_json::from_str(include_str!("input-identities.json"))
-        .expect("pre-test frozen identities");
+    let identities: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-backend-javascript/src/generic_execution_v1/loan_tests/input-identities.json"
+    )))
+    .expect("pre-test frozen identities");
     let bytes = read(name);
     assert_eq!(
         u64::try_from(bytes.len()).expect("bounded input"),

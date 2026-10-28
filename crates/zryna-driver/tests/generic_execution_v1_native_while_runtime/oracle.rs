@@ -10,7 +10,10 @@ pub(super) struct Fault {
     expected: Value,
 }
 pub(super) fn row(case: &str) -> Value {
-    let bytes = include_bytes!("RUNTIME_EXPECTED.json");
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-backend-javascript/src/generic_execution_v1/while_tests/RUNTIME_EXPECTED.json"
+    ));
     assert_eq!(
         super::emit::digest(bytes),
         "e8a1761b0bd36f22dd78f90f00cf9ed777885f48b1026146fa97dbc22200060d"

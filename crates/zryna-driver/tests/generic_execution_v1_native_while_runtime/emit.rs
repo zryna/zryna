@@ -92,7 +92,10 @@ fn retain_inputs(case: &str, directory: &Path) {
     }
     std::fs::write(
         directory.join("RUNTIME_EXPECTED.json"),
-        include_bytes!("RUNTIME_EXPECTED.json"),
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-backend-javascript/src/generic_execution_v1/while_tests/RUNTIME_EXPECTED.json"
+        )),
     )
     .expect("unchanged independent runtime oracle");
 }

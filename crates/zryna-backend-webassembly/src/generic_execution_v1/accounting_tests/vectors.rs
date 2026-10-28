@@ -15,9 +15,10 @@ fn first_growth_and_within_capacity_reserve_small_rows_use_canonical_storage() {
     actual("reserve-vec-call-loop", false);
 }
 fn actual(case: &str, full: bool) {
-    let bytes = include_bytes!(
-        "../../../../zryna-driver/tests/generic_execution_v1_native_accounting_vec/RUNTIME_EXPECTED_FREEZE.json"
-    );
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-backend-javascript/src/generic_execution_v1/vec_accounting_tests/RUNTIME_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
         "74e37c21295455022586c9115c6c1ed3b9e6975c1864304241660d5b55949a64"

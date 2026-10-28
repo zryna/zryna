@@ -3,7 +3,10 @@ use super::*;
 use sha2::{Digest, Sha256};
 #[test]
 fn actual_string_adapters_match_the_ten_representable_frozen_string_held_rows() {
-    let oracle = include_str!("HELD_COUNTER_EXPECTED_FREEZE.json");
+    let oracle = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting/HELD_COUNTER_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle)),
         "578b3f1d8373237b3c92a1267865fefe83243b17fed2d04eaa5098ff51f6faf2"

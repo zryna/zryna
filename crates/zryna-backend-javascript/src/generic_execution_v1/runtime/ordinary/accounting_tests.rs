@@ -46,7 +46,10 @@ fn known_expired_numeric_control_retains_genuine_upgrade_and_control_activation(
     });
 }
 fn run(group: &str) {
-    let oracle = include_str!("accounting_tests/HELD_COUNTER_EXPECTED_FREEZE.json");
+    let oracle = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting/HELD_COUNTER_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle.as_bytes())),
         "578b3f1d8373237b3c92a1267865fefe83243b17fed2d04eaa5098ff51f6faf2"

@@ -12,8 +12,10 @@ mod process;
 mod source;
 const SOURCE_ROOT: &str = "../../tests/m7-generic-execution-native-accounting-vec";
 const EVIDENCE_PREFIX: &str = "m416-native-accounting-vec";
-const RUNTIME_ORACLE: &[u8] =
-    include_bytes!("generic_execution_v1_native_accounting_vec/RUNTIME_EXPECTED_FREEZE.json");
+const RUNTIME_ORACLE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../zryna-backend-javascript/src/generic_execution_v1/vec_accounting_tests/RUNTIME_EXPECTED_FREEZE.json"
+));
 fn actual(case: &str) {
     for provider in source::PROVIDERS {
         source::with_program(case, provider, |program, wire| {
