@@ -30,10 +30,12 @@ with (base / 'native.json').open('x') as stream, contextlib.redirect_stdout(stre
 native = (base / 'native.json').read_bytes()
 requests, anchor = [], []
 engine = load('lifecycle_engine').Engine({}, time.monotonic() + 180, requests, anchor)
-info, version = engine.json('GET', '/info'), engine.json('GET', '/version')
+try:
+    info, version = engine.json('GET', '/info'), engine.json('GET', '/version')
+finally:
+    save('engine-discovery.json', requests)
 expected = {'id': info['ID'], 'version': version['Version'], 'apiVersion': version['ApiVersion'],
             'cgroupDriver': info['CgroupDriver'], 'dockerRootDir': info['DockerRootDir']}
-save('engine-discovery.json', requests)
 selection = value['preparation']
 image, materials, manifest = load('preparation_plan').validate(selection)
 source = next(row for row in selection['runtimeSources'] if row['path'] == '/resources/materials-manifest.json')

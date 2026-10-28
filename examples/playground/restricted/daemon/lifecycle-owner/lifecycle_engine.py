@@ -3,11 +3,52 @@ import base64
 import json
 import os
 import socket
+import stat
 import struct
 import time
 from cli_common import require, sha256
-from cli_engine import Connection, Chunked, decode
+from cli_engine import Connection as OriginalConnection, TimedSocket, Chunked, decode
 from cli_kernel_read import ticks
+
+
+class Connection(OriginalConnection):
+    """Authenticate the two fixed names of the same root-owned native socket."""
+    def connect(self):
+        aliases = ['/var/run/docker.sock', '/run/docker.sock']
+        fields = ['st_dev', 'st_ino', 'st_uid', 'st_gid', 'st_mode', 'st_ctime_ns']
+        self.observation = {'parents': [], 'before': [], 'after': [], 'peer': None}
+        def snapshot(path, value):
+            return {'path': path, **{field: str(getattr(value, field)) for field in fields}}
+        for parent in ['/', '/var', '/var/run', '/run']:
+            value = os.stat(parent)
+            self.observation['parents'].append(snapshot(parent, value))
+            require(stat.S_ISDIR(value.st_mode) and value.st_uid == 0
+                    and not value.st_mode & 0o022, 'trusted native socket ancestry required')
+        before = [os.lstat(path) for path in aliases]
+        self.observation['before'] = [snapshot(path, value) for path, value in zip(aliases, before)]
+        require(all(stat.S_ISSOCK(value.st_mode) and value.st_uid == 0
+                    and not value.st_mode & 0o002 for value in before)
+                and all(getattr(before[0], field) == getattr(before[1], field) for field in fields),
+                'fixed native socket aliases must identify the same root-owned socket')
+        stream = TimedSocket(self.deadline, self.cancel)
+        try:
+            stream.guard()
+            stream.connect(aliases[0])
+            stream.guard()
+            after = [os.lstat(path) for path in aliases]
+            self.observation['after'] = [snapshot(path, value) for path, value in zip(aliases, after)]
+            require(all(getattr(old, field) == getattr(new, field)
+                        for old, new in zip(before, after) for field in fields), 'native socket changed')
+            pid, uid, gid = struct.unpack('3i', stream.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+            name = stream.getpeername()
+            self.observation['peer'] = {'pid': pid, 'uid': uid, 'gid': gid,
+                'nameKind': type(name).__name__, 'nameHex': os.fsencode(name).hex(),
+                'name': name if type(name) is str else None}
+            require(uid == 0 and name in aliases, 'fixed root native daemon peer differs')
+            self.sock = stream
+        except BaseException:
+            stream.close()
+            raise
 
 
 class Engine:
@@ -28,7 +69,8 @@ class Engine:
         item = {'method': method, 'path': path, 'request': value, 'status': None, 'failure': None}
         self.record.append(item)
         try:
-            connection.connect()  # Existing source checks socket ancestry/identity and SO_PEERCRED.
+            connection.connect()
+            item['connection'] = connection.observation
             pid, uid, gid = struct.unpack('3i', connection.sock.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
             state = os.lstat('/var/run/docker.sock')
             peer = {'pid': pid, 'uid': uid, 'gid': gid, 'ticks': ticks(pid, self.deadline),
@@ -65,6 +107,7 @@ class Engine:
                     'complete bounded original Engine response within phase')
             return raw, emission
         except BaseException as error:
+            item['connection'] = getattr(connection, 'observation', None)
             item['failure'] = {'type': type(error).__name__, 'errno': getattr(error, 'errno', None)}
             raise
         finally:
