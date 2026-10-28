@@ -7,6 +7,7 @@ import { validateLifecyclePrebuild } from './lifecycle-owner-prebuild.mjs';
 const NAME = 'authenticated_large_provider_stages_then_compiles_and_removes_owned_stage';
 const PACKAGE = 'zryna-playground-compiler';
 const TEST = '/lifecycle/test', PYTHON = '/usr/bin/python3', SUPERVISOR = '/lifecycle/supervisor';
+const MATERIAL_NODE = '/materials/runtime/node/bin/node';
 const MIB = 1024 * 1024;
 const SHADOW = ['/materials', '/input', '/output', '/tmp', '/dev', '/proc', '/sys'];
 const PROVIDERS = [
@@ -22,7 +23,7 @@ const PROVIDERS = [
 ];
 export function lifecycleMaterialPins() {
   return [...PROVIDERS.map(([path, bytes, sha256]) => ({ path: '/materials/lib/zryna/bootstrap/' + path, bytes, sha256, mode: 0o444 })),
-    { path: '/materials/runtime/node/bin/node', bytes: 124674920,
+    { path: MATERIAL_NODE, bytes: 124674920,
       sha256: '243fd8938011479f41b3de101842150fa990f33fbbb3f7aabd330857f2d79e1d', mode: 0o555 }];
 }
 const contains = (root, path) => path === root || path.startsWith(root + '/');
@@ -74,7 +75,8 @@ function runtimeInventory(runtime, expected) {
   assert(Array.isArray(runtime.elf) && runtime.elf.length <= 512); ordered(runtime.elf.map(row => row.path));
   const elf = new Map();
   for (const row of runtime.elf) {
-    exact(row, ['path', 'prefixHex', 'interpreter', 'needed'], 'declared ELF closure'); assert(files.has(row.path));
+    exact(row, ['path', 'prefixHex', 'interpreter', 'needed'], 'declared ELF closure');
+    assert(row.path === MATERIAL_NODE || files.has(row.path), 'only fixed material Node may be an external ELF root');
     assert.match(row.prefixHex, /^[a-f0-9]{128,256}$/u); const prefix = Buffer.from(row.prefixHex, 'hex');
     assert.equal(prefix.toString('hex'), row.prefixHex, 'complete ELF prefix encoding');
     assert(prefix.subarray(0, 6).equals(Buffer.from([127, 69, 76, 70, 2, 1])) && prefix.readUInt16LE(18) === 62, 'declared ELF x64');
@@ -85,14 +87,16 @@ function runtimeInventory(runtime, expected) {
   }
   const roots = [TEST, expected.artifacts.compiler.path, PYTHON, SUPERVISOR];
   for (const name of roots) assert(elf.has(name) && files.get(name).mode === 0o555, 'fixed executable closure root');
-  const visited = new Set(), pending = [...roots, ...runtime.python.files.filter(name => elf.has(name))];
+  assert(elf.has(MATERIAL_NODE), 'fixed material Node ELF root required');
+  const visited = new Set(), pending = [...roots, MATERIAL_NODE, ...runtime.python.files.filter(name => elf.has(name))];
   while (pending.length) {
     const name = pending.pop(); if (visited.has(name)) continue; visited.add(name);
     const row = elf.get(name); assert(row, 'missing declared dependency ELF');
     pending.push(...row.needed.map(item => item.path)); if (row.interpreter) pending.push(row.interpreter);
   }
   assert.equal(visited.size, elf.size, 'no disconnected ELF declarations');
-  const used = new Set([...visited, ...runtime.python.files, ...runtime.support]);
+  // Only the pinned material executable is outside the image file-role inventory.
+  const used = new Set([...visited].filter(name => name !== MATERIAL_NODE).concat(runtime.python.files, runtime.support));
   assert.equal(used.size, files.size, 'every declared runtime file has an explicit role'); return total;
 }
 export function createLifecycleOwnerPlan(input) {
