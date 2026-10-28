@@ -13,7 +13,7 @@ export function campaignFixture(phase = 'baselines', selectedSource = null) {
   const source = selectedSource ? structuredClone(selectedSource) :
     { commit: 'a'.repeat(40), tree: 'b'.repeat(40), ref: 'refs/heads/feat/performance-regression-gates' };
   const workflows = NUMERIC_WORKFLOWS.map(path => {
-    const bytes = readFileSync(new URL(`./cli-performance-campaign-workflows-v1/${path.slice(path.lastIndexOf('/') + 1)}`, import.meta.url)), descriptor = { path, bytes: bytes.length, sha256: sha256(bytes) };
+    const bytes = readFileSync(new URL(`../${path}`, import.meta.url)), descriptor = { path, bytes: bytes.length, sha256: sha256(bytes) };
     responses.set(`${PREFIX}/contents/${path}?ref=${source.commit}`, { type: 'file', path, size: bytes.length,
       encoding: 'base64', content: bytes.toString('base64'),
       sha: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex') });

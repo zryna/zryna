@@ -96,3 +96,6 @@ export function inspectNumericCampaignHost(selection, sourceKey, rawKey, hostKey
   inspectNumericCampaignArchive(selection, sourceKey, rawKey); // Closed source/archive keys cannot be revived by a host copy.
   return structuredClone(value.value);
 }
+
+// Reuse the unchanged original record validator; this supplies no owner key or authority.
+export { originalHost as validateNumericOriginalHost };

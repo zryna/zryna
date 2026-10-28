@@ -12,7 +12,7 @@ export const NUMERIC_WORKFLOW_PINS = Object.freeze([
   { bytes: 1055, sha256: '46e576a6589a862ede5f466d5b342b3fd70e627a7d7b17450b8875b2f47e8455' },
   { bytes: 2758, sha256: '241f052f8b8d4039d5f5edfc79109f1482574f98f466a115e23bc9859a6991f7' },
   { bytes: 877, sha256: '119413c5537b95a9bb3779d021457ff4c36feb632f7b60203cfe26e1c6811295' },
-  { bytes: 13060, sha256: '4da91cb1c90c26c09364d2fcc707ab800476638c92fc85f86b18835c562d4225' },
+  { bytes: 13113, sha256: '6f4f1abeff65de6f18519c26222f294fb7605aec75c0f6c3702ab784daeeee0b' },
 ].map(Object.freeze));
 export const NUMERIC_LABELS = Object.freeze({ 'linux-x86_64': 'ubuntu-24.04', 'windows-x86_64': 'windows-2022' });
 export const numericJobName = ({ host, role }) => `${host} / ${role} / collect`;

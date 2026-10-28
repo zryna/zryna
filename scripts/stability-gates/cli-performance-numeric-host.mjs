@@ -146,6 +146,33 @@ export async function captureNumericCompanion(input, root, output, phase, previo
     state.parentCreated ??= native.record.decoded.parent.created;
   }
   save(output, `numeric-host-${phase}.json`, record);
-  if (phase === 'before') { const key = Object.freeze({}); sessions.set(key, state); return key; }
+  if (phase === 'before') {
+    state.inputSha256 = sha256(canonical(input)); state.hostSha256 = sha256(bytes);
+    state.companionSha256 = sha256(readSafe(output, 'numeric-host-before.json'));
+    const key = Object.freeze({}); sessions.set(key, state); return key;
+  }
   return null;
+}
+
+// A copied record cannot stand in for this collector's live before session. No extra native query.
+export function inspectNumericCompanionBefore(key, input, root, output) {
+  assert.equal(arguments.length, 4, 'fixed private companion inspector');
+  const state = sessions.get(key);
+  assert(state && !state.completed && state.pid === process.pid && state.root === root && state.output === output,
+    'same live before companion required');
+  assert.equal(state.inputSha256, sha256(canonical(input)), 'same original numeric operator');
+  assert.deepEqual(state.source, { commit: input.expectedHead, tree: input.expectedTree });
+  const rawHost = readSafe(output, 'host-before.json'), rawCompanion = readSafe(output, 'numeric-host-before.json');
+  assert.equal(sha256(rawHost), state.hostSha256, 'original before host bytes unchanged');
+  assert.equal(sha256(rawCompanion), state.companionSha256, 'original before companion bytes unchanged');
+  const host = parse(rawHost), companion = parse(rawCompanion);
+  assert.equal(companion.collectorNodePid, process.pid); assert.deepEqual(companion.source, state.source);
+  if (process.platform === 'win32') {
+    const locations = affinityLocations(root, input.calibrationDirectory), raw = readSafe(locations.evidence, 'affinity-build.json');
+    const current = bindings(input, root, locations, raw);
+    assert.deepEqual(current, state.nativeBinding, 'original native material identities remain live');
+    validateAffinityBuild(JSON.parse(raw.toString('utf8')), current);
+    assert.equal(companion.native.decoded.parent.created, state.parentCreated);
+  }
+  return structuredClone({ host, companion, nativeBinding: state.nativeBinding ?? null });
 }

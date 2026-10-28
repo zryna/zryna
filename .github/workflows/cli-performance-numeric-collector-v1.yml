@@ -102,6 +102,8 @@ jobs:
           & ./scripts/stability-gates/windows-parent-affinity-v1/hosted.ps1
           if (-not $?) { throw 'Fixed parent-affinity build and live controls failed' }
       - name: Assemble observed operator inputs and collect one fresh round
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

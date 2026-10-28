@@ -44,4 +44,9 @@ jobs:
           tests/cli-performance-campaign-host-facts-v1.test.mjs
           tests/cli-performance-campaign-host-v1.test.mjs
           tests/cli-performance-campaign-linux-provider-v1.test.mjs
+          tests/cli-performance-campaign-normalization-v1.test.mjs
+          tests/cli-performance-anchor-v1.test.mjs
+          tests/cli-performance-heldout-gate-v1.test.mjs
+          tests/cli-performance-heldout-replay-v1.test.mjs
+          tests/cli-performance-completed-campaign-v1.test.mjs
           tests/release-image-replay.test.mjs

@@ -14,6 +14,7 @@ import { HELPER_SOURCE_SHA256 } from './cli-performance-windows-binding.mjs';
 import { captureHostedMetadata } from './cli-performance-host.mjs';
 import { runArchitectureCheck, verifySourceAfterCollection } from './cli-performance-hosted-checks.mjs';
 import { captureNumericCompanion, numericOperatorInput } from './cli-performance-numeric-host.mjs';
+import { beginNumericHeldoutGate, finishNumericHeldoutGate, closeNumericHeldoutGate } from './cli-performance-heldout-gate-v1.mjs';
 
 export function collectorEnvironment(environment, rustc, windows) {
   const keys = windows ? ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'USERPROFILE', 'CARGO_HOME',
@@ -101,6 +102,7 @@ async function hostedRound(input, output, numeric) {
   let stage = 'operator-input';
   let build;
   let numericBefore;
+  let numericGate;
   let sourcePostflightAttempted = false;
   save(output, 'operator-input.json', input);
   try {
@@ -135,6 +137,10 @@ async function hostedRound(input, output, numeric) {
     if (numeric) {
       stage = 'numeric-host-before';
       numericBefore = await captureNumericCompanion(input, root, output, 'before');
+      if (input.round === 'held-out-candidate') {
+        stage = 'numeric-anchor-before-release-build';
+        numericGate = await beginNumericHeldoutGate(numericBefore, input, root, output);
+      }
     }
     stage = 'release-build';
     build = await captureReleaseBuild({ root, output: join(output, 'release-build'), target,
@@ -169,6 +175,10 @@ async function hostedRound(input, output, numeric) {
     if (windows) capture.operatorAdmission = save(output, 'windows-operator-binding.json', windowsAdmission(capture));
     else Object.assign(capture, { providerRoot: provider.providerRoot, providerRecordSha256: provider.providerRecordSha256,
       providerReceiptSha256: provider.providerReceiptSha256 });
+    if (numericGate) {
+      stage = 'numeric-anchor-before-timed-round';
+      await finishNumericHeldoutGate(numericGate, numericBefore, input, root, output, build, capture, provider);
+    }
     stage = 'one-collector-round';
     const session = await (windows ? captureWindowsDraft : captureLinuxDraft)({ root,
       output: join(output, 'round'), document, capture, oracles: oracle.oracles });
@@ -197,5 +207,7 @@ async function hostedRound(input, output, numeric) {
     save(output, 'hosted-failure.json', { stage, message: String(error.stack ?? error),
       sourceAuthenticated: false, performanceQualified: false, baselineAuthority: null, thresholds: null });
     throw error;
+  } finally {
+    if (numericGate) closeNumericHeldoutGate(numericGate);
   }
 }

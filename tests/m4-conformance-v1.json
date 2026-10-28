@@ -2889,8 +2889,8 @@
     },
     {
       "path": "tests/workflow-routing/inventory-contracts.mjs",
-      "bytes": 8029,
-      "sha256": "5f619af3c3479f3ad9b04393b2da6692bb58216657e91f16bdd365e369fd7121"
+      "bytes": 8182,
+      "sha256": "489b26c22299e0ca71ed35a660c83085da7da6cfdfc82db379cde8762cf083e1"
     },
     {
       "path": "zryna.workspace.json",

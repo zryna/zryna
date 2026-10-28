@@ -9,7 +9,7 @@ import { canonical, readSafe, sha256 } from '../scripts/stability-gates/input.mj
 import { captureSourceCensus } from '../scripts/stability-gates/source-census-v2.mjs';
 import { NUMERIC_WORKFLOWS } from '../scripts/stability-gates/cli-performance-campaign-plan-v1.mjs';
 import { linkNumericCampaignPhase } from '../scripts/stability-gates/cli-performance-campaign-link-v1.mjs';
-import { bindNumericCampaignSource } from '../scripts/stability-gates/cli-performance-campaign-source-v1.mjs';
+import { bindNumericCampaignSource, NUMERIC_COLLECTOR_REQUIRED_INPUTS } from '../scripts/stability-gates/cli-performance-campaign-source-v1.mjs';
 import { campaignFixture, PREFIX } from './cli-performance-campaign-fixture.mjs';
 import { releaseImageFixture } from './release-image-replay-fixture.mjs';
 import { oracleReplayFixture } from './cli-performance-oracle-replay-fixture.mjs';
@@ -37,7 +37,7 @@ function records(files, changes) {
     return [name, JSON.stringify(old) === JSON.stringify(value) ? Buffer.from(bytes) : Buffer.from(canonical(value))];
   }));
 }
-function sourceTree(t, origin, document) {
+export function campaignArchiveSource(t, origin, document, collector = false) {
   const base = mkdtempSync(join(tmpdir(), 'numeric-composite-')), root = join(base, 'source');
   t.after(() => rmSync(base, { recursive: true, force: true })); mkdirSync(root);
   const git = args => execFileSync('git', ['-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgSign=false', ...args],
@@ -56,6 +56,9 @@ function sourceTree(t, origin, document) {
   for (const path of ['.github/workflows/windows-job-metrics.yml', ...['probe.c', 'build-msvc.cmd', 'decode.mjs', 'decode.test.mjs', 'hosted.ps1', 'live-controls.mjs'].map(name => affinity + name)]) {
     put(path, readSafe(repository, path));
   }
+  if (collector) for (const path of NUMERIC_COLLECTOR_REQUIRED_INPUTS) {
+    if (!NUMERIC_WORKFLOWS.includes(path)) put(path, readSafe(repository, path));
+  }
   git(['add', '--force', '--', '.']);
   git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@invalid', 'commit', '-qm', 'Synthetic archive source fixture']);
   const source = { commit: git(['rev-parse', 'HEAD']).trim(), tree: git(['rev-parse', 'HEAD^{tree}']).trim(), ref: origin.plan.source.ref };
@@ -67,7 +70,8 @@ function sourceTree(t, origin, document) {
   }
   return { root, source, captures, files };
 }
-export async function campaignArchiveFixture(t, { windows = false, phase = 'baselines', hostEvidence = false } = {}) {
+export async function campaignArchiveFixture(t, { windows = false, phase = 'baselines', hostEvidence = false,
+  role: selectedRole = null, sharedSource = null, provider = null } = {}) {
   assert(['baselines', 'heldout'].includes(phase));
   const release = releaseImageFixture(windows), oracle = oracleReplayFixture(windows);
   assert(typeof hostEvidence === 'boolean' && (!hostEvidence || windows));
@@ -78,14 +82,21 @@ export async function campaignArchiveFixture(t, { windows = false, phase = 'base
   }
   const raw = windows ? await windowsReplayFixture() : linuxReplayFixture();
   if (windows) exactWindows(raw);
-  const origin = campaignFixture(phase), tree = sourceTree(t, origin, raw.document);
-  const role = phase === 'heldout' ? 'held-out-candidate' : 'baseline-round-1', host = release.host;
+  const origin = campaignFixture(phase), tree = sharedSource ?? campaignArchiveSource(t, origin, raw.document);
+  const role = selectedRole ?? (phase === 'heldout' ? 'held-out-candidate' : 'baseline-round-1'), host = release.host;
+  assert((phase === 'heldout' ? ['held-out-candidate'] : ['baseline-round-1', 'baseline-round-2']).includes(role));
+  if (role === 'baseline-round-2') release.results['release-build'].termination.elapsedMs = 11;
+  assert(provider === null || !windows);
+  if (provider) for (const value of [raw.capture, raw.session]) {
+    value.providerRoot = provider.root; value.providerReceiptSha256 = sha256(provider.receipt);
+  }
   const p = windows ? win32 : posix, output = p.dirname(p.dirname(release.retained.copy.path));
   const helper = { path: p.join(output, windows ? 'helper.exe' : 'helper'), bytes: 128, sha256: '1'.repeat(64),
     mode: windows ? '666' : '755', prefixHex: '00'.repeat(128) };
   const changes = [[raw.capture.tools.cli.path, release.retained.copy.path], [raw.capture.tools.node.path, release.operator.tools.node],
     [raw.operator.root, release.operator.root], [oracle.capture.tools.cli.path, release.retained.copy.path],
     [oracle.capture.tools.node.path, release.operator.tools.node], [p.dirname(p.dirname(oracle.capture.tools.cli.path)), output]];
+  if (provider) changes.push([raw.capture.tools.time.path, provider.executable.path]);
   if (windows) changes.push([raw.capture.tools.helper.path, helper.path],
     [p.join(p.dirname(raw.capture.operatorAdmission.path), 'round'), p.join(output, 'round')],
     [raw.capture.operatorAdmission.path, p.join(output, 'windows-operator-binding.json')], [oracle.capture.tools.helper.path, helper.path]);
@@ -111,6 +122,12 @@ export async function campaignArchiveFixture(t, { windows = false, phase = 'base
   const oracleBytes = Buffer.from(canonical(oracle.oracles)); capture.artifactOracleSha256 = sha256(oracleBytes);
   put('round/artifact-oracles.json', oracleBytes); put('oracles/artifact-oracles.json', oracleBytes);
   const session = remap(raw.session, replacements); session.round = role;
+  if (provider) {
+    capture.tools.time = structuredClone(provider.executable);
+    put('provider-binding.json', provider.binding);
+    put('round/provider-admission.json', provider.admission);
+    put('round/provider-runtime-receipt.json', provider.receipt);
+  }
   if (windows) {
     const admission = remap(JSON.parse(raw.files.get('round/operator-admission.json')), replacements);
     Object.assign(admission, { sourceCommit: tree.source.commit, sourceTree: tree.source.tree, tools: capture.tools,

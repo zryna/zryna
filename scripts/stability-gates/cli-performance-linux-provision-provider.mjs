@@ -10,6 +10,11 @@ export { validatePackageDownload } from './cli-performance-linux-acquire-provide
 import { GNU_TIME, PROVIDER_SHA256, RECEIPT_NAME, ROOT_PREFIX,
   fileIdentity, openLinuxTimeProvider, snapshotProviderFile, timeExecutable,
   validateRuntimeReceipt, validateUbuntuRelease } from './cli-performance-linux-provider.mjs';
+// API credentials stay in the trusted collector parent; proxy/CA headers remain inherited for acquisition.
+export function providerAcquisitionEnvironment(environment) {
+  assert.equal(arguments.length, 1);
+  return Object.fromEntries(Object.entries(environment).filter(([key]) => key !== 'GH_TOKEN' && key !== 'GITHUB_TOKEN'));
+}
 export function parseLoaderListing(text) {
   assert(typeof text === 'string' && Buffer.byteLength(text) <= 16384);
   const paths = [];
@@ -66,7 +71,7 @@ export async function provisionLinuxTimeProvider({ checkoutRoot }) {
     execute: call => {
       for (const pin of acquisitionPins) assert.deepEqual(snapshotProviderFile(pin.path).pin, pin);
       // Preserve managed proxy and CA variables for acquisition only; performance children use reviewed env.
-      const result = spawnSync(call.file, call.args, { cwd: root, env: { ...process.env, LC_ALL: 'C' },
+      const result = spawnSync(call.file, call.args, { cwd: root, env: { ...providerAcquisitionEnvironment(process.env), LC_ALL: 'C' },
         timeout: call.timeoutMs, killSignal: 'SIGKILL', maxBuffer: 16384, encoding: null });
       return { status: result.status, signal: result.signal,
         error: result.error ? String(result.error.code ?? result.error.message) : null,

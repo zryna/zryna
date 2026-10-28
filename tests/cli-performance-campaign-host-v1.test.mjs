@@ -1,17 +1,17 @@
 // Synthetic host controls plus tiny private Git source fixtures; no native helper or workload runs.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { win32 } from 'node:path';
 import { campaignArchiveFixture } from './cli-performance-campaign-archive-fixture.mjs';
 import { reconcileNumericCampaignArchive, closeNumericCampaignArchive }
   from '../scripts/stability-gates/cli-performance-campaign-archive-v1.mjs';
 import { canonical, MAX_DOCUMENT, sha256 } from '../scripts/stability-gates/input.mjs';
-import { COMPANION_FLAGS, producerDocument }
+import { producerDocument }
   from '../scripts/stability-gates/cli-performance-campaign-windows-host-v1.mjs';
 import { reconcileNumericCampaignHost, inspectNumericCampaignHost }
   from '../scripts/stability-gates/cli-performance-campaign-host-v1.mjs';
 import { decodeObservedParentAffinity } from '../scripts/stability-gates/windows-parent-affinity-v1/decode.mjs';
 import { fixture, run, mutateDocument, PREFIX, DIRECTORY } from './cli-performance-campaign-windows-host-fixture.mjs';
+import { addHosts } from './cli-performance-campaign-host-fixture.mjs';
 test('self-consistently pinned helpers still require original bounded PE AMD64 headers', () => {
   for (const mutate of [bytes => bytes.writeUInt32LE(0, 60), bytes => bytes.writeUInt32LE(0xffffffff, 60),
     bytes => bytes.fill(0, 64, 68), bytes => bytes.writeUInt16LE(0x14c, 68)])
@@ -69,46 +69,6 @@ test('producer JSON is bounded and lossless, and copied phase/source/raw/host ke
   assert.throws(() => reconcileNumericCampaignHost({}, {}, {}, () => {}), /fixed live/u);
 });
 
-function addHosts(f, change = () => {}, native = null) {
-  for (const phase of ['before', 'after']) {
-    const host = { format: 'zryna.cli-performance-host-observation.v1', phase, platform: f.host,
-      observedAt: '2026-10-28T00:00:00.000Z', image: Object.fromEntries(
-        ['ImageOS', 'ImageVersion', 'RUNNER_OS', 'RUNNER_ARCH', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']
-          .map(key => [key, { status: 'observed-environment', value: f.release.operator.environment[key] }])),
-      kernel: { type: 'Linux', release: 'fixture', version: 'synthetic', machine: 'x86_64' },
-      cpu: { availableParallelism: 2, logicalCount: 2, models: ['synthetic CPU'], reportedMHz: [0, 0] },
-      memory: { totalBytes: 1024, freeBytesAtObservation: phase === 'before' ? 512 : 256 },
-      exclusiveHost: { status: 'unavailable', reason: 'synthetic' },
-      affinity: { status: 'observed', path: '/proc/self/status',
-        text: 'Pid:\t123\nTgid:\t123\nCpus_allowed:\t3\nCpus_allowed_list:\t0-1\n' },
-      cgroupMembership: { status: 'unavailable', path: '/proc/self/cgroup', reason: 'synthetic' },
-      quotas: [], quotaScope: 'synthetic retained observations', power: [],
-      sourceAuthenticated: false, performanceQualified: false, baselineAuthority: null, thresholds: null };
-    if (native) {
-      host.kernel.type = 'Windows_NT'; delete host.cgroupMembership; delete host.quotaScope;
-      host.quotas = { status: 'unavailable', reason: 'host Job/container CPU and memory quotas not exposed by Node' };
-      for (const name of ['affinity', 'power']) {
-        const command = name === 'affinity'
-          ? { file: win32.join(f.release.operator.environment.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
-            args: ['-NoProfile', '-NonInteractive', '-Command', '(Get-Process -Id 123).ProcessorAffinity.ToInt64().ToString()'], cwd: f.release.operator.root, timeoutMs: 10000 }
-          : { file: win32.join(f.release.operator.environment.SystemRoot, 'System32', 'powercfg.exe'), args: ['/getactivescheme'], cwd: f.release.operator.root, timeoutMs: 10000 };
-        const bytes = Buffer.alloc(0);
-        host[name] = { status: 'unavailable', command, exitCode: 1, error: null, signal: null,
-          stdoutSha256: sha256(bytes), stderrSha256: sha256(bytes), stdout: '', stderr: '' };
-        f.files.set(PREFIX + `host-${phase}-${name}.command.json`, Buffer.from(canonical(command)));
-        for (const stream of ['stdout', 'stderr']) f.files.set(PREFIX + `host-${phase}-${name}.${stream}.raw`, bytes);
-      }
-    }
-    if (native) { host.cpu.logicalCount = 4; host.cpu.availableParallelism = 4; host.cpu.reportedMHz = [0, 0, 0, 0]; }
-    change(host, phase);
-    const bytes = Buffer.from(canonical(host)); f.files.set(PREFIX + `host-${phase}.json`, bytes);
-    f.files.set(PREFIX + `numeric-host-${phase}.json`, Buffer.from(canonical({
-      format: 'zryna.cli-performance-numeric-host-companion.v1', phase, platform: f.host,
-      source: { commit: f.source.commit, tree: f.source.tree }, collectorNodePid: 123, kernel: host.kernel,
-      original: { path: `host-${phase}.json`, bytes: bytes.length, sha256: sha256(bytes) },
-      ...(native ? { native: native.companions[phase === 'before' ? 0 : 1].native } : {}), ...COMPANION_FLAGS })));
-  }
-}
 test('actual private source/archive owner keys join synthetic Linux host bytes; copied and crossed keys remain powerless', async t => {
   const f = await campaignArchiveFixture(t); addHosts(f); await f.reseal();
   const rawKey = reconcileNumericCampaignArchive(f.selection, f.sourceKey, f.artifactId, f.bytes);
