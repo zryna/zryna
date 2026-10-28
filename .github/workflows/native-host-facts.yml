@@ -7,7 +7,22 @@ on:
       - 'scripts/stability-gates/collect-native-host-facts.py'
       - 'scripts/stability-gates/native_host_facts.py'
       - 'tests/test_native_host_facts.py'
+      - 'scripts/stability-gates/lifecycle-private*'
+      - 'tests/lifecycle-private*.test.mjs'
+      - 'examples/playground/restricted/**'
+      - 'scripts/stability-gates/lifecycle-owner-*'
+      - 'tests/lifecycle-owner-*'
+      - 'tests/lifecycle-material-auth.test.mjs'
   workflow_dispatch:
+    inputs:
+      lifecycle_operation:
+        type: choice
+        default: none
+        options: [none, capture, execute]
+      lifecycle_selection:
+        description: Base64 gzip of selected canonical JSON
+        type: string
+
 
 concurrency:
   group: native-host-facts-${{ github.event.pull_request.number || github.ref }}
@@ -26,13 +41,27 @@ jobs:
       matrix:
         os: [ubuntu-24.04, windows-2022]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - &checkout_source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
           fetch-depth: 1
       - name: Replay inert host and source-loader contracts
         run: python -I -B -m unittest discover -s tests -p test_native_host_facts.py -v
+      - &node22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - &pnpm11
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - run: pnpm install --frozen-lockfile
+      - name: Replay private lifecycle synthetic contracts
+        run: python -I -B -m unittest discover -s examples/playground/restricted/daemon/lifecycle-owner -p 'test_*.py'
+      - run: node --test tests/lifecycle-material-auth.test.mjs
+      - run: node --test tests/lifecycle-private.test.mjs tests/lifecycle-private-platform.test.mjs tests/lifecycle-private-workflow.test.mjs
 
   observe:
     needs: contracts
@@ -41,11 +70,7 @@ jobs:
     env:
       ZRYNA_NATIVE_SOURCE_COMMIT: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
+      - *checkout_source
       - name: Collect bounded ordinary observer facts
         id: ordinary
         env:
@@ -91,5 +116,73 @@ jobs:
         with:
           name: native-host-facts-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/native-host-facts
+          if-no-files-found: error
+          retention-days: 90
+
+  lifecycle:
+    if: github.event_name == 'workflow_dispatch' && inputs.lifecycle_operation != 'none'
+    needs: contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    env:
+      LIFECYCLE_OPERATION: ${{ inputs.lifecycle_operation }}
+      LIFECYCLE_SELECTION: ${{ inputs.lifecycle_selection }}
+      ZRYNA_NATIVE_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - *checkout_source
+      - *node22
+      - *pnpm11
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        if: inputs.lifecycle_operation == 'capture'
+        with:
+          toolchain: 1.97.1
+      - if: inputs.lifecycle_operation == 'capture'
+        run: cargo fetch --locked
+      - name: Capture immutable lifecycle inputs
+        if: inputs.lifecycle_operation == 'capture'
+        run: node scripts/stability-gates/lifecycle-private.mjs
+      - name: Run the fixed private pair
+        id: execute
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ZRYNA_NATIVE_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        if: inputs.lifecycle_operation == 'execute'
+        shell: bash
+        run: |
+          sudo -n --preserve-env=GITHUB_REPOSITORY,GITHUB_SHA,GITHUB_REF,GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT,GITHUB_JOB,GITHUB_WORKFLOW_REF,GITHUB_WORKFLOW_SHA,ImageOS,ImageVersion,RUNNER_OS,RUNNER_ARCH,GITHUB_WORKSPACE,GITHUB_TOKEN,RUNNER_TEMP,LIFECYCLE_OPERATION,LIFECYCLE_SELECTION,ZRYNA_NATIVE_SOURCE_COMMIT,ZRYNA_NATIVE_RUNNER_ENVIRONMENT \
+            "$(command -v node)" scripts/stability-gates/lifecycle-private.mjs > "$RUNNER_TEMP/lifecycle-retention.txt"
+      - name: Select protected observations for upload
+        id: retained
+        if: always() && inputs.lifecycle_operation == 'execute'
+        shell: bash
+        run: |
+          /usr/bin/python3 -I -S -B - <<'PYTHON' >> "$GITHUB_OUTPUT"
+          import os, re
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'lifecycle-retention.txt')) as stream:
+              match = re.fullmatch(r'retention_root=(/tmp/zryna-lifecycle-[A-Za-z0-9]{6})\n', stream.readline())
+          if match:
+              print('work=' + match[1])
+          PYTHON
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && inputs.lifecycle_operation == 'capture'
+        with:
+          name: lifecycle-capture-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/lifecycle/**
+            !${{ runner.temp }}/lifecycle/capture/**
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && inputs.lifecycle_operation == 'execute' && steps.retained.outputs.work != ''
+        with:
+          name: lifecycle-execute-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.retained.outputs.work }}/observations/**
+            ${{ runner.temp }}/lifecycle-retention.txt
           if-no-files-found: error
           retention-days: 90
