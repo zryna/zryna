@@ -8,11 +8,24 @@ import { createM4GateTemporaryEnvironment } from '../scripts/run-m4-conformance.
 
 function fixture(run) {
   const parent = mkdtempSync(path.join(tmpdir(), 'zryna-m4-gate-temp-'));
+  const owned = [];
   try {
     const root = path.join(parent, 'evidence');
     mkdirSync(root, { mode: 0o700 });
-    run(root, parent);
-  } finally { rmSync(parent, { recursive: true, force: true }); }
+    run(root, parent, (...args) => {
+      const environment = createM4GateTemporaryEnvironment(...args);
+      if (environment.TMP) {
+        assert.equal(path.dirname(environment.TMP), tmpdir());
+        assert.match(path.basename(environment.TMP), /^z4-[a-zA-Z0-9]+$/u);
+        assert.deepEqual(readdirSync(environment.TMP), []);
+        owned.push(environment.TMP);
+      }
+      return environment;
+    });
+  } finally {
+    for (const directory of owned) rmSync(directory, { recursive: true, force: true });
+    rmSync(parent, { recursive: true, force: true });
+  }
 }
 const keys = ['TMPDIR', 'TEMP', 'TMP'];
 const parentEnvironment = () => Object.fromEntries(keys.map(key => [key, process.env[key]]));
@@ -42,12 +55,12 @@ test('the shared-temp control reproduces the fixed-token collision without repla
   assert.equal(readFileSync(path.join(shared, 'fixed-pid-4242-evidence', 'original.txt'), 'utf8'), 'original');
 }));
 
-test('separate gates replay the same fixed evidence token in real children without overwriting either result', () => fixture(root => {
+test('separate gates replay the same fixed evidence token in real children without overwriting either result', () => fixture((root, _parent, allocate) => {
   const originalEnvironment = parentEnvironment(), results = [];
   for (const [gate, marker] of [['m0-full', 'first invocation'], ['m3-full', 'second invocation']]) {
-    const environment = createM4GateTemporaryEnvironment(root, gate, 'core');
+    const environment = allocate(root, gate, 'core');
     assert.deepEqual(Object.keys(environment).sort(), [...keys].sort());
-    assert.equal(path.dirname(environment.TMP), path.dirname(root), 'scratch is an evidence sibling');
+    assert.equal(path.relative(root, environment.TMP).split(path.sep)[0], '..', 'scratch is outside evidence');
     const result = spawnSync(process.execPath, ['-e', child, marker, environment.TMP], {
       env: { ...process.env, ...environment }, shell: false, windowsHide: true,
       timeout: 5000, maxBuffer: 4096, encoding: 'utf8',
@@ -63,13 +76,36 @@ test('separate gates replay the same fixed evidence token in real children witho
   assert.deepEqual(parentEnvironment(), originalEnvironment, 'the parent environment remains unchanged');
 }));
 
-test('reusing a gate namespace fails create-only and preserves prior bytes', () => fixture(root => {
-  const environment = createM4GateTemporaryEnvironment(root, 'm0-full', 'core');
+test('reusing a gate namespace is refused and preserves prior bytes', () => fixture((root, _parent, allocate) => {
+  const environment = allocate(root, 'm0-full', 'core');
   const file = path.join(environment.TMP, 'original.txt');
   writeFileSync(file, 'preserved', { flag: 'wx' });
-  assert.throws(() => createM4GateTemporaryEnvironment(root, 'm0-full', 'core'), { code: 'EEXIST' });
+  assert.throws(() => createM4GateTemporaryEnvironment(root, 'm0-full', 'core'), /one temporary namespace per gate/);
   assert.equal(readFileSync(file, 'utf8'), 'preserved');
   assert.deepEqual(readdirSync(environment.TMP), ['original.txt']);
+}));
+
+test('short core temp roots support the actual installation socket fixture path on Unix', () => fixture((root, _parent, allocate) => {
+  const environment = allocate(root, 'm0-full', 'core');
+  const program = String.raw`
+const fs = require('node:fs'), path = require('node:path');
+const socket = path.join(process.argv[1], 'zryna-installation-files-12345-99', 'installation', 'provider', 'worker.mjs');
+fs.mkdirSync(path.dirname(socket), { recursive: true });
+if (process.platform === 'win32') {
+  if (socket.length >= 260) throw Error('Windows fixture path too long');
+  fs.writeFileSync(socket, 'fixture', { flag: 'wx' });
+} else {
+  const server = require('node:net').createServer();
+  server.on('error', error => { console.error(error); process.exitCode = 1; });
+  server.listen(socket, () => server.close());
+}
+`;
+  const result = spawnSync(process.execPath, ['-e', program, environment.TMP], {
+    env: { ...process.env, ...environment }, shell: false, windowsHide: true,
+    timeout: 5000, maxBuffer: 4096, encoding: 'utf8',
+  });
+  assert.equal(result.error, undefined); assert.equal(result.signal, null);
+  assert.equal(result.status, 0, result.stderr);
 }));
 
 test('invalid selectors and non-directory or linked evidence roots are refused before scratch creation', () => fixture((root, parent) => {
