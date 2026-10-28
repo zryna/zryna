@@ -4,7 +4,10 @@ use serde_json::Value;
 mod runner;
 #[test]
 fn real_control_adapters_match_nineteen_representable_fixed_debt_rows() {
-    let oracle: Value = serde_json::from_str(include_str!("CONTROL_HELD_EXPECTED_FREEZE.json"))
+    let oracle: Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting_control/HELD_COUNTER_EXPECTED_FREEZE.json"
+        )))
         .expect("immutable twenty-row law");
     for provider in super::source::PROVIDERS {
         with_model("control-live-count-call-loop", provider, |m, wire| {
@@ -23,7 +26,10 @@ fn real_control_adapters_match_nineteen_representable_fixed_debt_rows() {
 }
 #[test]
 fn generic_u64_debt_overflow_remains_model_only_without_truncation() {
-    let oracle: Value = serde_json::from_str(include_str!("CONTROL_HELD_EXPECTED_FREEZE.json"))
+    let oracle: Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting_control/HELD_COUNTER_EXPECTED_FREEZE.json"
+        )))
         .expect("immutable model rows");
     let row = oracle["cases"]
         .as_array()

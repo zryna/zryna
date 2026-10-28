@@ -4,7 +4,10 @@ use crate::generic_execution_v1::{Context, Writer, accounting_tests, runtime::ac
 use zryna_ir::generic_v1::execution_v1::CloneNodeKind;
 #[test]
 fn fixed_control_debt_rows_bind_actual_wrappers_and_retained_helpers() {
-    let oracle = include_str!("private_effects/HELD_COUNTER_EXPECTED_FREEZE.json");
+    let oracle = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting_control/HELD_COUNTER_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle)),
         "608f189fd8e21d44f567ee41ee3aedec6f65ccd1c8ddb35542bb8a8bbf20e9ce"
