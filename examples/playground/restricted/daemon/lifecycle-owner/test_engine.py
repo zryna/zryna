@@ -1,5 +1,6 @@
 """Inert native socket controls; no daemon or application is contacted."""
 import copy
+import base64
 import json
 import struct
 import time
@@ -67,6 +68,46 @@ class ConnectionTests(unittest.TestCase):
                 self.connect(mutate=change)
         with self.assertRaises(ValueError):
             self.connect(changed=True)
+
+
+class RequestTests(unittest.TestCase):
+    def request(self, status=200, emitter=None):
+        connection, response = Mock(), Mock()
+        connection.observation = {'synthetic': True}
+        connection.sock.getsockopt.return_value = struct.pack('3i', 1, 0, 0)
+        response.status, response.length = status, 0
+        response.read.side_effect = [b'{"message":"original daemon response"}', b'']
+        connection.getresponse.return_value = response
+        state = SimpleNamespace(st_dev=1, st_ino=2, st_uid=0, st_gid=0,
+                                st_mode=0o140660, st_ctime_ns=123)
+        engine = ENGINE.Engine({}, time.monotonic() + 1)
+        with patch.object(ENGINE, 'Connection', return_value=connection), \
+                patch.object(ENGINE.os, 'lstat', return_value=state), \
+                patch.object(ENGINE.socket, 'SO_PEERCRED', 17, create=True), \
+                patch.object(ENGINE, 'ticks', return_value='60'):
+            try:
+                engine.request('POST' if emitter else 'GET', '/images/create' if emitter else '/info',
+                               emitter=emitter, stream_maximum=1024 if emitter else 0, statuses=(200,))
+            except ValueError:
+                self.assertEqual(engine.record[0]['status'], status)
+                self.assertEqual(base64.b64decode(engine.record[0]['rawBase64']),
+                                 b'{"message":"original daemon response"}')
+                self.assertIsNotNone(engine.record[0]['failure'])
+                connection.close.assert_called_once()
+                raise
+        connection.close.assert_called_once()
+        return connection
+
+    def test_native_json_and_chunked_transport_pin_compatible_api(self):
+        connection = self.request()
+        self.assertEqual(connection.request.call_args.args[:2], ('GET', '/v1.48/info'))
+        connection = self.request(emitter=lambda output: output.write(b'abc'))
+        connection.putrequest.assert_called_once_with('POST', '/v1.48/images/create')
+        self.assertEqual(connection.send.call_args.args, (b'0\r\n\r\n',))
+
+    def test_original_api_refusal_is_retained_and_remains_failure(self):
+        with self.assertRaises(ValueError):
+            self.request(status=400)
 
 
 if __name__ == '__main__':

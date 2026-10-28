@@ -10,6 +10,8 @@ from cli_common import require, sha256
 from cli_engine import Connection as OriginalConnection, TimedSocket, Chunked, decode
 from cli_kernel_read import ticks
 
+API_PREFIX = '/v1.48'
+
 
 class Connection(OriginalConnection):
     """Authenticate the two fixed names of the same root-owned native socket."""
@@ -85,7 +87,7 @@ class Engine:
             emission = None
             if emitter is not None:
                 require(type(stream_maximum) is int and 0 < stream_maximum <= 1075838976, 'existing finite USTAR transport bound')
-                connection.putrequest(method, '/v1.49' + path)
+                connection.putrequest(method, API_PREFIX + path)
                 connection.putheader('Content-Type', 'application/x-tar')
                 connection.putheader('Transfer-Encoding', 'chunked')
                 connection.putheader('Connection', 'close')
@@ -96,7 +98,7 @@ class Engine:
             else:
                 body = b'' if value is None else json.dumps(value, separators=(',', ':')).encode()
                 require(len(body) <= 262144, 'bounded request body')
-                connection.request(method, '/v1.49' + path, body=body,
+                connection.request(method, API_PREFIX + path, body=body,
                                    headers={'Content-Type': 'application/json', 'Connection': 'close'})
             response = connection.getresponse()
             self.last_status = item['status'] = response.status
