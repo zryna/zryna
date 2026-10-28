@@ -40,7 +40,6 @@ jobs:
     timeout-minutes: 5
     env:
       ZRYNA_NATIVE_SOURCE_COMMIT: ${{ github.sha }}
-      ZRYNA_NATIVE_RUNNER_ENVIRONMENT: ${{ runner.environment }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,6 +48,8 @@ jobs:
           fetch-depth: 1
       - name: Collect bounded ordinary observer facts
         id: ordinary
+        env:
+          ZRYNA_NATIVE_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         shell: bash
         run: |
           umask 077
@@ -73,6 +74,8 @@ jobs:
           PY
       - name: Collect exact bounded sudo observer only for denied namespace reads
         if: steps.ordinary.outputs.namespace_denied == 'true'
+        env:
+          ZRYNA_NATIVE_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         shell: bash
         run: |
           umask 077
