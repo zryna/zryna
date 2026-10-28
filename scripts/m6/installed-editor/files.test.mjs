@@ -1,3 +1,4 @@
+import './unit-failure-retention-cases.mjs';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, lstat, readFile, realpath, writeFile, link, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

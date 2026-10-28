@@ -97,6 +97,7 @@ jobs:
           name: m6-installed-editor-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/m6-installed-editor
+            ${{ runner.temp }}/m6-installed-editor-unit-failure-*/**
             ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/ROOT_RESULT.json
             ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/SERVICE.*
             ${{ runner.temp }}/m6-editor-linux-${{ github.run_id }}-${{ github.run_attempt }}/REQUEST.json
