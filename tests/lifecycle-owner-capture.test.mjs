@@ -44,6 +44,12 @@ test('bad selectors/flags/shadowed paths and unknown adapters fail before prepar
     assert.equal(f.state.prepared, false); assert.deepEqual(f.calls, []);
   }
 });
+test('distribution license naming remains intact through both capture phases', async () => {
+  const f = captureFixture(), path = 'licenses/rust/toml-0.9.12+spec-1.1.0/LICENSE-MIT';
+  f.hooks.materials = value => { value.licenses[0].path = path; };
+  await run(f);
+  assert(f.files.has('licenses-before/' + path)); assert(f.files.has('licenses-after/' + path));
+});
 test('output and target remain create-only; retained files are never overwritten', async () => {
   const f = captureFixture(); await run(f); const before = Buffer.from(f.files.get('discovery.json'));
   await assert.rejects(() => run(f), /fresh output/); assert(before.equals(f.files.get('discovery.json')));

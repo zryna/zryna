@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname as filesystemDirname, join as filesystemJoin, posix } from 'node:path';
-import { exact, MAX_DOCUMENT, MAX_LOG, portable, sha256 } from './input.mjs';
+import { exact, MAX_DOCUMENT, MAX_LOG, sha256 } from './input.mjs';
+import { portablePath } from '../distribution/canonical.mjs';
 import { execute } from './process.mjs';
 import { captureSourceCensus } from './source-census-v2.mjs';
 import { inspectCargoConfiguration, pinFile } from './release-build-input.mjs';
@@ -47,7 +48,7 @@ export function validateCaptureInput(input) {
 }
 export function captureWriter(output) {
   return (name, value) => {
-    portable(name);
+    portablePath(name);
     const raw = Buffer.isBuffer(value), bytes = raw ? value : Buffer.from(JSON.stringify(value) + '\n');
     assert(bytes.length <= (raw ? MAX_LOG : MAX_DOCUMENT), 'bounded retained capture file');
     mkdirSync(filesystemDirname(filesystemJoin(output, name)), { recursive: true, mode: 0o700 });

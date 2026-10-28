@@ -34,3 +34,9 @@ test('native capture writer preserves original bytes and rejects traversal and o
   assert.throws(() => write('oversized.raw', Buffer.alloc(MAX_LOG + 1)), /bounded retained capture file/);
   assert.equal(existsSync(join(base, 'oversized.json')), false); assert.equal(existsSync(join(base, 'oversized.raw')), false);
 }));
+test('native capture writer retains distribution license paths with SemVer build suffixes', () => temporary(base => {
+  const path = 'licenses-before/licenses/rust/toml-0.9.12+spec-1.1.0/LICENSE-MIT';
+  const data = Buffer.from('inert license fixture');
+  captureWriter(base)(path, data);
+  assert(readFileSync(join(base, path)).equals(data));
+}));

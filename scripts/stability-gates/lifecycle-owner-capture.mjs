@@ -1,7 +1,8 @@
 // Dedicated local Cargo no-run capture. Artifacts are discovery observations, never approvals.
 import assert from 'node:assert/strict';
 import { posix } from 'node:path';
-import { exact, MAX_LOG, portable, sha256 } from './input.mjs';
+import { exact, MAX_LOG, sha256 } from './input.mjs';
+import { portablePath } from '../distribution/canonical.mjs';
 import { sourceUnchanged } from './source-census-v2.mjs';
 import { validateBinary } from './release-build-input.mjs';
 import { parseLifecycleCargoOutput, validateLifecycleCargoArtifacts } from './lifecycle-owner-prebuild.mjs';
@@ -83,7 +84,7 @@ export async function captureLifecyclePrebuild(input, observations = {}) {
   function materials(value, suffix) {
     const result = io.materials(input, value);
     write('cache-closure-' + suffix + '.json', result.closure);
-    for (const file of result.licenses) { portable(file.path); write('licenses-' + suffix + '/' + file.path, file.data); }
+    for (const file of result.licenses) { portablePath(file.path); write('licenses-' + suffix + '/' + file.path, file.data); }
     return result;
   }
   async function postflight() {
