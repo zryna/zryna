@@ -85,7 +85,7 @@ export function registerWorkflowInventoryContracts({ workflow, root, ci, documen
     assert.deepEqual(names, [
       'browser-conformance.yml', 'ci.yml', 'cli-performance-collector.yml', 'cli-performance.yml', 'dependency-security.yml', 'documentation.yml', 'installed-command-h1.yml',
       'm6-installed-editor.yml', 'native-host-facts.yml', 'native-provider-activation.yml', 'native-provider-install.yml',
-      'native-provider-public.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
+      'native-provider-public.yml', 'numeric-evidence-contracts.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
       'release-production-candidate.yml',
       'release-qualification.yml', 'release.yml', 'windows-job-metrics.yml',
     ]);

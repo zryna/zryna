@@ -1,0 +1,208 @@
+name: CLI prospective numeric collector v1
+
+on:
+  workflow_call:
+    inputs:
+      host:
+        required: true
+        type: string
+      round:
+        required: true
+        type: string
+      anchor_run_id:
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  collect:
+    name: collect
+    runs-on: ${{ inputs.host == 'linux-x86_64' && 'ubuntu-24.04' || 'windows-2022' }}
+    timeout-minutes: 60
+    env:
+      EXPECTED_SOURCE_REVISION: ${{ github.sha }}
+      DECLARED_PR_HEAD: ${{ github.sha }}
+      M418_HOST: ${{ inputs.host }}
+      M418_ROUND: ${{ inputs.round }}
+      M418_ANCHOR_RUN_ID: ${{ inputs.anchor_run_id }}
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Guard fixed prospective numeric collection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or $env:GITHUB_RUN_ATTEMPT -cne '1') { throw 'Fresh explicit attempt-one dispatch only' }
+          if ($env:EXPECTED_SOURCE_REVISION -cnotmatch '^[a-f0-9]{40}$') { throw 'Exact dispatch source required' }
+          if ($env:M418_HOST -cnotin @('linux-x86_64','windows-x86_64')) { throw 'Closed host selection required' }
+          if (($env:M418_HOST -ceq 'linux-x86_64' -and $env:RUNNER_OS -cne 'Linux') -or ($env:M418_HOST -ceq 'windows-x86_64' -and $env:RUNNER_OS -cne 'Windows')) { throw 'Actual host mismatch' }
+          if ($env:M418_ROUND -cnotin @('baseline-round-1','baseline-round-2','held-out-candidate')) { throw 'Closed round selection required' }
+          if ($env:M418_ROUND -ceq 'held-out-candidate') {
+            if ($env:M418_ANCHOR_RUN_ID -cnotmatch '^[1-9][0-9]{0,19}$') { throw 'Explicit completed anchor run required' }
+          } elseif ($env:M418_ANCHOR_RUN_ID -cne '') { throw 'Baseline cannot select an anchor' }
+      - name: Checkout exact observed head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.97.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - name: Frozen workflow dependencies outside measurement
+        run: pnpm install --frozen-lockfile
+      # Required implementation dependency: fixed script/opaque platform and table owner.
+      # This proposal must not activate until that owner validates the completed anchor,
+      # baseline selection, immutable table, source/tree and this actual platform.
+      - name: Verify completed numeric anchor before any release build or measurement
+        if: inputs.round == 'held-out-candidate'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = Join-Path $env:RUNNER_TEMP 'm418-numeric-anchor-verification'
+          node ./scripts/stability-gates/run-cli-performance-numeric-anchor-v1.mjs --mode verify-anchor --anchor-run-id $env:M418_ANCHOR_RUN_ID --platform $env:M418_HOST --output $output
+          if ($LASTEXITCODE -ne 0) { throw 'Anchor/source/platform preflight failed; no collection permitted' }
+      - name: Verify fixed collectors oracles and release capture controls
+        env:
+          ZRYNA_PERFORMANCE_UNIT_SOURCE_ROOT: ${{ github.workspace }}
+        run: node --test tests/cli-performance-hosted-checks.test.mjs tests/cli-performance-hosted-correction-pure.test.mjs tests/cli-performance-hosted-pure.test.mjs tests/cli-performance-linux-acquisition.test.mjs tests/cli-performance-linux-provider.test.mjs tests/cli-performance-linux-round-v2.test.mjs tests/cli-performance-methodology-v4.test.mjs tests/cli-performance-oracle-capture.test.mjs tests/cli-performance-oracle-manifest.test.mjs tests/cli-performance-windows-metrics.test.mjs tests/cli-performance-windows-retention.test.mjs tests/cli-performance-windows-round.test.mjs tests/release-build-pure.test.mjs tests/source-census-read-only.test.mjs tests/cli-performance-hosted-expectations.test.mjs tests/cli-performance-platform-link.test.mjs tests/cli-performance-platform-artifacts.test.mjs tests/cli-performance-archive.test.mjs tests/cli-performance-receipt-storage.test.mjs tests/cli-performance-linux-replay.test.mjs tests/cli-performance-windows-replay.test.mjs tests/cli-performance-raw-archive.test.mjs tests/source-census-replay.test.mjs tests/release-image-replay.test.mjs tests/cli-performance-oracle-replay.test.mjs
+      - name: Locked Rust dependency preparation outside builder and measurement
+        run: cargo fetch --locked
+      - name: Build Windows helper and run exactly eight controls once
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & ./scripts/stability-gates/windows-job-metrics-v1/calibration/hosted.ps1
+          if (-not $?) { throw 'Unchanged Windows helper calibration failed' }
+          $names = @('PATH','INCLUDE','LIB','LIBPATH','WindowsSdkDir','WindowsSDKVersion',
+            'UniversalCRTSdkDir','UCRTVersion','VCToolsInstallDir','VCToolsVersion')
+          foreach ($name in $names) {
+            $value = [Environment]::GetEnvironmentVariable($name)
+            if ([string]::IsNullOrWhiteSpace($value) -or $value.Contains("`n") -or $value.Contains("`r")) {
+              throw "Complete selected developer environment required: $name"
+            }
+            "$name=$value" >> $env:GITHUB_ENV
+          }
+      - name: Build fixed Windows parent affinity probe
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & ./scripts/stability-gates/windows-parent-affinity-v1/hosted.ps1
+          if (-not $?) { throw 'Fixed parent-affinity build and live controls failed' }
+      - name: Assemble observed operator inputs and collect one fresh round
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $windows = $env:RUNNER_OS -eq 'Windows'
+          $root = (Resolve-Path '.').Path
+          $artifacts = Join-Path $env:RUNNER_TEMP 'm418-hosted-observations'
+          New-Item -ItemType Directory -Path $artifacts -ErrorAction Stop | Out-Null
+          $cargo = (rustup which --toolchain 1.97.1 cargo).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Direct pinned Cargo selection failed' }
+          $rustc = (rustup which --toolchain 1.97.1 rustc).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Direct pinned rustc selection failed' }
+          $env:RUSTUP_HOME = (rustup show home).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Explicit Rustup home observation failed' }
+          if (-not $env:HOME) { $env:HOME = $env:USERPROFILE }
+          if (-not $env:CARGO_HOME) { $env:CARGO_HOME = Join-Path $env:HOME '.cargo' }
+          $env:CARGO_HOME = (Resolve-Path $env:CARGO_HOME).Path
+          $env:LANG = 'C'; $env:LC_ALL = 'C'
+          $node = (Get-Command node -CommandType Application | Select-Object -First 1).Source
+          $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
+          $calibration = $null
+          if ($windows) {
+            $calibration = Join-Path $env:RUNNER_TEMP 'windows-job-metrics-calibration'
+            $selected = Get-Content -Raw (Join-Path $calibration 'toolchain-before-build.json') | ConvertFrom-Json
+            $cc = $selected.compiler.path; $linker = $selected.linker.path
+          } else {
+            $cc = (& /usr/bin/readlink -f (Get-Command cc -CommandType Application | Select-Object -First 1).Source).Trim()
+            if ($LASTEXITCODE -ne 0) { throw 'Actual compiler driver resolution failed' }
+            $linker = $cc # Rust needs the compiler driver, not raw ld.
+            $node = (& /usr/bin/readlink -f $node).Trim()
+            $git = (& /usr/bin/readlink -f $git).Trim()
+          }
+          $head = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $head -ne $env:EXPECTED_SOURCE_REVISION) { throw 'Expected checkout head required' }
+          $tree = (git rev-parse 'HEAD^{tree}').Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Expected checkout tree observation failed' }
+          $dirty = @(git status --porcelain=v1 --untracked-files=all)
+          if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { throw 'Clean checkout required' }
+          $names = @('PATH','HOME','CARGO_HOME','RUSTUP_HOME','LANG','LC_ALL','GITHUB_ACTIONS',
+            'GITHUB_REPOSITORY','GITHUB_RUN_ID','GITHUB_RUN_ATTEMPT','RUNNER_OS','RUNNER_ARCH','ImageOS','ImageVersion')
+          if ($windows) { $names += @('SystemRoot','WINDIR','TEMP','TMP','USERPROFILE','INCLUDE','LIB','LIBPATH',
+            'WindowsSdkDir','WindowsSDKVersion','UniversalCRTSdkDir','UCRTVersion','VCToolsInstallDir','VCToolsVersion') }
+          else { if (-not $env:TMPDIR) { $env:TMPDIR = $env:RUNNER_TEMP }; $names += 'TMPDIR' }
+          $environment = @{}
+          foreach ($name in $names) { $environment[$name] = [Environment]::GetEnvironmentVariable($name) }
+          $operatorInput = @{ root=$root; expectedHead=$head; expectedTree=$tree; round=$env:M418_ROUND
+            calibrationDirectory=$calibration; environment=$environment
+            tools=@{cargo=$cargo;rustc=$rustc;cc=$cc;linker=$linker;node=$node;git=$git} }
+          $inputPath = Join-Path $artifacts 'input.json'
+          [IO.File]::WriteAllText($inputPath, ($operatorInput | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+          $output = Join-Path $artifacts 'capture'
+          $entry = Join-Path $root 'scripts/stability-gates/run-cli-performance-numeric-hosted.mjs'
+          if ($windows) {
+            & $node $entry --input $inputPath --output $output 1> (Join-Path $artifacts 'operator.stdout.raw') 2> (Join-Path $artifacts 'operator.stderr.raw')
+          } else {
+            $owner = Join-Path $root 'scripts/stability-gates/linux-operator-owner.py'
+            $ownerHash = (Get-FileHash -Algorithm SHA256 $owner).Hash.ToLowerInvariant()
+            if ($ownerHash -ne 'd22a35ed60de0c919638b4a97c8283abc2ef1ea22617c05d4c94a3ae745286f3') { throw 'Frozen outer Linux owner identity differs' }
+            & /usr/bin/python3 $owner $node $entry --input $inputPath --output $output 1> (Join-Path $artifacts 'operator.stdout.raw') 2> (Join-Path $artifacts 'operator.stderr.raw')
+          }
+          $code = $LASTEXITCODE
+          [IO.File]::WriteAllText((Join-Path $artifacts 'operator-exit.json'), "{`"exitCode`":$code}`n", [Text.UTF8Encoding]::new($false))
+          if ($code -ne 0) { throw "Operator/wrapper failed with exit $code; retained raw evidence remains unqualified" }
+      - name: Expose bounded operator failure diagnostics
+        if: failure()
+        shell: pwsh
+        run: |
+          foreach ($leaf in @('operator.stderr.raw', 'capture/hosted-failure.json')) {
+            $path = Join-Path $env:RUNNER_TEMP "m418-hosted-observations/$leaf"
+            if (Test-Path -LiteralPath $path -PathType Leaf) {
+              $stream = [IO.File]::OpenRead($path)
+              try {
+                $buffer = [byte[]]::new(8192)
+                $count = $stream.Read($buffer, 0, $buffer.Length)
+                [Console]::WriteLine("Bounded diagnostic: $leaf (first $count bytes)")
+                [Console]::WriteLine([Text.Encoding]::UTF8.GetString($buffer, 0, $count))
+              } finally { $stream.Dispose() }
+            }
+          }
+      - name: Retain Linux provider acquisition and loader observations
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cli-performance-numeric-linux-provider-${{ inputs.round }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/m418-linux-provider-*/
+          include-hidden-files: true
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7
+      - name: Retain all observations and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cli-performance-numeric-${{ inputs.host }}-${{ inputs.round }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m418-hosted-observations
+            !${{ runner.temp }}/m418-hosted-observations/capture/release-build/cargo-target/**
+            ${{ runner.temp }}/windows-job-metrics-calibration
+            ${{ runner.temp }}/windows-parent-affinity-observation
+            ${{ runner.temp }}/m418-numeric-anchor-verification
+          include-hidden-files: true
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7

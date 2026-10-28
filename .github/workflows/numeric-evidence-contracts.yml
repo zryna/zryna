@@ -1,0 +1,47 @@
+name: Numeric evidence contracts
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: numeric-evidence-contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: numeric evidence (${{ matrix.os }})
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - run: pnpm install --frozen-lockfile
+      - name: Verify original records and exact numeric comparisons
+        run: >-
+          node --test --test-concurrency=1
+          tests/cli-performance-regression-v1.test.mjs
+          tests/cli-performance-linked-metrics-v1.test.mjs
+          tests/cli-performance-prospective-policy-v1.test.mjs
+          tests/cli-performance-threshold-derive-v1.test.mjs
+          tests/cli-performance-numeric-host.test.mjs
+          tests/cli-performance-campaign-link-v1.test.mjs
+          tests/cli-performance-campaign-source-v1.test.mjs
+          tests/cli-performance-campaign-archive-v1.test.mjs
+          tests/cli-performance-campaign-archive-positive.test.mjs
+          tests/cli-performance-campaign-host-facts-v1.test.mjs
+          tests/cli-performance-campaign-host-v1.test.mjs
+          tests/cli-performance-campaign-linux-provider-v1.test.mjs
+          tests/release-image-replay.test.mjs
