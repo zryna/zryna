@@ -11,7 +11,8 @@ test('actual dedicated M7 matrix preserves canonical Rust and waits for its real
   const value = workflow(), job = value.jobs['m7-platform']; assert(job, 'dedicated deadline budget required');
   assert.deepEqual(job.needs, ['rust']); assert.deepEqual(job.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
   assert.equal(job['timeout-minutes'], "${{ matrix.os == 'windows-latest' && 90 || 40 }}");
-  assert.equal(value.jobs.rust.steps.at(-1).id, 'm0-complete');
+  assert.deepEqual(value.jobs.rust.steps.at(-1), { id: 'm0-complete',
+    env: { RUST_TEST_THREADS: '2' }, run: 'node scripts/run-m0-conformance.mjs' });
   const packet = job.steps.find(step => step.id === 'm7-generic');
   assert.equal(packet.env.ZRYNA_M7_UPSTREAM_M0_RESULT, '${{ needs.rust.result }}');
   assert.equal(value.jobs.m0.steps.at(-1).env.M7_PLATFORM_RESULT, '${{ needs.m7-platform.result }}');
@@ -51,4 +52,29 @@ test('changed deadline/layout/command/retention or upstream/aggregate bindings r
   for (const changed of [raw.replace('    # Three unchanged 25-minute commands', '    # changed comment'),
     raw.replace('          M7_PLATFORM_RESULT:', '          M7_PLATFORM_RESULT: success #')])
     assert.throws(() => withoutDriverTransferText(changed));
+});
+
+test('M0 bounded scheduling rejects removed raised numeric or extra environment and preserves the historical inverse', () => {
+  const base = workflow(); assert.doesNotThrow(() => withoutDriverTransfer(base));
+  const before = structuredClone(base);
+  for (const mutate of [
+    step => { delete step.env; },
+    step => { step.env.RUST_TEST_THREADS = '3'; },
+    step => { step.env.RUST_TEST_THREADS = '1'; },
+    step => { step.env.RUST_TEST_THREADS = 2; },
+    step => { step.env.RUST_TEST_THREADS = '0'; },
+    step => { step.env.EXTRA_POLICY = 'true'; },
+  ]) {
+    const changed = structuredClone(base); mutate(changed.jobs.rust.steps.at(-1));
+    assert.throws(() => withoutDriverTransfer(changed));
+  }
+  const restored = withoutDriverTransfer(base);
+  assert.equal(restored.jobs.rust.steps.find(step => step.id === 'm0-complete').env, undefined);
+  assert.deepEqual(base, before, 'the inverse never mutates its input');
+  const block = "        env:\n          RUST_TEST_THREADS: '2'\n";
+  assert.equal(raw.split(block).length, 2, 'one exact step-local scheduling block');
+  const reordered = raw.replace(block, '').replace(
+    '        run: node scripts/run-m0-conformance.mjs\n',
+    '        run: node scripts/run-m0-conformance.mjs\n' + block);
+  assert.throws(() => withoutDriverTransferText(reordered), 'equivalent YAML cannot change the exact raw anchor');
 });
