@@ -1,4 +1,5 @@
 import './lifecycle-owner-inputs.test.mjs';
+import './lifecycle-owner-node-elf.test.mjs';
 import './lifecycle-owner-materials.test.mjs';
 import './dependency-lock-parser.test.mjs';
 import './qs-stringify-security.test.mjs';
