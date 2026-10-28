@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { lifecycleMaterialPins } from '../scripts/stability-gates/lifecycle-owner-inputs.mjs';
-import { authenticateMaterials, materialArchiveExpectation, selectMaterialBytes, selectMaterialSources } from '../examples/playground/restricted/daemon/lifecycle-owner/authenticate-materials.mjs';
+import { authenticateMaterials, materialArchiveExpectation, materialInputFiles, selectMaterialBytes, selectMaterialSources } from '../examples/playground/restricted/daemon/lifecycle-owner/authenticate-materials.mjs';
 import { release } from '../examples/playground/restricted/daemon/cli-parity/plan.mjs';
 
 test('signed envelope tag metadata stays outside the archive source identity without accepting another release', () => {
@@ -27,7 +27,9 @@ test('material bridge rejects an approval boolean before file access or verifica
   await assert.rejects(authenticateMaterials({ approved: true }));
 });
 test('a selected ten-file fragment cannot replace complete signed archive verification', () => {
-  assert.throws(() => selectMaterialBytes(Array.from({ length: 10 }, () => ({ data: Buffer.alloc(1) }))));
+  const fragment = Array.from({ length: 10 }, () => ({ data: Buffer.alloc(1) }));
+  assert.throws(() => selectMaterialBytes(fragment));
+  assert.throws(() => materialInputFiles(fragment));
 });
 test('complete inventory size and unique ordinary paths are checked before material selection', () => {
   const files = Array.from({ length: 349 }, () => ({ path: 'duplicate', data: { length: 0 } }));

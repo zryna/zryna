@@ -45,6 +45,13 @@ export function selectMaterialBytes(files) {
   });
 }
 
+// First physical installation uses neutral locators accepted by the unchanged launcher.
+// Logical guest names and their original signed archive bytes/modes remain unchanged.
+export function materialInputFiles(files) {
+  return selectMaterialBytes(files).map(({ pin, data }, index) => ({ path: `member-${index}`,
+    materialPath: pin.path, mode: pin.mode === 0o555 ? 0o755 : 0o644, data }));
+}
+
 // These original physical sources are checked again by the unchanged retained-handle
 // Python Sources on every archive emission. No second custom staging/custody layer.
 export function selectMaterialSources(rows) {
