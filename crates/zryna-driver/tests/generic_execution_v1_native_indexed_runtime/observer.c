@@ -4,6 +4,7 @@
 #include "observer_strings.h"
 #include "observer_vectors.h"
 #include "observer_unused.h"
+#include <sys/prctl.h>
 static long number(const char *text,long minimum,long maximum) {
   char *end=NULL;errno=0;long value=strtol(text,&end,10);assert(!errno && end!=text && !*end && value>=minimum && value<=maximum);return value;
 }
@@ -12,6 +13,9 @@ int main(int argc,char **argv) {
   int32_t argument0=(int32_t)number(argv[3],INT32_MIN,INT32_MAX),argument1=(int32_t)number(argv[4],INT32_MIN,INT32_MAX);
   assert(!M416_ENTRY_BOOL0 || argument0==0 || argument0==1);assert(!M416_ENTRY_BOOL1 || argument1==0 || argument1==1);
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);assert(setvbuf(stdout,NULL,_IONBF,0)==0);
+  /* RLIMIT_CORE alone does not exclude a host's piped crash collector. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
   trace=fopen(argv[2],"wx");assert(trace && setvbuf(trace,NULL,_IONBF,0)==0);
 #if M416_ENTRY_ARGUMENTS == 2
   int32_t result=zryna_v1_e_entry(argument0,argument1);
