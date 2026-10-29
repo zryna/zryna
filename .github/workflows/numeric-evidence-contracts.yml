@@ -50,3 +50,12 @@ jobs:
           tests/cli-performance-heldout-replay-v1.test.mjs
           tests/cli-performance-completed-campaign-v1.test.mjs
           tests/release-image-replay.test.mjs
+      - name: Verify bounded fuzz originals, replay and cleanup contracts
+        run: >-
+          node --test --test-concurrency=1
+          tests/stability-fuzz-cleanup.test.mjs
+          tests/stability-fuzz-dto.test.mjs
+          tests/stability-fuzz-failures.test.mjs
+          tests/stability-fuzz-producer.test.mjs
+          tests/stability-fuzz-registry.test.mjs
+          tests/stability-fuzz-witness.test.mjs

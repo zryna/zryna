@@ -1,8 +1,8 @@
 // Frozen engineering declaration, never a numeric-table anchor or authentication/admission issuer.
 import assert from 'node:assert/strict';
 import { canonical, exact, parse, sha256 } from './input.mjs';
-export const PROSPECTIVE_POLICY_SHA256 = '55065ddbaf38350bbd794a84fb0f18e308e02fa8c0cc0f431225acbbb359363b';
-const METHODOLOGY_SHA256 = 'b73dee72db94b65fb9e0786c43e807e416e8791bf650da2b5babd4c658294b7b';
+export const PROSPECTIVE_POLICY_SHA256 = '2d034cc834d4d4f13ef0c92ff02c7d082858c3e2598af231460623d9d802861c';
+const METHODOLOGY_SHA256 = '5aa0ea425c752976a6eb1a4baa7ae7ca703d655270ef5272b78ec28564dffa1c';
 export function parseProspectivePolicy(bytes) {
   assert.equal(arguments.length, 1, 'S418 policy: no caller expected digest, override or admission input');
   const declaration = parse(bytes); // Existing canonical JSON/byte/node/depth limits; no file or process IO.

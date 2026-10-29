@@ -88,7 +88,7 @@ export function registerWorkflowInventoryContracts({ workflow, root, ci, documen
       'm6-installed-editor.yml', 'native-host-facts.yml', 'native-provider-activation.yml', 'native-provider-install.yml',
       'native-provider-public.yml', 'numeric-evidence-contracts.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
       'release-production-candidate.yml',
-      'release-qualification.yml', 'release.yml', 'windows-job-metrics.yml',
+      'release-qualification.yml', 'release.yml', 'stability-fuzz-campaign.yml', 'windows-job-metrics.yml',
     ]);
     for (const name of names) {
       const candidate = workflow(name);

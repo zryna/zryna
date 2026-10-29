@@ -5,6 +5,13 @@ import { MAX_LOG } from './input.mjs';
 import { createInterruptionScope } from './interruption.mjs';
 import { linuxProcessIdentity, terminateLinuxTree } from './linux-tree.mjs';
 
+// Same caller environment reaches the cleanup child; injectable for inert controls.
+export function terminateWindowsTree(pid, env, spawn = spawnSync) {
+  return spawn(resolve(process.env.SystemRoot ?? 'C:/Windows', 'System32/taskkill.exe'),
+    ['/PID', String(pid), '/T', '/F'], { env, shell: false, windowsHide: true,
+      timeout: 10_000, maxBuffer: 64 * 1024 });
+}
+
 // Only trusted registered commands run here. Process-tree termination is a separate
 // bounded operation; this is not an execution sandbox for arbitrary commands.
 export function execute(executable, args, { root, timeoutMs, env = process.env, interruption } = {}) {
@@ -68,9 +75,7 @@ export function execute(executable, args, { root, timeoutMs, env = process.env, 
       }, 10_000);
       if (child.pid) {
         if (process.platform === 'win32') {
-          const killed = spawnSync(resolve(process.env.SystemRoot ?? 'C:/Windows', 'System32/taskkill.exe'),
-            ['/PID', String(child.pid), '/T', '/F'], { shell: false, windowsHide: true,
-              timeout: 10_000, maxBuffer: 64 * 1024 });
+          const killed = terminateWindowsTree(child.pid, env);
           if (killed.error || killed.status !== 0) { error = 'CLEANUP'; treeGone = () => false; }
         } else {
           try { treeGone = terminateLinuxTree(child.pid, identity); }

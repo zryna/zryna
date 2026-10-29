@@ -141,7 +141,7 @@ test('canonical closed reader rejects duplicate keys and formatted alternate enc
 test('frozen legacy v1/v4 and legacy comparator remain byte-identical, not threshold sources', () => {
   for (const [path, expected] of [
     ['./stability-gates-v1.json', 'f339c9edba6773d63a252908dbfa094875a5ecb7c66843dd8017142f547e787b'],
-    ['./cli-performance-methodology-v4.json', 'b73dee72db94b65fb9e0786c43e807e416e8791bf650da2b5babd4c658294b7b'],
+    ['./cli-performance-methodology-v4.json', '5aa0ea425c752976a6eb1a4baa7ae7ca703d655270ef5272b78ec28564dffa1c'],
     ['../scripts/stability-gates/performance.mjs', 'd93b7924273f42ffe877dd781d36c3ccace7648cf5c42dfa13de628ce7ffd4b9'],
   ]) assert.equal(sha256(readFileSync(new URL(path, import.meta.url))), expected);
 });

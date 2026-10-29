@@ -8,6 +8,8 @@ mod execute;
 mod native_identity;
 #[path = "generic_struct_clone_v5/oracle.rs"]
 mod oracle;
+#[path = "generic_struct_clone_v5/portable_observation.rs"]
+mod portable_observation;
 #[path = "generic_struct_v4_nested/process.rs"]
 mod process;
 #[path = "generic_struct_clone_v5/source.rs"]
