@@ -89,3 +89,18 @@ test('self-consistent artifact hashes and totals cannot admit identical malforme
     assert.throws(() => checkObservation(directory, record, campaign));
   }
 });
+
+// Provider snapshots retain TypeScript parse diagnostics as well as Zryna codes.
+test('provider diagnostic codes preserve TypeScript syntax errors and reject malformed namespaces', () => {
+  const entry = acceptedFixtures().find(value => value.raw.diagnostics.length > 0);
+  for (const code of ['TS1109', 'TS1005', 'TS18003', 'ZRYNA-F2002']) {
+    const raw = structuredClone(entry.raw);
+    raw.diagnostics[0].code = code;
+    acceptedDTO(raw, entry.source, entry.version);
+  }
+  for (const code of ['TS', 'TS1', 'TS01109', 'TS1109suffix', 'ts1109', 'UNKNOWN', null]) {
+    const raw = structuredClone(entry.raw);
+    raw.diagnostics[0].code = code;
+    assert.throws(() => acceptedDTO(raw, entry.source, entry.version));
+  }
+});
