@@ -13,7 +13,7 @@ PINS = {
     "tests/msal-backport/probe.mjs": "7bbc65ef077f943dd7d3523f458eedf587838799597ec0a01b1dbcee77045fed",
     "tests/msal-backport/network-deny.cjs": "9d3dc4ba260f30c23df39807201b007cf7d5b53d7c250f62ae5935c199f3d5d2",
     "tests/msal-backport/provenance.json": "c236c11e16b7983111840ea3f6051d1422864a3b8e3160906fd601a7c284818f",
-    "scripts/stability-gates/process.mjs": "12391db1cca0420525756ad4c601b5f4ac3354ee763e077298ebfcbe827a9cfb",
+    "scripts/stability-gates/process.mjs": "7d92aba50cc519281641b09c34b59d007e3a12e29b70ca292fe4d2316ef245a4",
     "scripts/stability-gates/linux-tree.mjs": "555c1d5d1b22b995952e4458d3be6cf09a44cf3b2492ddcaf8cafa20a1a772f3",
     "scripts/stability-gates/interruption.mjs": "9e4c2e9c5c7a4f2df480593bd0f7ffa2b863f610e756e618bbdda4743064bbc8",
     "scripts/stability-gates/input.mjs": "09e5212dc41e61536461a8e1a13655463427db974ad59e82944b0d01efe80da0",
