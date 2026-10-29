@@ -1,0 +1,67 @@
+name: CLI prospective numeric anchor v1
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_run_id:
+        description: Completed attempt-one four-job numeric baseline run ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cli-performance-numeric-anchor-v1
+  cancel-in-progress: false
+
+jobs:
+  anchor:
+    name: derive immutable numeric table
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EXPECTED_SOURCE_REVISION: ${{ github.sha }}
+      M418_BASELINE_RUN_ID: ${{ inputs.baseline_run_id }}
+    steps:
+      - name: Guard fixed independent anchor phase
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or $env:GITHUB_RUN_ATTEMPT -cne '1') { throw 'Fresh explicit attempt-one dispatch only' }
+          if ($env:EXPECTED_SOURCE_REVISION -cnotmatch '^[a-f0-9]{40}$' -or $env:M418_BASELINE_RUN_ID -cnotmatch '^[1-9][0-9]{0,19}$') { throw 'Exact source and explicit baseline run required' }
+      - name: Checkout exact observed head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.18.0
+      - name: Frozen workflow dependencies outside measurement
+        run: pnpm install --frozen-lockfile
+      # Required future implementation; a declared policy is not a table anchor.
+      - name: Reconcile completed baselines and derive fixed immutable table
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = Join-Path $env:RUNNER_TEMP 'm418-numeric-anchor'
+          node ./scripts/stability-gates/run-cli-performance-numeric-anchor-v1.mjs --mode build-anchor --baseline-run-id $env:M418_BASELINE_RUN_ID --output $output
+          if ($LASTEXITCODE -ne 0) { throw 'Baseline admission/table derivation failed; no qualified anchor' }
+      - name: Retain independent anchor observations and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cli-performance-numeric-anchor-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m418-numeric-anchor
+          include-hidden-files: true
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7

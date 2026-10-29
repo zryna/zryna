@@ -10,7 +10,9 @@ fn root() -> PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/generic_struct_clone_v5")
 }
 fn successful(command: Command, seconds: u64) -> std::process::Output {
-    let output = process::run(command, seconds);
+    successful_output(process::run(command, seconds))
+}
+fn successful_output(output: std::process::Output) -> std::process::Output {
     assert!(
         output.status.success(),
         "child failed: {:?}\n{}",
@@ -39,7 +41,8 @@ pub(super) fn all_targets(case: &str, artifacts: &Artifacts) -> Counts {
     for (index, target) in ["javascript", "webassembly"].into_iter().enumerate() {
         let mut node = Command::new("node");
         node.arg(root().join("portable.mjs")).arg(target).arg(&artifacts.directory).arg(case);
-        let output = successful(node, 10);
+        let output =
+            successful_output(super::portable_observation::run(node, target, case, artifacts));
         let value: serde_json::Value =
             serde_json::from_slice(&output.stdout).expect("portable observation JSON");
         assert_eq!(value["target"], target);

@@ -1,0 +1,3 @@
+The four reviewed numeric campaign workflows now live in `.github/workflows`. They use explicit attempt-one dispatches: four baselines (serial per host), an independent immutable anchor, then two held-out rounds. Dispatch only after the preceding phase has completed successfully, using the same clean source revision. Do not rerun or replace failed observations.
+
+The fixed CLI's `compare` mode reopens all six originals and rejects numeric regressions and inconsistent premeasurement records. Local synthetic validation supplies no hosted performance authority. Actual measurements, complete supported-platform checks, private lifecycle cleanup and the authenticated M7 closure report remain required before #418 closes.

@@ -1,3 +1,6 @@
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
@@ -36,6 +39,11 @@ static int32_t argument(const char *text) {
 int main(int argc,char **argv) {
   assert(argc==ENTRY_ARGUMENT_COUNT+1);
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   assert(setvbuf(stdout,NULL,_IONBF,0)==0);
   int32_t result=zryna_v1_e_entry(ENTRY_CALL);
   for(size_t i=0;i<used;i++) assert(!blocks[i].live);

@@ -1,4 +1,7 @@
 /* Private test entry: actual typed reserved carrier, exact20LE record, no ordinary wrapper. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "observer.h"
 #include "allocation.h"
 #include "strings.h"
@@ -8,6 +11,11 @@ static void put32(uint8_t *out,uint32_t value) {for(unsigned i=0;i<4;i++) out[i]
 int main(int argc,char **argv) {
   assert(argc==3 && strlen(argv[1])==1 && argv[1][0]>='0' && argv[1][0]<='4');fault_code=(unsigned)(argv[1][0]-'0');
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   trace_fd=open(argv[2],O_WRONLY|O_CREAT|O_EXCL,0600);assert(trace_fd>=0);
   int32_t scalar=INT32_C(0x13579bdf);uint32_t status=zryna_gexecution_invoke_v1(&scalar);
   assert(!inside_runtime && faults==(fault_code!=0));if(status) assert(scalar==0);

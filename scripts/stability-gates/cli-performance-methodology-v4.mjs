@@ -1,7 +1,7 @@
 // Pure declaration/argv expansion only. No process launch, collector, baseline or threshold issuer.
 import assert from 'node:assert/strict';
 import { canonical, parse, portable, sha256 } from './input.mjs';
-const SNAPSHOT = 'b73dee72db94b65fb9e0786c43e807e416e8791bf650da2b5babd4c658294b7b';
+const SNAPSHOT = '5aa0ea425c752976a6eb1a4baa7ae7ca703d655270ef5272b78ec28564dffa1c';
 export function validateMethodology(document) {
   canonical(document);
   assert.equal(document.format, 'zryna.cli-performance-methodology.draft.v4');

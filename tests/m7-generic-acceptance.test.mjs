@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { withoutDeadlineEvidence } from './ci-deadline-evidence-cases.mjs';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
@@ -72,7 +73,7 @@ test('tested merge revision and clean state are checked, never replaced by PR he
   }
 });
 test('canonical M0 remains in Rust and the dedicated finite packet binds actual upstream Rust success', () => {
-  const workflow = parseDocument(readFileSync(resolve(ROOT, '.github/workflows/ci.yml'), 'utf8')).toJS();
+  const workflow = withoutDeadlineEvidence(parseDocument(readFileSync(resolve(ROOT, '.github/workflows/ci.yml'), 'utf8')).toJS(), true);
   const rust = workflow.jobs.rust;
   assert.deepEqual(rust.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);
   const checkout = rust.steps.find(row => row.uses?.startsWith('actions/checkout@'));

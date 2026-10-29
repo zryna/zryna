@@ -1,0 +1,40 @@
+name: CLI prospective numeric baselines v1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cli-performance-numeric-baselines-v1
+  cancel-in-progress: false
+
+jobs:
+  linux_round_1:
+    name: linux-x86_64 / baseline-round-1
+    uses: ./.github/workflows/cli-performance-numeric-collector-v1.yml
+    with:
+      host: linux-x86_64
+      round: baseline-round-1
+  linux_round_2:
+    name: linux-x86_64 / baseline-round-2
+    needs: linux_round_1
+    uses: ./.github/workflows/cli-performance-numeric-collector-v1.yml
+    with:
+      host: linux-x86_64
+      round: baseline-round-2
+  windows_round_1:
+    name: windows-x86_64 / baseline-round-1
+    uses: ./.github/workflows/cli-performance-numeric-collector-v1.yml
+    with:
+      host: windows-x86_64
+      round: baseline-round-1
+  windows_round_2:
+    name: windows-x86_64 / baseline-round-2
+    needs: windows_round_1
+    uses: ./.github/workflows/cli-performance-numeric-collector-v1.yml
+    with:
+      host: windows-x86_64
+      round: baseline-round-2

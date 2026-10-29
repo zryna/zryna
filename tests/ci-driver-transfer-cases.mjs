@@ -1,4 +1,5 @@
 import { withoutM7Transfer, withoutM7TransferText } from './ci-m7-transfer-cases.mjs';
+import { withoutDeadlineEvidence, withoutDeadlineEvidenceText } from './ci-deadline-evidence-cases.mjs';
 // Strict reviewed relocation only; never a fallback or replacement CI authority.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -75,7 +76,7 @@ function acyclic(jobs) {
   for (const id of Object.keys(jobs)) visit(id);
 }
 export function withoutDriverTransfer(candidate) {
-  const original = withoutM7Transfer(candidate);
+  const original = withoutM7Transfer(withoutDeadlineEvidence(candidate));
   const rust = original.jobs.rust, m2 = original.jobs['m2-platform'], m0 = original.jobs.m0;
   if (Object.hasOwn(rust, 'env')) {
     assert.deepEqual(rust.env, HOST_DEBUG_PROFILE, 'only reviewed Linux host debug profile');
@@ -119,7 +120,7 @@ function editJob(text, id, edit) {
   return text.slice(0, start) + edit(text.slice(start, end)) + text.slice(end);
 }
 export function withoutDriverTransferText(text) {
-  text = withoutM7TransferText(text);
+  text = withoutM7TransferText(withoutDeadlineEvidenceText(text));
   assert(typeof text === 'string' && Buffer.byteLength(text) <= 512 * 1024);
   const parsed = parseDocument(text, { uniqueKeys: true }); assert.deepEqual(parsed.errors, []);
   withoutDriverTransfer(parsed.toJS()); // once at the raw-reader boundary, before old projections

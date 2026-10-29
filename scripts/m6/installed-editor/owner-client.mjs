@@ -26,6 +26,9 @@ async function executablePath(program, env) {
   throw new Error('Required trusted executable is unavailable.');
 }
 export async function launchOwned(program, args, options) {
+  const launchedAt = performance.now();
+  let phase = 'resolving-material', phaseAt = launchedAt, readyAfterMs = null, startedAfterMs = null;
+  const enter = value => { phase = value; phaseAt = performance.now(); };
   const env = options.env ?? process.env;
   const runtime = await executablePath(process.platform === 'win32'
     ? join(env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe') : 'python3', env);
@@ -34,6 +37,7 @@ export async function launchOwned(program, args, options) {
   const target = await executablePath(program, env);
   const pins = { runtime: await descriptor(runtime, options.deadline),
     helper: await descriptor(helperSource, options.deadline), target: await descriptor(target, options.deadline) };
+  enter('capturing-owner');
   const material = join(options.output, `${options.name}.owner-material`);
   await mkdir(material, { mode: 0o700 });
   const helper = join(material, process.platform === 'win32' ? 'owner.ps1' : 'owner.py');
@@ -51,12 +55,19 @@ export async function launchOwned(program, args, options) {
   const events = [], parts = [[], []], sizes = [0, 0], raw = [], stderr = [];
   let pending = Buffer.alloc(0), protocolBytes = 0, stderrBytes = 0;
   let failure, ended = null, complete, rootPid, ready, started = false, ownerClosed = false;
+  let failedAfterMs = null, failurePhase = null;
+  const rememberFailure = error => {
+    if (failure === undefined || failure === null) { failure = error; failedAfterMs = performance.now() - launchedAt; failurePhase = phase; }
+  };
   let resolveClosed;
   const closed = new Promise(resolve => { resolveClosed = resolve; });
   const requestStop = () => {
     if (!child.stdin.destroyed) child.stdin.end('{"op":"stop"}\n');
   };
-  const bad = message => { failure ??= new Error(message); requestStop(); };
+  const bad = message => {
+    if (failure === undefined || failure === null) rememberFailure(new Error(message));
+    requestStop();
+  };
   const receive = line => {
     let row;
     try { row = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(line)); }
@@ -77,8 +88,8 @@ export async function launchOwned(program, args, options) {
       if (!['ready', 'identity', 'started', 'image', 'gone', 'root-exit', 'complete', 'unknown', 'observation-scope', 'parent'].includes(row.kind)
           || events.length >= 4096) { bad('Owner event bound or kind invalid.'); return; }
       events.push(row);
-      if (row.kind === 'ready') { if (ready) bad('Duplicate owner readiness.'); else ready = row; }
-      if (row.kind === 'started') { rootPid = row.pid; started = true; }
+      if (row.kind === 'ready') { if (ready) bad('Duplicate owner readiness.'); else { ready = row; readyAfterMs = performance.now() - launchedAt; } }
+      if (row.kind === 'started') { rootPid = row.pid; started = true; startedAfterMs = performance.now() - launchedAt; }
       if (row.kind === 'root-exit') ended = { status: row.status, signal: null };
       if (row.kind === 'unknown') bad('Owner could not prove process cleanup.');
       if (row.kind === 'complete') {
@@ -106,7 +117,7 @@ export async function launchOwned(program, args, options) {
   child.on('close', (status, signal) => { ownerClosed = true; resolveClosed({ status, signal }); });
   const config = { program: target, args, cwd: options.cwd, stage: options.stage,
     timeoutMs: Math.min(600000, deadlineRemaining(options.deadline)), cleanupMs: 15000 };
-  child.stdin.on('error', () => { failure ??= new Error('Owner control pipe unavailable.'); });
+  child.stdin.on('error', () => { rememberFailure(new Error('Owner control pipe unavailable.')); });
   child.stdin.write(`${JSON.stringify(config)}\n`);
   const timer = setTimeout(() => bad('Owned process absolute deadline exceeded.'),
     deadlineRemaining(options.deadline));
@@ -130,17 +141,21 @@ export async function launchOwned(program, args, options) {
       })]);
       if (!ownerExit || pending.length || !complete || complete.cleanupConfirmed !== true
           || complete.status !== 0 || !Array.isArray(complete.failures) || complete.failures.length
-          || ownerExit.status !== 0) failure ??= new Error('Owned process completion/cleanup unconfirmed.');
+          || ownerExit.status !== 0) rememberFailure(new Error('Owned process completion/cleanup unconfirmed.'));
     } finally {
       clearTimeout(timer);
       // Unknown ownership remains a failure in the retained record. Closing pipe references
       // bounds this Node driver; it does not assert that an unresponsive owner was killed.
       child.stdin.destroy(); child.stdout.destroy(); child.stderr.destroy(); child.unref();
       await mkdir(options.output, { recursive: true });
+      const recordedAt = performance.now();
       const record = { requested: { program, args, cwd: options.cwd }, supervisorPid: child.pid,
         rootPid, pins, config, ownerExit, complete: complete ?? null, events,
         stdoutBytes: sizes[0], stderrBytes: sizes[1],
         failure: failure ? failure.message : null, cleanupConfirmed: !failure,
+        diagnostics: { phase, elapsedMs: recordedAt - launchedAt, phaseElapsedMs: recordedAt - phaseAt,
+          failedAfterMs, failurePhase, readyAfterMs, startedAfterMs,
+          readyReceived: Boolean(ready), targetStarted: started, ownerClosed },
         scope: 'Trusted installed-editor harness ownership; no hostile containment claim.' };
       await writeFile(join(options.output, `${options.name}.stdout`), Buffer.concat(parts[0]), { flag: 'wx' });
       await writeFile(join(options.output, `${options.name}.stderr`), Buffer.concat(parts[1]), { flag: 'wx' });
@@ -153,10 +168,12 @@ export async function launchOwned(program, args, options) {
     return { stdout: Buffer.concat(parts[0]).toString('utf8'), ended, events };
   }
   try {
+    enter('waiting-ready');
     await waitUntil(() => ready, Math.min(options.deadline, performance.now() + 15000));
     assert.equal(ready.pid, child.pid);
     assert.equal(await realpath(ready.runtime), runtime);
     assert(Array.isArray(ready.dependencies) && ready.dependencies.length > 0 && ready.dependencies.length <= 256);
+    enter('authenticating-dependencies');
     pins.dependencies = [];
     const runtimeDependency = await createRuntimeDependencyDescriptor(options.deadline);
     for (const dependency of [...new Set(ready.dependencies)].sort()) {
@@ -165,9 +182,11 @@ export async function launchOwned(program, args, options) {
     await writeFile(join(options.output, `${options.name}.before-start.json`),
       `${JSON.stringify({ supervisorPid: child.pid, pins, ready }, null, 2)}\n`, { flag: 'wx' });
     child.stdin.write('{"op":"start"}\n');
+    enter('waiting-started');
     await waitUntil(() => started, Math.min(options.deadline, performance.now() + 15000));
+    enter('executing-target');
   } catch (error) {
-    failure ??= error;
+    rememberFailure(error);
     await finish({ stop: true });
     throw error;
   }

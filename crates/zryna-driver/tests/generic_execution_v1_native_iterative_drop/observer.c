@@ -1,5 +1,8 @@
 /* Bounded private observation of an unchanged ordinary object and actual canonical C runtime. */
 #define _POSIX_C_SOURCE 200809L
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "observer.h"
 #include <signal.h>
 volatile uint8_t *arena;
@@ -83,6 +86,11 @@ int main(int argc,char **argv) {
   arena=(volatile uint8_t *)((get_type)address(M416_TLS_DELTA))(dummy);
   assert(arena && ((uintptr_t)arena&15U)==0);
   const struct rlimit core={0,0};assert(setrlimit(RLIMIT_CORE,&core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   trace_fd=open(argv[4],O_WRONLY|O_CREAT|O_EXCL,0600);assert(trace_fd>=0);
   assert(used()==0 && busy()==0 && owner()==0);
   struct sigaction handler;memset(&handler,0,sizeof(handler));

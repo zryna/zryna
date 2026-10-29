@@ -22,7 +22,14 @@ function json(bytes) {
   return value;
 }
 
-export function replayReleaseImage({ host, expectedSource, read }) {
+export function replayReleaseImage(input) {
+  return replayImage(input, false);
+}
+export function replayNumericReleaseImage(input) {
+  assert.equal(arguments.length, 1, 'fixed numeric release image replay API');
+  return replayImage(input, true);
+}
+function replayImage({ host, expectedSource, read }, numeric) {
   assert(['linux-x86_64', 'windows-x86_64'].includes(host));
   exact(expectedSource, ['commit', 'tree'], 'selected source');
   hex(expectedSource.commit, 40); hex(expectedSource.tree, 40);
@@ -57,7 +64,8 @@ export function replayReleaseImage({ host, expectedSource, read }) {
   absolute(operator.root); exact(operator.tools, KEYS, 'six build tools');
   for (const value of Object.values(operator.tools)) absolute(value);
   assert.equal(operator.expectedHead, source.commit); assert.equal(operator.expectedTree, source.tree);
-  assert(['baseline-round-1', 'baseline-round-2'].includes(operator.round));
+  assert((numeric ? ['baseline-round-1', 'baseline-round-2', 'held-out-candidate']
+    : ['baseline-round-1', 'baseline-round-2']).includes(operator.round));
   if (windows) absolute(operator.calibrationDirectory); else assert.equal(operator.calibrationDirectory, null);
   const fields = ['protocol', 'kind', 'target', 'hostPlatform', 'runnerFamily', 'source', 'environment', 'tools',
     'sdk', 'command', 'build', 'cargoConfiguration', 'logs', 'cli', 'profile', ...Object.keys(FLAGS)];

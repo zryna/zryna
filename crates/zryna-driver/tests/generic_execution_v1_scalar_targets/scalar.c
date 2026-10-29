@@ -1,4 +1,7 @@
 /* Scalar ABI harness; canonical runtime remains real and every logical ABI event is forbidden. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "entry_abi.h"
 #include <assert.h>
 #include <errno.h>
@@ -14,6 +17,11 @@ static int32_t argument(const char *text) {
 #endif
 int main(int argc,char **argv) {
   assert(argc==ENTRY_ARGUMENTS+1);const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   assert(setvbuf(stdout,NULL,_IONBF,0)==0);
   int32_t args[2]={0,0};
 #if ENTRY_ARGUMENTS > 0

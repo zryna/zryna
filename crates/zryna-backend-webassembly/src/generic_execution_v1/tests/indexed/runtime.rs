@@ -18,7 +18,9 @@ pub(super) fn check(case: &str, provider: &str, wire: &[u8], bytes: &[u8], obser
         .iter()
         .find(|row| row["case"] == case)
         .expect("same case");
-    let source = include_bytes!("OBSERVED_EXPECTED_FREEZE.json");
+    let source = include_bytes!(
+        "../../../../../zryna-driver/tests/generic_execution_v1_native_indexed_runtime/OBSERVED_EXPECTED_FREEZE.json"
+    );
     assert_eq!(digest(source), "e4ffbd6b69f42d8d023fa9265b51a3bc1b08cebdc679caaa0cd3bb852032bad3");
     let source: Value = serde_json::from_slice(source).expect("unchanged source oracle");
     let source = source["cases"]
@@ -28,7 +30,10 @@ pub(super) fn check(case: &str, provider: &str, wire: &[u8], bytes: &[u8], obser
         .find(|row| row["case"] == case)
         .expect("same source");
     assert_eq!(row["sourceSha256"], source["sourceSha256"]);
-    let scalar_bytes = include_bytes!("RUNTIME_EXPECTED_FREEZE.json");
+    let scalar_bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-backend-javascript/src/generic_execution_v1/indexed_tests/RUNTIME_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         digest(scalar_bytes),
         "d8115763d70c5f3d804f4756fb3aa6ca34da58f8f7242ebaba7c7f356a25c8d5"

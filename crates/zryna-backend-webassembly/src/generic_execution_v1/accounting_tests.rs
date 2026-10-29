@@ -5,9 +5,10 @@ use sha2::{Digest, Sha256};
 mod deadline;
 #[test]
 fn empty_string_status_exact_extra_and_same_instance_retry() {
-    let oracle = include_bytes!(
-        "../../../zryna-driver/tests/generic_execution_v1_native_accounting_string/RUNTIME_EXPECTED_FREEZE.json"
-    );
+    let oracle = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/m7-generic-execution-native-accounting-string/RUNTIME_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle)),
         "fe2636923a20fd8ca2c6fb176aedc0eaf91d607bcd584555be335c38c4dee490"

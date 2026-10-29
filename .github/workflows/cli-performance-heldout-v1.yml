@@ -1,0 +1,33 @@
+name: CLI prospective numeric heldout v1
+
+on:
+  workflow_dispatch:
+    inputs:
+      anchor_run_id:
+        description: Completed attempt-one numeric anchor run ID; no substitution or retry
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cli-performance-numeric-heldout-v1
+  cancel-in-progress: false
+
+jobs:
+  linux_heldout:
+    name: linux-x86_64 / held-out-candidate
+    uses: ./.github/workflows/cli-performance-numeric-collector-v1.yml
+    with:
+      host: linux-x86_64
+      round: held-out-candidate
+      anchor_run_id: ${{ inputs.anchor_run_id }}
+  windows_heldout:
+    name: windows-x86_64 / held-out-candidate
+    uses: ./.github/workflows/cli-performance-numeric-collector-v1.yml
+    with:
+      host: windows-x86_64
+      round: held-out-candidate
+      anchor_run_id: ${{ inputs.anchor_run_id }}

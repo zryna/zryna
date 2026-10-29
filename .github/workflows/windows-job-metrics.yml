@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/windows-job-metrics.yml
       - scripts/stability-gates/windows-job-metrics-v1/**
+      - scripts/stability-gates/windows-parent-affinity-v1/**
   workflow_dispatch:
 
 permissions:
@@ -34,11 +35,22 @@ jobs:
           DECLARED_PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           & ./scripts/stability-gates/windows-job-metrics-v1/calibration/hosted.ps1
+          if (-not $?) { throw 'Existing eight-control calibration failed' }
+          & ./scripts/stability-gates/windows-parent-affinity-v1/hosted.ps1
+          if (-not $?) { throw 'Private parent-affinity qualification failed' }
       - name: Retain raw calibration and build observations
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-job-metrics-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/windows-job-metrics-calibration
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Retain separate parent-affinity build and live observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-parent-affinity-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/windows-parent-affinity-observation
           if-no-files-found: warn
           retention-days: 14

@@ -13,7 +13,7 @@ const matrixHashes = {
 };
 test('current whole-document snapshot is fixed without any historical projection reader', () => {
   const document = fresh();
-  assert.equal(sha256(raw), 'b73dee72db94b65fb9e0786c43e807e416e8791bf650da2b5babd4c658294b7b');
+  assert.equal(sha256(raw), '5aa0ea425c752976a6eb1a4baa7ae7ca703d655270ef5272b78ec28564dffa1c');
   assert.equal(canonical(document), raw.toString('utf8'));
   assert.equal(document.format, 'zryna.cli-performance-methodology.draft.v4');
   assert(document.sourceRole.includes('99fc32b7ad24cfdbb9b3932a79b6a1fcade2d9e2'));

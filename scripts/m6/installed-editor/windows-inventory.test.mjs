@@ -6,16 +6,22 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import test from 'node:test';
 import { launchOwned } from './owner-client.mjs';
+import { retainUnitFailure } from './unit-failure-retention.mjs';
 if (process.platform === 'win32') {
   test('Windows changing inventory cannot prove cleanup; bounded exact native inventory recovers', async t => {
     const stage = await mkdtemp(join(await realpath(tmpdir()), 'm6-job-inventory-unit-'));
-    t.after(() => rm(stage, { recursive: true, force: true }));
+    let passed = false, deadline;
+    t.after(async () => {
+      if (passed) await rm(stage, { recursive: true, force: true });
+      else t.diagnostic(`Failed owner stage preserved; cleanup is not inferred: ${stage}`);
+    });
     const output = join(stage, 'records');
-    await mkdir(output);
-    await writeFile(join(stage, 'owner-windows-job.ps1'),
-      await readFile(new URL('./owner-windows-job.ps1', import.meta.url)), { flag: 'wx' });
-    const helper = join(stage, 'inventory-control.ps1');
-    await writeFile(helper, `
+    try {
+      await mkdir(output);
+      await writeFile(join(stage, 'owner-windows-job.ps1'),
+        await readFile(new URL('./owner-windows-job.ps1', import.meta.url)), { flag: 'wx' });
+      const helper = join(stage, 'inventory-control.ps1');
+      await writeFile(helper, `
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'owner-windows-job.ps1')
 function MustReject([scriptblock]$body) {
@@ -58,17 +64,31 @@ try {
   $null = [M6OwnerJob]::CloseHandle($job)
 }
 `, { flag: 'wx' });
-    const runtime = join(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe');
-    const owner = await launchOwned(runtime,
-      ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', helper, process.execPath],
-      { stage, output, cwd: stage, env: { ...process.env }, name: 'job-inventory',
-        deadline: performance.now() + 30000 });
-    const result = await owner.finish();
-    assert.equal(result.stdout.trim(),
-      'native-live-inventory;changing-not-complete;malformed-refused;exact-bound;retained-cleanup');
-    const record = JSON.parse(await readFile(join(output, 'job-inventory.json'), 'utf8'));
-    assert.equal(record.cleanupConfirmed, true);
-    assert.equal(record.complete.ownerOnlyConfirmed, true);
-    assert.equal(record.complete.privateJobDescendants, 0);
+      const runtime = join(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe');
+      deadline = performance.now() + 30000;
+      const owner = await launchOwned(runtime,
+        ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', helper, process.execPath],
+        { stage, output, cwd: stage, env: { ...process.env }, name: 'job-inventory',
+          deadline });
+      const result = await owner.finish();
+      assert.equal(result.stdout.trim(),
+        'native-live-inventory;changing-not-complete;malformed-refused;exact-bound;retained-cleanup');
+      const record = JSON.parse(await readFile(join(output, 'job-inventory.json'), 'utf8'));
+      assert.equal(record.cleanupConfirmed, true);
+      assert.equal(record.complete.ownerOnlyConfirmed, true);
+      assert.equal(record.complete.privateJobDescendants, 0);
+      passed = true;
+    } catch (error) {
+      try {
+        const retained = await retainUnitFailure({ output, name: 'job-inventory',
+          parent: await realpath(process.env.RUNNER_TEMP ?? tmpdir()),
+          // Use only the existing execution+cleanup allowance; no fresh clock or retry.
+          deadline: deadline === undefined ? 0 : deadline + 15000, error });
+        t.diagnostic(`Unit failure records: ${retained.directory}; complete=${retained.complete}`);
+      } catch (retentionError) {
+        t.diagnostic(`Unit failure capture refused; original stage remains: ${String(retentionError).slice(0, 2048)}`);
+      }
+      throw error;
+    }
   });
 }

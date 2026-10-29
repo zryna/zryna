@@ -83,11 +83,12 @@ export function registerWorkflowInventoryContracts({ workflow, root, ci, documen
   test('pull-request workflows stay inventoried and every superseded run cancels', () => {
     const names = readdirSync(resolve(root, '.github/workflows')).sort();
     assert.deepEqual(names, [
-      'browser-conformance.yml', 'ci.yml', 'cli-performance-collector.yml', 'cli-performance.yml', 'dependency-security.yml', 'documentation.yml', 'installed-command-h1.yml',
+      'browser-conformance.yml', 'ci.yml', 'cli-performance-anchor-v1.yml', 'cli-performance-baselines-v1.yml', 'cli-performance-collector.yml',
+      'cli-performance-heldout-v1.yml', 'cli-performance-numeric-collector-v1.yml', 'cli-performance.yml', 'dependency-security.yml', 'documentation.yml', 'installed-command-h1.yml',
       'm6-installed-editor.yml', 'native-host-facts.yml', 'native-provider-activation.yml', 'native-provider-install.yml',
-      'native-provider-public.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
+      'native-provider-public.yml', 'numeric-evidence-contracts.yml', 'playground-compiler-release.yml', 'portable-setup.yml',
       'release-production-candidate.yml',
-      'release-qualification.yml', 'release.yml', 'windows-job-metrics.yml',
+      'release-qualification.yml', 'release.yml', 'stability-fuzz-campaign.yml', 'windows-job-metrics.yml',
     ]);
     for (const name of names) {
       const candidate = workflow(name);

@@ -1,14 +1,21 @@
 //! Exact ten representable String-owned rows from the unchanged fifteen-row freeze.
 use super::*;
 use sha2::{Digest, Sha256};
-#[test]
-fn actual_string_adapters_match_the_ten_representable_frozen_string_held_rows() {
-    let oracle = include_str!("HELD_COUNTER_EXPECTED_FREEZE.json");
+fn frozen_held_rows() -> serde_json::Value {
+    let oracle = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting/HELD_COUNTER_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle)),
         "578b3f1d8373237b3c92a1267865fefe83243b17fed2d04eaa5098ff51f6faf2"
     );
-    let oracle: serde_json::Value = serde_json::from_str(oracle).expect("fixed15 held rows");
+    serde_json::from_str(oracle).expect("fixed15 held rows")
+}
+
+#[test]
+fn actual_string_adapters_match_the_ten_representable_frozen_string_held_rows() {
+    let oracle = frozen_held_rows();
     with_empty(|m, wire| {
         let harness = Harness::new(m, wire, "held-string10", None);
         let _deadline = super::super::deadline::Deadline::new(harness.engine.clone());

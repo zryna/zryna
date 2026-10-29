@@ -1,6 +1,10 @@
 //! Exact diagnostic and recovery parity at the untrusted candidate boundary.
 
 use serde_json::{Value, json};
+#[path = "m7_fuzz_witness/parser.rs"]
+mod parser_witness;
+#[path = "m7_fuzz_witness/support.rs"]
+mod witness;
 use zryna_frontend::{
     native_lexer::lex,
     native_parser::{
@@ -10,37 +14,14 @@ use zryna_frontend::{
 };
 use zryna_source::{SourceFileInput, SourceMap};
 
+#[path = "native_parser_parity/corpus.rs"]
+mod corpus;
 #[path = "native_parser_parity/projects.rs"]
 mod projects;
 #[path = "native_parser_parity/provider.rs"]
 mod provider;
 #[path = "native_parser_parity/resources.rs"]
 mod resources;
-
-fn frozen_cases() -> Vec<Value> {
-    let cases = [
-        include_str!("native_parser_parity/corpus.json"),
-        include_str!("native_parser_parity/depth-corpus.json"),
-        include_str!("native_parser_parity/project-corpus.json"),
-        include_str!("native_parser_parity/call-depth-corpus.json"),
-        include_str!("native_parser_parity/priority-corpus.json"),
-        include_str!("native_parser_parity/priority-project-corpus.json"),
-        include_str!("native_parser_parity/count-order-corpus.json"),
-        include_str!("native_parser_parity/review-corpus.json"),
-    ]
-    .into_iter()
-    .flat_map(|text| serde_json::from_str::<Vec<Value>>(text).expect("frozen corpus"))
-    .collect::<Vec<_>>();
-    let mut names = std::collections::BTreeSet::new();
-    for case in &cases {
-        assert!(
-            names.insert(case["name"].as_str().expect("stable case identity")),
-            "duplicate corpus identity"
-        );
-    }
-    assert_eq!(cases.len(), 428, "complete combined frozen inventory");
-    cases
-}
 
 #[test]
 fn frozen_project_resources_reject_first_extra_atomically() {
@@ -186,72 +167,7 @@ fn pinned_provider_matches_production_resource_boundaries() {
 #[test]
 #[ignore = "requires the exact pinned TypeScript provider"]
 fn pinned_provider_matches_frozen_diagnostic_corpus() {
-    let cases = frozen_cases();
-    assert_eq!(cases.len(), 428, "complete frozen diagnostic inventory");
-    for version in 2..=4 {
-        let selected = cases
-            .iter()
-            .filter(|case| case["version"] == version && case.get("text").is_some())
-            .collect::<Vec<_>>();
-        let texts = selected
-            .iter()
-            .map(|case| case["text"].as_str().expect("source").to_owned())
-            .collect::<Vec<_>>();
-        let responses = provider::responses(version, &texts);
-        for (case, response) in selected.into_iter().zip(responses) {
-            assert_eq!(response, case["response"], "{}: exact pinned receipt", case["name"]);
-        }
-    }
-    for case in cases.iter().filter(|case| case.get("files").is_some()) {
-        let version =
-            u32::try_from(case["version"].as_u64().expect("version")).expect("version range");
-        let files =
-            case_sources(case).into_iter().map(|file| (file.path, file.text)).collect::<Vec<_>>();
-        assert_eq!(
-            provider::project_response(version, &files),
-            case["response"],
-            "{}: pinned multi-file receipt",
-            case["name"]
-        );
-    }
-    frozen_recovery_and_rejections_match_exact_provider_diagnostics();
-}
-
-#[test]
-fn frozen_recovery_and_rejections_match_exact_provider_diagnostics() {
-    let cases = frozen_cases();
-    let mut failures = Vec::new();
-    for case in &cases {
-        let name = case["name"].as_str().expect("case identity");
-        let sources = SourceMap::build(case_sources(case)).expect("source authority");
-        let lexed = lex(&sources).expect("bounded tokens");
-        let version =
-            u32::try_from(case["version"].as_u64().expect("protocol")).expect("version range");
-        let native = candidate(version, &sources, &lexed);
-        if native != case["response"] {
-            failures.push(format!("{name}:\nnative {native}\nworker {}", case["response"]));
-        }
-    }
-    assert!(failures.is_empty(), "{}", failures.join("\n"));
-}
-
-fn case_sources(case: &Value) -> Vec<SourceFileInput> {
-    if let Some(files) = case.get("files") {
-        files
-            .as_array()
-            .expect("case file inventory")
-            .iter()
-            .map(|file| SourceFileInput {
-                path: file["path"].as_str().expect("file path").to_owned(),
-                text: file["text"].as_str().expect("file source").to_owned(),
-            })
-            .collect()
-    } else {
-        vec![SourceFileInput {
-            path: "src/main.zry".to_owned(),
-            text: case["text"].as_str().expect("case source").to_owned(),
-        }]
-    }
+    corpus::pinned_provider_matches_frozen_diagnostic_corpus();
 }
 
 fn rejection(diagnostic: &zryna_diagnostics::Diagnostic) -> Value {
@@ -299,89 +215,10 @@ fn candidate(
     }
 }
 
+#[path = "native_parser_parity/generated_property.rs"]
+mod generated_property;
+
 #[test]
 fn arbitrary_bounded_token_grammar_is_deterministic_and_never_forges_a_snapshot() {
-    let vocabulary = [
-        "export",
-        "function",
-        "(",
-        ")",
-        "{",
-        "}",
-        "interface",
-        "extends",
-        "ZrynaStruct",
-        "return",
-        "const",
-        "let",
-        "if",
-        "else",
-        "while",
-        "i32",
-        "x",
-        "1",
-        "true",
-        "+",
-        "-",
-        "*",
-        "=",
-        "<",
-        ">",
-        ":",
-        ";",
-        "[",
-        "]",
-        ",",
-        "\"x\"",
-    ];
-    let mut seed = 0x412_2026_u32;
-    for index in 0..2048 {
-        let mut text = "// π\r\n".to_owned();
-        for _ in 0..4 + index % 47 {
-            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
-            text.push_str(vocabulary[seed as usize % vocabulary.len()]);
-            text.push(' ');
-        }
-        let sources =
-            SourceMap::build(vec![SourceFileInput { path: "src/main.zry".to_owned(), text }])
-                .expect("bounded mutated source");
-        let lexed = lex(&sources).expect("bounded token grammar");
-        for version in 2..=4 {
-            let mut results = Vec::new();
-            for _ in 0..2 {
-                let result = match version {
-                    2 => match parse_v2_recovering_candidate(&sources, &lexed) {
-                        Ok(raw) => {
-                            let value = serde_json::to_value(&raw).expect("v2 JSON");
-                            syntax_v2::verify_snapshot(raw, &sources)
-                                .expect("generated v2 graph verifies");
-                            json!({"result": value})
-                        }
-                        Err(error) => rejection(error.diagnostic()),
-                    },
-                    3 => match parse_v3_straight_line_candidate(&sources, &lexed) {
-                        Ok(raw) => {
-                            let value = serde_json::to_value(&raw).expect("v3 JSON");
-                            syntax_v3::verify_snapshot(raw, &sources)
-                                .expect("generated v3 graph verifies");
-                            json!({"result": value})
-                        }
-                        Err(error) => rejection(error.diagnostic()),
-                    },
-                    4 => match parse_v4_candidate(&sources, &lexed) {
-                        Ok(raw) => {
-                            let value = serde_json::to_value(&raw).expect("v4 JSON");
-                            syntax_v4::verify_snapshot(raw, &sources)
-                                .expect("generated v4 graph verifies");
-                            json!({"result": value})
-                        }
-                        Err(error) => rejection(error.diagnostic()),
-                    },
-                    _ => unreachable!(),
-                };
-                results.push(result);
-            }
-            assert_eq!(results[0], results[1], "v{version} deterministic grammar case {index}");
-        }
-    }
+    generated_property::run();
 }

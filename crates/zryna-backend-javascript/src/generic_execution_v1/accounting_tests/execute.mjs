@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 const [path,caseName]=process.argv.slice(2);
-const bytes=readFileSync(new URL('./RUNTIME_EXPECTED_FREEZE.json',import.meta.url));
+const bytes=readFileSync(new URL('../../../../../tests/m7-generic-execution-native-accounting-string/RUNTIME_EXPECTED_FREEZE.json',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),'fe2636923a20fd8ca2c6fb176aedc0eaf91d607bcd584555be335c38c4dee490');
 const oracle=JSON.parse(bytes);
 assert.deepEqual(oracle.limits,{A:1048576,L:1048576,S:4194304});

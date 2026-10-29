@@ -13,6 +13,8 @@ import { captureWindowsDraft } from './cli-performance-windows-io.mjs';
 import { HELPER_SOURCE_SHA256 } from './cli-performance-windows-binding.mjs';
 import { captureHostedMetadata } from './cli-performance-host.mjs';
 import { runArchitectureCheck, verifySourceAfterCollection } from './cli-performance-hosted-checks.mjs';
+import { captureNumericCompanion, numericOperatorInput } from './cli-performance-numeric-host.mjs';
+import { beginNumericHeldoutGate, finishNumericHeldoutGate, closeNumericHeldoutGate } from './cli-performance-heldout-gate-v1.mjs';
 
 export function collectorEnvironment(environment, rustc, windows) {
   const keys = windows ? ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'USERPROFILE', 'CARGO_HOME',
@@ -86,16 +88,25 @@ function readCalibration(directory, tools) {
     toolchain: observedPin(pinFile(join(directory, 'toolchain-before-build.json'))) } };
 }
 export async function runHostedRound(input, output) {
+  return hostedRound(input, output, false);
+}
+export async function runNumericHostedRound(input, output) {
+  assert.equal(arguments.length, 2, 'fixed numeric hosted API');
+  return hostedRound(numericOperatorInput(input), output, true);
+}
+async function hostedRound(input, output, numeric) {
   output = resolve(output); mkdirSync(output, { mode: 0o700 });
   const root = realpathSync(input.root); const windows = process.platform === 'win32';
   const host = windows ? 'windows-x86_64' : 'linux-x86_64';
   const target = windows ? 'x86_64-pc-windows-msvc' : 'x86_64-unknown-linux-gnu';
   let stage = 'operator-input';
   let build;
+  let numericBefore;
+  let numericGate;
   let sourcePostflightAttempted = false;
   save(output, 'operator-input.json', input);
   try {
-    baselineRound(input.round);
+    if (!numeric) baselineRound(input.round);
     const document = parseMethodology(readSafe(root, 'tests/cli-performance-methodology-v4.json'));
     const review = readSafe(root, 'scripts/stability-gates/cli-performance-operator-review.json');
     const boundary = JSON.parse(review.toString('utf8'));
@@ -123,6 +134,14 @@ export async function runHostedRound(input, output) {
       assert.equal(name === 'clean' ? result.stdout.toString('utf8') : result.stdout.toString('utf8').trim(), expected);
     }
     await captureHostedMetadata({ root, output, phase: 'before', environment: env });
+    if (numeric) {
+      stage = 'numeric-host-before';
+      numericBefore = await captureNumericCompanion(input, root, output, 'before');
+      if (input.round === 'held-out-candidate') {
+        stage = 'numeric-anchor-before-release-build';
+        numericGate = await beginNumericHeldoutGate(numericBefore, input, root, output);
+      }
+    }
     stage = 'release-build';
     build = await captureReleaseBuild({ root, output: join(output, 'release-build'), target,
       tools: input.tools, environment: env });
@@ -156,6 +175,10 @@ export async function runHostedRound(input, output) {
     if (windows) capture.operatorAdmission = save(output, 'windows-operator-binding.json', windowsAdmission(capture));
     else Object.assign(capture, { providerRoot: provider.providerRoot, providerRecordSha256: provider.providerRecordSha256,
       providerReceiptSha256: provider.providerReceiptSha256 });
+    if (numericGate) {
+      stage = 'numeric-anchor-before-timed-round';
+      await finishNumericHeldoutGate(numericGate, numericBefore, input, root, output, build, capture, provider);
+    }
     stage = 'one-collector-round';
     const session = await (windows ? captureWindowsDraft : captureLinuxDraft)({ root,
       output: join(output, 'round'), document, capture, oracles: oracle.oracles });
@@ -164,6 +187,10 @@ export async function runHostedRound(input, output) {
     verifySourceAfterCollection({ root, output, tools: input.tools, environment: build.environment,
       before: build.source.after });
     await captureHostedMetadata({ root, output, phase: 'after', environment: env });
+    if (numeric) {
+      stage = 'numeric-host-after';
+      await captureNumericCompanion(input, root, output, 'after', numericBefore);
+    }
     save(output, 'hosted-result.json', { status: 'collected-unqualified-observations', round: input.round,
       cells: session.cells.length, sourceAuthenticated: false, performanceQualified: false,
       baselineAuthority: null, thresholds: null, closureStatus: 'blocked' });
@@ -180,5 +207,7 @@ export async function runHostedRound(input, output) {
     save(output, 'hosted-failure.json', { stage, message: String(error.stack ?? error),
       sourceAuthenticated: false, performanceQualified: false, baselineAuthority: null, thresholds: null });
     throw error;
+  } finally {
+    if (numericGate) closeNumericHeldoutGate(numericGate);
   }
 }

@@ -10,7 +10,10 @@ fn vec_storage_growth_and_real_clone_prefix_match_the_eighteen_frozen_held_rows(
         format!("{:x}", Sha256::digest(addendum)),
         "5493da462d23d7b229d40d02f74850663dcc119ea4de8c7f522ab6afeaf480b9"
     );
-    let oracle = include_str!("private_controls/HELD_COUNTER_EXPECTED_FREEZE.json");
+    let oracle = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-ownership-runtime-abi/tests/generic_execution_accounting_vec/HELD_COUNTER_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle)),
         "5c6cbfc840dd06b29a409b5994002c294bf7436dd7d6be7a0abddede76f632f0"

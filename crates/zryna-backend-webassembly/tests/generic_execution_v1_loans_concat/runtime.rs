@@ -4,7 +4,10 @@ use sha2::{Digest, Sha256};
 #[path = "runtime/trace.rs"]
 mod trace;
 fn expected(case: &str) -> (i32, Value, Value) {
-    let original = include_bytes!("SOURCE_RUNTIME_ORACLE.json");
+    let original = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../zryna-backend-javascript/src/generic_execution_v1/loan_tests/RUNTIME_ORACLE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(original)),
         "a772a260962503436a0d4fde7836f72db9a4fdc2857f79085b05f624a11d4264"

@@ -1,11 +1,11 @@
 // Frozen declared-scope snapshot; changing these identities requires review, never a run-derived waiver.
 export const INDEX_PATH = 'tests/stability-contract-coverage-v2.json';
-export const INDEX_SHA256 = '4501935275b10fbd3fd21bffe58ccd6bda284b7e6226db976967893b16098fab';
+export const INDEX_SHA256 = '0233104ed6dc5467d1cf2907e81ff945d155f75994dd0cdfb683ff046ff010bf';
 // Informational merged-base references; neither is a candidate/source/host receipt.
 export const MERGED_REVISION = '4a5b9d423051e78766899d1d5f46ef3f4e0f39d6';
 export const MERGED_TREE = 'f4908f76574c405b68be39a65ccb74ca36c3fefa';
 export const PLAN_SHA256 = "c081c8b0338c79b76a601161ae5614bfa5792342ddf29ef2acf21022412337cc";
-export const MATERIAL_SHA256 = '5ae571a6cc1d99e05c11663659045ca92510b8ab18fe9c08f836c1897416dcf1';
+export const MATERIAL_SHA256 = '80b5f567afcdea8c42893070296ef01fd619e42bb667a179b4eee1522ac74eb1';
 export const LEGACY_SHA256 = 'f339c9edba6773d63a252908dbfa094875a5ecb7c66843dd8017142f547e787b';
 export const ROWS = Object.freeze([
   Object.freeze(["m1-default-language-cli-manifest", "887fe042e08b58c4a10adf2dc56bf4cd28649090465f5339137fc8d9589bf5f4"]),

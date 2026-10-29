@@ -16,12 +16,17 @@ fn success(command: Command, seconds: u64) -> std::process::Output {
 pub(super) fn all(case: &str, artifacts: &Artifacts) -> usize {
     compile(&artifacts.directory);
     assert_eq!(
-        super::emit::digest(include_bytes!("RUNTIME_EXPECTED_FREEZE.json")),
+        super::emit::digest(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/m7-generic-execution-native-accounting-string/RUNTIME_EXPECTED_FREEZE.json"
+        ))),
         "fe2636923a20fd8ca2c6fb176aedc0eaf91d607bcd584555be335c38c4dee490"
     );
-    let oracle: serde_json::Value =
-        serde_json::from_slice(include_bytes!("RUNTIME_EXPECTED_FREEZE.json"))
-            .expect("independent pre-output threshold oracle");
+    let oracle: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/m7-generic-execution-native-accounting-string/RUNTIME_EXPECTED_FREEZE.json"
+    )))
+    .expect("independent pre-output threshold oracle");
     let mut observations = Vec::new();
     for run in oracle["runs"].as_array().expect("fourteen frozen threshold rows") {
         if run["case"] == case {

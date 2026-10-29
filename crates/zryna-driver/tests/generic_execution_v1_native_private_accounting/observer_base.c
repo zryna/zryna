@@ -1,4 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -121,6 +124,11 @@ int m416_unused_threshold_observer_main(int argc,char **argv) {
   uint64_t trips=number(argv[1],2097153),repeats=number(argv[2],2);
   assert(repeats>0);
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   trace_fd=open(argv[3],O_WRONLY|O_CREAT|O_EXCL,0600);assert(trace_fd>=0);
   struct sigaction action={0};action.sa_handler=trapped;action.sa_flags=SA_RESETHAND;
   assert(sigemptyset(&action.sa_mask)==0 && sigaction(SIGILL,&action,NULL)==0);

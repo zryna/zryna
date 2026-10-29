@@ -18,9 +18,10 @@ fn denied_callee_clone_cleans_the_retained_parent_and_retries_pristine() {
     actual("retained-clone-call-loop", 4);
 }
 fn actual(case: &str, rows: usize) {
-    let oracle = include_bytes!(
-        "../../../zryna-backend-javascript/src/generic_execution_v1/accounting_tests/RUNTIME_EXPECTED_FREEZE.json"
-    );
+    let oracle = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/m7-generic-execution-native-accounting-string/RUNTIME_EXPECTED_FREEZE.json"
+    ));
     assert_eq!(
         format!("{:x}", Sha256::digest(oracle)),
         "fe2636923a20fd8ca2c6fb176aedc0eaf91d607bcd584555be335c38c4dee490"

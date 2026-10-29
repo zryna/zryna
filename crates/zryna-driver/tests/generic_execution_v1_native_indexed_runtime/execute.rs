@@ -124,17 +124,35 @@ fn one(run: &Value, artifacts: &Artifacts, name: &str, metadata: &Value) -> Valu
         .arg(&trace)
         .arg(args[0].to_string())
         .arg(args[1].to_string());
-    let output = process::run(command, 10);
+    std::fs::write(
+        artifacts.directory.join(format!("{name}.request.json")),
+        serde_json::to_vec_pretty(&json!({"name":name,"arguments":args,"expected":run}))
+            .expect("invocation witness"),
+    )
+    .expect("retain request before child");
+    let output =
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| process::run(command, 10)))
+            .unwrap_or_else(|failure| {
+                let mut bytes = Vec::new();
+                let read = std::fs::File::open(&trace)
+                    .and_then(|file| file.take(65_537).read_to_end(&mut bytes));
+                eprintln!(
+                    "native indexed failure {name}: expected={run}, trace_read={read:?}, trace={}",
+                    String::from_utf8_lossy(&bytes)
+                );
+                std::panic::resume_unwind(failure)
+            });
     std::fs::write(artifacts.directory.join(format!("{name}.stdout")), &output.stdout)
         .expect("raw stdout before assertion");
     std::fs::write(artifacts.directory.join(format!("{name}.stderr")), &output.stderr)
         .expect("raw stderr before assertion");
-    let status = json!({"signal":output.status.signal(),"exit_code":output.status.code(),"expected_source_row":run});
+    let status = json!({"signal":output.status.signal(),"exit_code":output.status.code(),"core_dumped":output.status.core_dumped(),"expected_source_row":run});
     std::fs::write(
         artifacts.directory.join(format!("{name}.status.json")),
         serde_json::to_vec_pretty(&status).expect("process JSON"),
     )
     .expect("raw status before assertion");
+    assert!(!output.status.core_dumped(), "native observations never request a core dump");
     let mut bytes = Vec::new();
     std::fs::File::open(trace)
         .expect("unbuffered observed trace")
