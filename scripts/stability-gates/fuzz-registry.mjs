@@ -6,7 +6,7 @@ import { loadRegistry } from './registry.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const REGISTRY = 'tests/stability-fuzz-campaign-v2.json';
-export const REGISTRY_SHA256 = 'dbf6f29c60292a8a98f3f6821a7281feee8513a99b20de78e21b4c5449b0a01a';
+export const REGISTRY_SHA256 = '71136c709eb3ae9214d9bca955bca0e4224354a1696f24014cb6d8fb59d1e4da';
 
 export function loadFuzzRegistry(root = ROOT) {
   const bytes = readSafe(root, REGISTRY);

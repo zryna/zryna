@@ -53,6 +53,7 @@ four or five digits with a nonzero first digit) alongside Zryna diagnostic codes
 Lexer and parser rejection envelopes retain their Zryna-only codes. Windows tool
 observation resolves the existing reviewed pnpm shim metadata to the pinned
 `pnpm.cjs` entry and launches it through the same Node executable, without a
-shell. The receipt retains the actual executable and argv; replay checks those
+shell. Collection uses the standard pnpm JS package setup, matching the existing
+M4 resolver contract; standalone native-package shims are not JS entries. The receipt retains the actual executable and argv; replay checks those
 fields as well as the original version streams. Original failed campaigns remain
 failed, including the b22 parser replay rejection and Windows pnpm ENOENT.
