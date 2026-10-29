@@ -1,7 +1,4 @@
 /* Test-only private ABI, same unchanged ordinary object; qualified SystemV/x86_64. */
-#if defined(__linux__)
-#include <sys/prctl.h>
-#endif
 #include "observer_base.c"
 #include "private_binding.h"
 static uintptr_t address(int64_t delta) {

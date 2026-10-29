@@ -1,8 +1,5 @@
 /* Test-only projection of the unchanged ordinary private ABI with the exact existing C observer. */
 #define main m416_unused_public_observer_main
-#if defined(__linux__)
-#include <sys/prctl.h>
-#endif
 #include "control_observer.c"
 #undef main
 #include "private_binding.h"
