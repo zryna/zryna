@@ -21,13 +21,13 @@ fn write_new(path: &Path, bytes: &[u8]) {
 }
 
 pub(super) fn run(node: Command, target: &str, case: &str, artifacts: &Artifacts) -> Output {
-    let cwd = node
-        .get_current_dir()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| std::env::current_dir().expect("actual portable child cwd"));
+    let cwd = node.get_current_dir().map_or_else(
+        || std::env::current_dir().expect("actual portable child cwd"),
+        Path::to_path_buf,
+    );
     let argv = std::iter::once(node.get_program())
         .chain(node.get_args())
-        .map(|argument| argument.as_bytes())
+        .map(OsStrExt::as_bytes)
         .collect::<Vec<_>>();
     let request = serde_json::json!({"target":target,"case":case,
         "argvUnixBytes":argv,"cwdUnixBytes":cwd.as_os_str().as_bytes(),
@@ -64,7 +64,8 @@ fn report_progress(target: &str, case: &str, directory: &Path) {
     let _ = writeln!(
         log,
         "portable original failure witness: target={target}, case={case}, \
-         directory={directory:?}, deadline_seconds=10, journal_read={read:?}, first_extra={}",
+         directory={}, deadline_seconds=10, journal_read={read:?}, first_extra={}",
+        directory.display(),
         bytes.len() > PROGRESS_BYTES
     );
     for (index, chunk) in bytes[..bytes.len().min(PROGRESS_BYTES)].chunks(1024).enumerate() {
