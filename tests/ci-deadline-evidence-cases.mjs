@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { parseDocument } from 'yaml';
 const condition = "failure() && runner.os == 'Linux'";
-const profile = "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}";
+const profile = '0';
 const unit = { name: 'Verify bounded original-failure collector controls',
   if: "runner.os == 'Linux'", run: 'python3 -B tests/test_generic_deadline_retention.py' };
 const groups = [
