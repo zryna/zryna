@@ -5,8 +5,24 @@ import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
 import { withoutDriverTransfer, withoutDriverTransferText } from './ci-driver-transfer-cases.mjs';
+import { withoutDeadlineEvidence } from './ci-deadline-evidence-cases.mjs';
 const raw = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-const workflow = () => { const doc = parseDocument(raw, { uniqueKeys: true }); assert.deepEqual(doc.errors, []); return doc.toJS(); };
+const workflow = () => { const doc = parseDocument(raw, { uniqueKeys: true }); assert.deepEqual(doc.errors, []); return withoutDeadlineEvidence(doc.toJS(), true); };
+test('failure metadata stays exact and cannot replace canonical work', () => {
+  const base = parseDocument(raw).toJS();
+  for (const edit of [
+    w => w.jobs.rust.steps.pop(),
+    w => { w.jobs.rust.steps.at(-2).run += ' || true'; },
+    w => { w.jobs.rust.steps.at(-1).if = 'always()'; },
+    w => { w.jobs['m4-platform'].env.CARGO_PROFILE_TEST_DEBUG = '1'; },
+    w => { w.jobs['m4-platform'].steps.at(-2)['continue-on-error'] = true; },
+  ]) {
+    const changed = structuredClone(base); edit(changed);
+    assert.throws(() => withoutDriverTransfer(changed));
+  }
+  assert.throws(() => withoutDeadlineEvidence(withoutDeadlineEvidence(base, true), true));
+  assert.deepEqual(base, parseDocument(raw).toJS());
+});
 test('actual dedicated M7 matrix preserves canonical Rust and waits for its real upstream result', () => {
   const value = workflow(), job = value.jobs['m7-platform']; assert(job, 'dedicated deadline budget required');
   assert.deepEqual(job.needs, ['rust']); assert.deepEqual(job.strategy.matrix.os, ['ubuntu-latest', 'windows-latest']);

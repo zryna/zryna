@@ -11,6 +11,9 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+#[path = "process/snapshot.rs"]
+mod snapshot;
+
 const STREAM_BYTES: usize = 65_536;
 struct Running {
     child: Box<dyn ChildWrapper>,
@@ -59,6 +62,12 @@ pub(super) fn run(mut native: Command, seconds: u64) -> Output {
         let stream_overflow = overflow.load(Ordering::Acquire);
         if stream_overflow || Instant::now() >= deadline {
             let elapsed = started.elapsed();
+            let child_pid = running.child.id();
+            // Capture now; the guard retains after cleanup on the original failure unwind.
+            let _snapshot = std::panic::catch_unwind(|| {
+                snapshot::capture(child_pid, seconds, elapsed, stream_overflow)
+            })
+            .ok();
             running.child.kill().expect("terminate and reap complete test process group");
             let stdout = stdout.join().ok();
             let stderr = stderr.join().ok();

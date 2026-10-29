@@ -1,3 +1,3 @@
 // Fixed declared inventory; no source/host/receipt authority. Refresh requires independent review.
-export const CATALOGUE_SHA256 = '9010332511dbc4adb2c59a22b091852a93ef39d152889e261a02e11c23fe7056';
+export const CATALOGUE_SHA256 = '8b8e5396df471914f5b2592e9c9a953763889113d8003a69016d91a3448bd7cb';
 export const CATALOGUE_PATH = 'tests/stability-required-ignored-v2.json';

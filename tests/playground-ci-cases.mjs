@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseDocument } from 'yaml';
+import { withoutDeadlineEvidence } from './ci-deadline-evidence-cases.mjs';
 
 const contracts = [
   { name: 'Verify restricted playground contracts', run: 'pnpm playground:contract' },
@@ -41,7 +42,7 @@ export function withoutPlaygroundContracts(candidate) {
 
 const parsed = parseDocument(readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 assert.deepEqual(parsed.errors, []);
-const workflow = parsed.toJS();
+const workflow = withoutDeadlineEvidence(parsed.toJS(), true);
 test('playground CI removal, bypass, duplicate and relocation mutations fail closed', () => {
   for (const mutate of [
     (steps, i) => { steps.splice(i, 1); },

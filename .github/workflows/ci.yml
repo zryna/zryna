@@ -255,6 +255,9 @@ jobs:
           python3 tests/playground-helper-policy-unit.py
           python3 -B examples/playground/restricted/daemon/preparation/test_preparation.py
           python3 -B -m unittest discover -s tests -p 'playground_operator*.py'
+      - name: Verify bounded original-failure collector controls
+        if: runner.os == 'Linux'
+        run: python3 -B tests/test_generic_deadline_retention.py
       - name: Verify Linux compiler publication boundaries
         if: runner.os == 'Linux'
         run: node --test --test-concurrency=1 scripts/m6/compiler-release/*.test.mjs
@@ -280,6 +283,19 @@ jobs:
         env:
           RUST_TEST_THREADS: '2'
         run: node scripts/run-m0-conformance.mjs
+      - name: Retain ordinary nested and clone originals after Linux failure
+        if: failure() && runner.os == 'Linux'
+        timeout-minutes: 2
+        shell: bash
+        run: python3 -B scripts/retain-generic-deadline-failures.py --output "$RUNNER_TEMP/generic-deadline-originals"
+      - name: Upload ordinary original failure evidence
+        if: failure() && runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: generic-deadline-originals-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/generic-deadline-originals
+          if-no-files-found: error
+          retention-days: 7
 
   m7-platform:
     name: m7 generic (${{ matrix.os }})
@@ -806,6 +822,8 @@ jobs:
       M4_SOURCE_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
       CARGO_BUILD_JOBS: 3
       RUST_TEST_THREADS: 3
+      CARGO_PROFILE_DEV_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}"
+      CARGO_PROFILE_TEST_DEBUG: "${{ matrix.os == 'ubuntu-latest' && '0' || 'line-tables-only' }}"
     steps:
       - name: Checkout exact M4 candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -859,6 +877,19 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
+      - name: Retain ordinary nested and clone originals after Linux M4 failure
+        if: failure() && runner.os == 'Linux'
+        timeout-minutes: 2
+        shell: bash
+        run: python3 -B scripts/retain-generic-deadline-failures.py --output "$RUNNER_TEMP/generic-deadline-originals-m4"
+      - name: Upload ordinary M4 original failure evidence
+        if: failure() && runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: generic-deadline-originals-m4-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/generic-deadline-originals-m4
+          if-no-files-found: error
+          retention-days: 7
       - name: Preserve failed M4 core diagnostics
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
