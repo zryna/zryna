@@ -1,4 +1,7 @@
 /* Actual allocation identities and fixed branch cleanup observations, unchanged ABI. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "ownership-runtime-v1.h"
 #include <assert.h>
 #include <signal.h>
@@ -53,6 +56,11 @@ static void inactive(const char *name,int32_t (*function)(uint8_t),uint8_t flag,
 }
 int main(void) {
     const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);assert(setvbuf(stdout,NULL,_IONBF,0)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
     positive("leftNone",zryna_v1_e_leftNone,1,11);
     positive("leftNone",zryna_v1_e_leftNone,0,11);
     positive("leftSome",zryna_v1_e_leftSome,1,13);

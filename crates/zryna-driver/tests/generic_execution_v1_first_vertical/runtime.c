@@ -1,4 +1,7 @@
 /* Fixed first-vertical String ABI observer: successful IDs differ from actual pointers. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "ownership-runtime-v1.h"
 #include <assert.h>
 #include <errno.h>
@@ -59,6 +62,11 @@ static int32_t result_number(const char *text) {
 }
 int main(int argc, char **argv) {
     assert(argc==6); const struct rlimit no_core={0,0}; assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
     assert(setvbuf(stdout,NULL,_IONBF,0)==0); trace=fopen(argv[5],"wx"); assert(trace); assert(setvbuf(trace,NULL,_IONBF,0)==0);
     fault_kind=strcmp(argv[1],"none")==0 ? 0 : strcmp(argv[1],"allocation")==0 ? 1 : strcmp(argv[1],"clone")==0 ? 2 : -1;
     assert(fault_kind>=0); fail_ordinal=number(argv[2]); expected_allocations=number(argv[4]); assert((fault_kind==0)==(fail_ordinal==0));

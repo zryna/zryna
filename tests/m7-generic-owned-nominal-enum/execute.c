@@ -1,4 +1,7 @@
 /* Source-first nominal active-payload/reverse-failure cleanup with actual allocation identities. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "ownership-runtime-v1.h"
 #include <assert.h>
 #include <signal.h>
@@ -129,6 +132,11 @@ static void failure(const test_case *test, size_t number) {
 int main(void) {
     const struct rlimit no_core = {0, 0};
     assert(setrlimit(RLIMIT_CORE, &no_core) == 0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
     assert(setvbuf(stdout, NULL, _IONBF, 0) == 0);
     size_t size = sizeof(cases) / sizeof(cases[0]);
     for (size_t i = 0; i < size; i++) positive(&cases[i]);

@@ -1,4 +1,7 @@
 /* Fixed Linux/System V scalar observations; no Zryna runtime or profile activation. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include <assert.h>
 #include <inttypes.h>
 #include <signal.h>
@@ -19,6 +22,11 @@ extern int32_t zryna_v1_e_error(void);
 int main(void) {
     const struct rlimit no_core = { 0, 0 };
     assert(setrlimit(RLIMIT_CORE, &no_core) == 0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
     const int32_t input[] = { INT32_MIN, -1, 0, 7, INT32_MAX };
     for (size_t i = 0; i < sizeof(input) / sizeof(input[0]); ++i) {
         assert(zryna_v1_e_score(input[i]) == input[i]);

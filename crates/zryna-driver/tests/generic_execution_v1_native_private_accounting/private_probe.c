@@ -1,4 +1,7 @@
 /* Test-only private ABI, same unchanged ordinary object; qualified SystemV/x86_64. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "observer_base.c"
 #include "private_binding.h"
 static uintptr_t address(int64_t delta) {
@@ -20,6 +23,11 @@ int main(int argc,char **argv) {
   unsigned fault=(unsigned)number(argv[5],1);
   trace_fd=open(argv[6],O_WRONLY|O_CREAT|O_EXCL,0600);assert(trace_fd>=0);
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   uint64_t out=0;
 #if M416_PRIVATE_BORROW
   zryna_rt_o1_handle parent={0};

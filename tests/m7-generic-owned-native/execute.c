@@ -1,4 +1,7 @@
 /* Actual malloc/copy/free with immutable ABI records, fixed UTF-8 cleanup oracles and trap children. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "ownership-runtime-v1.h"
 #include <assert.h>
 #include <signal.h>
@@ -50,6 +53,11 @@ static void failure(const char *name,int32_t (*function)(int32_t),size_t number)
 }
 int main(void) {
     const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);assert(setvbuf(stdout,NULL,_IONBF,0)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
     positive("some",zryna_v1_e_some);positive("none",zryna_v1_e_none);positive("ok",zryna_v1_e_ok);positive("err",zryna_v1_e_err);
     positive("exclusive",zryna_v1_e_exclusive);positive("clones",zryna_v1_e_clones);positive("lexical",zryna_v1_e_lexical);
     positive("nested",zryna_v1_e_nested);positive("nestednone",zryna_v1_e_nestednone);

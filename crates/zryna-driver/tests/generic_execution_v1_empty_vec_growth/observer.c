@@ -1,4 +1,7 @@
 /* Actual canonical malloc/free and storage outputs; no replacement allocator/count model. */
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "observer.h"
 void *__wrap_malloc(size_t size) {
   ++attempts;event("attempt",attempts);
@@ -60,6 +63,11 @@ int main(int argc,char **argv) {
   assert(argc==3);char *end=NULL;errno=0;unsigned long ordinal=strtoul(argv[1],&end,10);
   assert(!errno && end!=argv[1] && !*end && ordinal<=2);fail_ordinal=(size_t)ordinal;
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   assert(setvbuf(stdout,NULL,_IONBF,0)==0);trace=fopen(argv[2],"wx");assert(trace && setvbuf(trace,NULL,_IONBF,0)==0);
   int32_t value=zryna_v1_e_entry();assert(value==18 && !fault_fired && attempts==1 && acquired==1 && released==1 && reserves==2);
   assert(fclose(trace)==0);printf("result:%d\n",value);return 0;

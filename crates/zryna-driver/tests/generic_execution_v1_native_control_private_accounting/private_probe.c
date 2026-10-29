@@ -1,5 +1,8 @@
 /* Test-only projection of the unchanged ordinary private ABI with the exact existing C observer. */
 #define main m416_unused_public_observer_main
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #include "control_observer.c"
 #undef main
 #include "private_binding.h"
@@ -20,6 +23,11 @@ int main(int argc,char **argv) {
   for(size_t i=0;i<4;i++)context[i]=number(argv[i+1],UINT64_MAX);
   fault_ordinal=number(argv[5],1);trace_fd=open(argv[6],O_WRONLY|O_CREAT|O_EXCL,0600);assert(trace_fd>=0);
   const struct rlimit no_core={0,0};assert(setrlimit(RLIMIT_CORE,&no_core)==0);
+#if defined(__linux__)
+  /* Piped crash collectors ignore RLIMIT_CORE; suppress dumps in this child. */
+  assert(prctl(PR_SET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+  assert(prctl(PR_GET_DUMPABLE,0UL,0UL,0UL,0UL)==0);
+#endif
   summary[MAGIC]=UINT64_C(0x4d34313641434331);summary[INVOCATION]=1;
   uint64_t out=0;record_private(0,0,0,context);
   typedef uint32_t (*step_type)(uint64_t *,uint64_t *);
