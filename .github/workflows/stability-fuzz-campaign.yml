@@ -49,6 +49,47 @@ jobs:
           "ZRYNA_TEST_NODE=$nodePath" >> $env:GITHUB_ENV
       - run: pnpm install --frozen-lockfile
       - run: cargo fetch --locked
+      - name: Prepare the existing pinned Linux SQLite source prerequisite
+        id: fuzz-sqlite
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          sqlite_logs="$RUNNER_TEMP/fuzz-sqlite-prerequisite"
+          mkdir -m 700 "$sqlite_logs"
+          : > "$sqlite_logs/stdout.log"
+          : > "$sqlite_logs/stderr.log"
+          printf 'incomplete\n' > "$sqlite_logs/status.txt"
+          if python3 -B scripts/m5/prepare_sqlite_fixture.py --output "$RUNNER_TEMP/zryna-sqlite-source" > "$sqlite_logs/stdout.log" 2> "$sqlite_logs/stderr.log"; then
+            sqlite_status=0
+          else
+            sqlite_status=$?
+          fi
+          printf '%s\n' "$sqlite_status" > "$sqlite_logs/status.txt"
+          if [ "$sqlite_status" -ne 0 ]; then exit "$sqlite_status"; fi
+          printf 'ZRYNA_SQLITE_FIXTURE_ROOT=%s\n' "$RUNNER_TEMP/zryna-sqlite-source" >> "$GITHUB_ENV"
+      - name: Acquire and verify the existing pinned browser prerequisite
+        id: fuzz-browser
+        timeout-minutes: 4
+        shell: pwsh
+        run: |
+          $pin = Get-Content -LiteralPath 'tests/scalar-host/browser-pin.json' -Raw | ConvertFrom-Json
+          $key = if ($IsWindows) { 'win32-x64' } else { 'linux-x64' }
+          $selected = $pin.platforms.$key
+          $cache = Join-Path $env:GITHUB_WORKSPACE ".zryna/cache/scalar-browser-$key-$($pin.browserVersion)"
+          "cache=$cache" >> $env:GITHUB_OUTPUT
+          $python = if ($IsWindows) { 'python' } else { 'python3' }
+          & $python scripts/scalar-host/acquire-browser.py 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/fuzz-browser-acquisition.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Original browser acquisition failed; retain its evidence' }
+          $receipt = Get-Content -LiteralPath (Join-Path $cache 'receipt.json') -Raw | ConvertFrom-Json
+          $archive = (Get-FileHash -LiteralPath (Join-Path $cache 'archive.zip') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($receipt.url -ne $selected.url -or $receipt.finalUrl -ne $selected.publisherUrl -or
+              $receipt.archiveSha256 -ne $selected.archiveSha256 -or $archive -ne $selected.archiveSha256 -or
+              $receipt.inventorySha256 -ne $selected.inventorySha256) { throw 'Browser acquisition differs from reviewed pins' }
+          $env:ZRYNA_TEST_BROWSER_ROOT = Join-Path $cache 'browser'
+          node --input-type=module -e 'import { verifyBrowser } from "./tests/scalar-host/browser-fixture.mjs"; await verifyBrowser(process.env.ZRYNA_TEST_BROWSER_ROOT); console.log("reviewed browser inventory verified");' 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/fuzz-browser-verification.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Original browser inventory verification failed' }
+          "ZRYNA_TEST_BROWSER_ROOT=$env:ZRYNA_TEST_BROWSER_ROOT" >> $env:GITHUB_ENV
       - name: Check the collector and source structure
         run: node --test tests/stability-fuzz-registry.test.mjs tests/stability-fuzz-witness.test.mjs tests/stability-fuzz-producer.test.mjs tests/stability-fuzz-dto.test.mjs tests/stability-fuzz-cleanup.test.mjs tests/stability-fuzz-failures.test.mjs
       - name: Preserve the existing shared executor guard owner
@@ -75,5 +116,42 @@ jobs:
         with:
           name: stability-fuzz-${{ matrix.os }}-${{ github.sha }}-attempt1
           path: ${{ runner.temp }}/stability-fuzz-original
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain ordinary original programs after Linux campaign failure
+        if: failure() && runner.os == 'Linux'
+        timeout-minutes: 2
+        shell: bash
+        run: python3 -B scripts/retain-generic-deadline-failures.py --output "$RUNNER_TEMP/fuzz-generic-deadline-originals"
+      - name: Upload ordinary original Linux campaign failure evidence
+        if: failure() && runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stability-fuzz-original-failures-${{ matrix.os }}-${{ github.sha }}-attempt1
+          path: ${{ runner.temp }}/fuzz-generic-deadline-originals
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain Linux SQLite prerequisite originals and command evidence
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stability-fuzz-sqlite-prerequisite-${{ matrix.os }}-${{ github.sha }}-attempt1
+          path: |
+            ${{ runner.temp }}/fuzz-sqlite-prerequisite
+            ${{ runner.temp }}/zryna-sqlite-source
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain prerequisite acquisition originals and diagnostics
+        if: always() && steps.fuzz-browser.outputs.cache != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stability-fuzz-prerequisites-${{ matrix.os }}-${{ github.sha }}-attempt1
+          path: |
+            ${{ steps.fuzz-browser.outputs.cache }}/archive.zip
+            ${{ steps.fuzz-browser.outputs.cache }}/inventory.json
+            ${{ steps.fuzz-browser.outputs.cache }}/receipt.json
+            ${{ runner.temp }}/fuzz-browser-acquisition.log
+            ${{ runner.temp }}/fuzz-browser-verification.log
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
