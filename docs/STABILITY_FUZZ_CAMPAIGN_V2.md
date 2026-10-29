@@ -57,3 +57,23 @@ shell. Collection uses the standard pnpm JS package setup, matching the existing
 M4 resolver contract; standalone native-package shims are not JS entries. The receipt retains the actual executable and argv; replay checks those
 fields as well as the original version streams. Original failed campaigns remain
 failed, including the b22 parser replay rejection and Windows pnpm ENOENT.
+
+Ubuntu 24.04 full-owner collection provisions the already pinned real browser's
+namespace sandbox prerequisite in the ephemeral hosted job. The original c656
+browser reported `No usable sandbox!` and SIGABRT; its conditional AppArmor
+guidance alone does not prove the former host's sysctl state. The new preparation
+records the actual existing AppArmor/userns policy, verifies the complete browser
+inventory, and adds a create-only root-owned profile for that one literal
+executable pathname. It keeps Chromium sandboxing enabled and never changes a
+global sysctl or selects another OS. The exact profile, bounded direct setup/cleanup
+commands and policy readbacks are retained even on failure. Exclusive kernel add
+never replaces a pre-existing loaded profile; cleanup unloads only after a
+recorded successful add. The root creator removes its own inode on ordinary
+partial-write/fsync failure. Unknown interrupted creation, failed/uncertain add,
+missing owned files and failed unload cannot yield cleanup success. A
+pre-existing profile file is preserved.
+This is a pathname allowance in a trusted ephemeral runner that already has sudo,
+not kernel enforcement of a binary hash against a same-user cache writer. The
+existing fixture rechecks the pinned inventory before browser execution. No
+root-owned browser copy or production isolation claim is added. Browser pins,
+full owner commands, assertions and deadlines remain unchanged.

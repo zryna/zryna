@@ -89,8 +89,14 @@ jobs:
           node --input-type=module -e 'import { verifyBrowser } from "./tests/scalar-host/browser-fixture.mjs"; await verifyBrowser(process.env.ZRYNA_TEST_BROWSER_ROOT); console.log("reviewed browser inventory verified");' 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/fuzz-browser-verification.log"
           if ($LASTEXITCODE -ne 0) { throw 'Original browser inventory verification failed' }
           "ZRYNA_TEST_BROWSER_ROOT=$env:ZRYNA_TEST_BROWSER_ROOT" >> $env:GITHUB_ENV
+      - name: Prepare the exact pinned Linux browser sandbox prerequisite
+        id: fuzz-sandbox
+        if: runner.os == 'Linux'
+        timeout-minutes: 2
+        shell: bash
+        run: node scripts/scalar-host/fuzz-browser-sandbox.mjs prepare "$RUNNER_TEMP/fuzz-browser-sandbox"
       - name: Check the collector and source structure
-        run: node --test tests/stability-fuzz-registry.test.mjs tests/stability-fuzz-witness.test.mjs tests/stability-fuzz-producer.test.mjs tests/stability-fuzz-dto.test.mjs tests/stability-fuzz-cleanup.test.mjs tests/stability-fuzz-failures.test.mjs
+        run: node --test tests/stability-fuzz-registry.test.mjs tests/stability-fuzz-witness.test.mjs tests/stability-fuzz-producer.test.mjs tests/stability-fuzz-dto.test.mjs tests/stability-fuzz-cleanup.test.mjs tests/stability-fuzz-failures.test.mjs tests/stability-fuzz-browser-sandbox.test.mjs
       - name: Preserve the existing shared executor guard owner
         run: node scripts/stability-gates/check-tests.mjs
       - run: node scripts/check-repository-structure.mjs
@@ -109,6 +115,19 @@ jobs:
         run: |
           node scripts/stability-gates/fuzz-replay.mjs "$env:RUNNER_TEMP/stability-fuzz-original" "$env:EXPECTED_COMMIT"
           if ($LASTEXITCODE -ne 0) { throw 'Retained originals did not replay' }
+      - name: Remove only the owned Linux browser sandbox profile
+        if: always() && runner.os == 'Linux' && steps.fuzz-sandbox.outcome != 'skipped'
+        timeout-minutes: 2
+        shell: bash
+        run: node scripts/scalar-host/fuzz-browser-sandbox.mjs cleanup "$RUNNER_TEMP/fuzz-browser-sandbox"
+      - name: Retain Linux browser sandbox setup and cleanup originals
+        if: always() && runner.os == 'Linux' && steps.fuzz-sandbox.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stability-fuzz-browser-sandbox-${{ matrix.os }}-${{ github.sha }}-attempt1
+          path: ${{ runner.temp }}/fuzz-browser-sandbox
+          if-no-files-found: error
+          retention-days: 14
       - name: Retain originals and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
