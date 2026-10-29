@@ -47,3 +47,12 @@ supplied environment and original literal taskkill/deadline/buffer policy. No
 parent-environment token deletion spans an await. Existing process/interruption
 guards and new hostile tests must pass before collection; final independent host,
 artifact/provenance and threat-model review remain separate authorities.
+
+Provider diagnostic envelopes admit existing TypeScript parse codes (`TS` plus
+four or five digits with a nonzero first digit) alongside Zryna diagnostic codes.
+Lexer and parser rejection envelopes retain their Zryna-only codes. Windows tool
+observation resolves the existing reviewed pnpm shim metadata to the pinned
+`pnpm.cjs` entry and launches it through the same Node executable, without a
+shell. The receipt retains the actual executable and argv; replay checks those
+fields as well as the original version streams. Original failed campaigns remain
+failed, including the b22 parser replay rejection and Windows pnpm ENOENT.

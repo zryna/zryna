@@ -22,9 +22,10 @@ export function fixture(t, failure) {
     let stdout;
     let error = null;
     let signal = null;
-    if (args[0] === '--version') {
-      const version = registry.toolchains[executable];
-      stdout = Buffer.from(['cargo', 'rustc'].includes(executable) ? `${executable} ${version}\n` : `${version}\n`);
+    if (args.at(-1) === '--version') {
+      const name = executable === process.execPath ? 'pnpm' : executable;
+      const version = registry.toolchains[name];
+      stdout = Buffer.from(['cargo', 'rustc'].includes(name) ? `${name} ${version}\n` : `${version}\n`);
     } else {
       const gate = [...registry.campaigns, registry.fullOwner].find(value => value.executable === executable &&
         JSON.stringify(value.args) === JSON.stringify(args));
@@ -47,5 +48,6 @@ export function fixture(t, failure) {
     return { exitCode: error ? null : 0, signal, error, elapsedMs: 1, stdout, stderr: Buffer.from('') };
   };
   return { output, parent, calls, interruption,
-    collect: () => collectFuzz(output, commit, { root: ROOT, inspect: () => structuredClone(source), run, interruption }) };
+    collect: () => collectFuzz(output, commit, { root: ROOT, inspect: () => structuredClone(source), run, interruption,
+      resolvePnpmScript: () => resolve(parent, 'bin/pnpm.cjs') }) };
 }

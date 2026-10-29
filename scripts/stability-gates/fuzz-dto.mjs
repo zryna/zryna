@@ -64,7 +64,7 @@ function functionShape(value, version) {
 function diagnostics(values) {
   for (const diagnostic of array(values, 256)) {
     exact(diagnostic, ['code', 'severity', 'location', 'message', 'guidance'], 'provider diagnostic');
-    assert.match(diagnostic.code, /^ZRYNA-[A-Z][0-9]{4}$/);
+    assert.match(diagnostic.code, /^(?:ZRYNA-[A-Z][0-9]{4}|TS[1-9][0-9]{3,4})$/);
     assert(['error', 'warning'].includes(diagnostic.severity));
     for (const key of ['message', 'guidance']) {
       assert.equal(typeof diagnostic[key], 'string');

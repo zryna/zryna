@@ -14,6 +14,9 @@ test('synthetic complete producer records replay; full owner never receives witn
   const value = fixture(t);
   await value.collect();
   assert.equal(value.calls.length, 7);
+  const pnpm = value.calls[2];
+  assert.equal(pnpm.executable, process.execPath);
+  assert.deepEqual(pnpm.args, [resolve(value.parent, 'bin/pnpm.cjs'), '--version']);
   assert.equal(value.calls.filter(call => call.witness).length, 2);
   assert.deepEqual(value.calls.at(-1).args, registry.fullOwner.args);
   assert(value.calls.at(-1).args.includes('--include-ignored'));
@@ -52,12 +55,14 @@ test('source drift after a campaign retains all existing originals and blocks pu
   let inspections = 0;
   await assert.rejects(() => collectFuzz(value.output, commit, {
     root: ROOT, interruption: value.interruption,
+    resolvePnpmScript: () => resolve(value.parent, 'bin/pnpm.cjs'),
     inspect: () => ({ ...source, tree: ++inspections > 2 ? 'd'.repeat(40) : source.tree }),
     run: async (executable, args, options) => {
-      if (args[0] === '--version') {
-        const version = registry.toolchains[executable];
+      if (args.at(-1) === '--version') {
+        const name = executable === process.execPath ? 'pnpm' : executable;
+        const version = registry.toolchains[name];
         return { exitCode: 0, signal: null, error: null, elapsedMs: 1,
-          stdout: Buffer.from(['cargo', 'rustc'].includes(executable) ? `${executable} ${version}` : version), stderr: Buffer.alloc(0) };
+          stdout: Buffer.from(['cargo', 'rustc'].includes(name) ? `${name} ${version}` : version), stderr: Buffer.alloc(0) };
       }
       const gate = registry.campaigns[0];
       writeFileSync(options.env.ZRYNA_M7_FUZZ_WITNESS, encode(witnessRecords(gate)), { flag: 'wx' });
@@ -80,6 +85,9 @@ test('retained receipt mutations cannot waive execution, source, tools, outputs 
     receipt => { receipt.source.tree = 'd'.repeat(40); },
     receipt => { receipt.host = 'unknown'; },
     receipt => { receipt.tools[0].version = 'replacement'; },
+    receipt => { receipt.tools.find(tool => tool.name === 'pnpm').executable = 'cmd.exe'; },
+    receipt => { receipt.tools.find(tool => tool.name === 'pnpm').args[0] = 'pnpm.cmd'; },
+    receipt => { receipt.tools.find(tool => tool.name === 'pnpm').args.push('--ignored'); },
     receipt => { receipt.results[0].attempt.signal = 'SIGTERM'; },
     receipt => { receipt.results[0].attempt.error = 'CLEANUP'; },
     receipt => { receipt.results[0].attempt.exitCode = 1; },

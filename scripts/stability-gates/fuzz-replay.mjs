@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { resolve } from 'node:path';
+import { resolve, posix, win32 } from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { exact, MAX_LOG, parse, readSafe, sha256 } from './input.mjs';
@@ -60,13 +60,23 @@ function checkSource(source, expectedCommit) {
   assert(Number.isSafeInteger(source.bytes) && source.bytes > 0 && source.bytes <= 64 * 1024 * 1024);
 }
 
-function checkTools(output, records, toolchains) {
+function checkTools(output, records, toolchains, runtime) {
   assert.equal(records.length, Object.keys(toolchains).length);
   for (const [index, name] of Object.keys(toolchains).sort().entries()) {
     const record = records[index];
-    exact(record, ['name', 'args', 'version', 'attempt', 'stdout', 'stderr'], 'observed tool');
+    exact(record, ['name', 'executable', 'args', 'version', 'attempt', 'stdout', 'stderr'], 'observed tool');
     assert.equal(record.name, name);
-    assert.deepEqual(record.args, ['--version']);
+    if (name === 'pnpm') {
+      const paths = runtime.platform === 'win32' ? win32 : posix;
+      assert.equal(record.executable, runtime.nodePath, 'same explicit Node executes pnpm JS');
+      assert.equal(record.args.length, 2);
+      assert.equal(record.args[1], '--version');
+      assert(paths.isAbsolute(record.args[0]), 'absolute direct pnpm entry');
+      assert.equal(paths.basename(record.args[0]), 'pnpm.cjs');
+    } else {
+      assert.equal(record.executable, name);
+      assert.deepEqual(record.args, ['--version']);
+    }
     successful(record.attempt, 30000);
     const stdout = utf8(retained(output, record.stdout, `tool-${name}.stdout`, 65536)).trim();
     retained(output, record.stderr, `tool-${name}.stderr`, 65536);
@@ -100,7 +110,7 @@ export function replayFuzz(output, expectedCommit, { root = ROOT, host = hostNam
   checkSource(receipt.source, expectedCommit);
   assert.deepEqual(parse(readSafe(output, 'source.json')), receipt.source);
   assert.deepEqual(parse(readSafe(output, 'source-final.json')), receipt.source);
-  checkTools(output, receipt.tools, registry.toolchains);
+  checkTools(output, receipt.tools, registry.toolchains, receipt.runtime);
   const gates = [...registry.campaigns, registry.fullOwner];
   assert.equal(receipt.results.length, gates.length);
   for (const [index, gate] of gates.entries()) {

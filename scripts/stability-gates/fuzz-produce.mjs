@@ -10,6 +10,7 @@ import { loadFuzzRegistry, REGISTRY_SHA256, ROOT } from './fuzz-registry.mjs';
 import { childEnvironment, descriptor, document, inspectWithoutTokens, prepare, retain, successful } from './fuzz-files.mjs';
 import { checkObservation, namedProof } from './fuzz-replay.mjs';
 import { replayWitness } from './fuzz-witness.mjs';
+import { resolvePnpmScript } from '../m4/observe-materials.mjs';
 
 async function observe(output, gate, context) {
   const { root, run, interruption } = context;
@@ -37,12 +38,14 @@ async function tools(output, registry, context) {
   const observations = [];
   for (const name of Object.keys(registry.toolchains).sort()) {
     assert.equal(context.interruption.signal, null, 'interrupted before tool observation');
-    const result = await context.run(name, ['--version'], { root: context.root, timeoutMs: 30000,
+    const executable = name === 'pnpm' ? process.execPath : name;
+    const args = name === 'pnpm' ? [context.resolvePnpmScript(), '--version'] : ['--version'];
+    const result = await context.run(executable, args, { root: context.root, timeoutMs: 30000,
       env: childEnvironment(), interruption: context.interruption });
     const { stdout, stderr, ...attempt } = result;
     const text = stdout.toString('utf8').trim();
     const version = ['rustc', 'cargo'].includes(name) ? text.split(' ')[1] : text;
-    const record = { name, args: ['--version'], version: version ?? null, attempt,
+    const record = { name, executable, args, version: version ?? null, attempt,
       stdout: retain(output, `tool-${name}.stdout`, stdout), stderr: retain(output, `tool-${name}.stderr`, stderr) };
     document(output, `observed-tool-${name}.json`, record);
     successful(attempt, 30000);
@@ -57,7 +60,8 @@ export async function collectFuzz(output, expectedCommit, options = {}) {
   const root = options.root ?? ROOT;
   const inspect = options.inspect ?? snapshot;
   const interruption = options.interruption ?? createInterruptionScope();
-  const context = { root, interruption, run: options.run ?? execute };
+  const context = { root, interruption, run: options.run ?? execute,
+    resolvePnpmScript: options.resolvePnpmScript ?? resolvePnpmScript };
   const results = [];
   let created = false;
   let stage = 'preparation';
